@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  frontend:
+    build: ./DeSS_T_Frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-go
+
+  backend-go:
+    build: ./DeSS_T_Backend-go
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend-python
+
+  backend-python:
+    build: ./DeSS_T_Backend-python
+    ports:
+      - "5000:5000"
+
+  postgres:
+    image: postgres:16
+    container_name: dess_T_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: DeSS_T
+      POSTGRES_PASSWORD: DeSS_T_491
+      POSTGRES_DB: dess_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - DeSS_T:/var/lib/postgresql/data
+
+volumes:
+  DeSS_T:

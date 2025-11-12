@@ -22,7 +22,8 @@ func main() {
     // Setup routes
     routes.SetupLogRoutes(app)	
 	routes.SetupRoutes(app)
-
+    routes.SetupComputeRoutes(app)
+    
     app.Listen(":8080")
 }
 

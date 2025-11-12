@@ -5,3 +5,6 @@ pandas
 scipy
 numpy
 salabim
+flask
+flask-cors
+

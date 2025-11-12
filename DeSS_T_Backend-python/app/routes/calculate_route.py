@@ -1,6 +1,6 @@
 # routes/calculate_route.py
 from flask import Blueprint, request, jsonify
-from services.calculator import multiply_by_two, add_numbers
+from app.services.calculator import multiply_by_two, add_numbers
 
 calc_bp = Blueprint("calc_bp", __name__)
 

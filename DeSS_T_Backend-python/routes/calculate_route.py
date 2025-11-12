@@ -14,3 +14,10 @@ def calculate():
 
     result = multiply_by_two(num)
     return jsonify({"result": result})
+
+@calc_bp.route("/add", methods=["GET"])
+def add():
+    a = int(request.args.get("a", 0))
+    b = int(request.args.get("b", 0))
+    result = add_numbers(a, b)
+    return jsonify({"result": result})

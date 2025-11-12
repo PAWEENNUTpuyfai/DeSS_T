@@ -1,0 +1,31 @@
+/* src/style/App.css */
+body {
+  font-family: system-ui, sans-serif;
+  background-color: #f6f8fa;
+  color: #333;
+  text-align: center;
+  padding: 2em;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 2em;
+  margin: 1em auto;
+  width: 300px;
+}
+
+button {
+  margin: 0.5em;
+  padding: 0.6em 1.2em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #646cff;
+  color: white;
+}
+
+button:hover {
+  background-color: #535bf2;
+}

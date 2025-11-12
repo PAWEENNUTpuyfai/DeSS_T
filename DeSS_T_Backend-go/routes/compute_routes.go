@@ -8,4 +8,5 @@ import (
 func SetupComputeRoutes(app *fiber.App) {
     group := app.Group("/api")
     group.Post("/compute", controllers.ComputeFromPython)
+	group.Post("/power", controllers.Calculate)
 }

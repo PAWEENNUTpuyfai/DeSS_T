@@ -6,11 +6,17 @@ import (
     "DeSS_T_Backend-go/routes"
     "DeSS_T_Backend-go/models"
     "DeSS_T_Backend-go/seed"
+    "github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func main() {
     app := fiber.New()
 
+    app.Use(cors.New(cors.Config{
+        AllowOrigins: "*", // หรือ "http://localhost:5173"
+        AllowMethods: "GET,POST,OPTIONS",
+        AllowHeaders: "Content-Type",
+    }))
     config.ConnectDatabase()
 	config.ConnectMongo()
 
@@ -23,7 +29,7 @@ func main() {
     routes.SetupLogRoutes(app)	
 	routes.SetupRoutes(app)
     routes.SetupComputeRoutes(app)
-    
+
     app.Listen(":8080")
 }
 

@@ -35,3 +35,21 @@ func CallPythonAPI(num int) (int, error) {
 
     return 0, fmt.Errorf("unexpected response: %s", string(responseData))
 }
+
+func CallPythonAPIPOWER(number int) (int, error) {
+	payload := map[string]int{"number": number}
+	data, _ := json.Marshal(payload)
+
+	resp, err := http.Post("http://localhost:5000/api/power", "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	var res map[string]int
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return 0, err
+	}
+
+	return res["result"], nil
+}

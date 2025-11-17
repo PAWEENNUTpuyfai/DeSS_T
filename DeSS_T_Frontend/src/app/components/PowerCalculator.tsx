@@ -30,7 +30,7 @@ export default function PowerCalculator() {
         {loading ? "Calculating..." : "Calculate"}
       </button>
 
-      {message && (
+      {result && message && (
         <p
           style={{
             marginTop: "1em",

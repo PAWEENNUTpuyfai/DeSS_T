@@ -1,23 +1,41 @@
 version: "3.9"
+
 services:
-  # frontend:
-  #   build: ./DeSS_T_Frontend
-  #   ports:
-  #     - "3000:80"
-  #   depends_on:
-  #     - backend-go
+  frontend:
+    image: paweennutpuyfai/dess-t-frontend:1.0
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-go
 
-  # backend-go:
-  #   build: ./DeSS_T_Backend-go
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - backend-python
+  backend-go:
+    image: paweennutpuyfai/dess-t-go:1.0
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend-python
+      - postgres
+      - mongo
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: DeSS_T
+      POSTGRES_PASSWORD: DeSS_T_491
+      POSTGRES_DB: dess_db
+      MONGO_URI: mongodb://DeSS_T:DeSS_T_491@mongo:27017/dess_db?authSource=admin
 
-  # backend-python:
-  #   build: paweennutpuyfai/dess-t-python:0.0
-  #   ports:
-  #     - "5000:5000"
+  backend-python:
+    image: paweennutpuyfai/dess-t-python:1.0
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - mongo
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: DeSS_T
+      POSTGRES_PASSWORD: DeSS_T_491
+      POSTGRES_DB: dess_db
+      MONGO_URI: mongodb://DeSS_T:DeSS_T_491@mongo:27017/dess_db?authSource=admin
 
   postgres:
     image: postgres:16
@@ -31,8 +49,11 @@ services:
       - "5432:5432"
     volumes:
       - DeSS_T:/var/lib/postgresql/data
+
   mongo:
     image: mongo:7
+    container_name: DeSS_T_mongo
+    restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: DeSS_T
       MONGO_INITDB_ROOT_PASSWORD: DeSS_T_491
@@ -41,6 +62,7 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+
 volumes:
   DeSS_T:
   mongo_data:

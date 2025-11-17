@@ -8,6 +8,8 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"DeSS_T_Backend-go/models"
 )
 
 var DB *gorm.DB
@@ -37,6 +39,15 @@ func ConnectDatabase() {
         log.Fatal("❌ Failed to connect database:", err)
     }
 
-    fmt.Println("✅ Database connected")
-    DB = db
+    // ⭐ กำหนดว่าตารางไหนจะถูกสร้างขึ้น
+	err = db.AutoMigrate(
+		&models.User{},
+		&models.PythonLog{},
+	)
+	if err != nil {
+		log.Fatal("❌ AutoMigrate failed:", err)
+	}
+
+	DB = db
+	fmt.Println("✅ Migration complete")
 }

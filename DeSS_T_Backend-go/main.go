@@ -4,7 +4,7 @@ import (
     "github.com/gofiber/fiber/v2"
     "DeSS_T_Backend-go/config"
     "DeSS_T_Backend-go/routes"
-    "DeSS_T_Backend-go/models"
+
     "DeSS_T_Backend-go/seed"
     "github.com/gofiber/fiber/v2/middleware/cors"
 )
@@ -20,7 +20,6 @@ func main() {
     config.ConnectDatabase()
 	config.ConnectMongo()
 
-    config.DB.AutoMigrate(&models.User{}) // migrate automatically
 
     seed.SeedData() // insert initial data
 	seed.SeedMongo()

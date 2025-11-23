@@ -1,5 +1,5 @@
 // src/app/routes/PowerPage.tsx
-import PowerCalculator from "../components/PowerCalculator";
+import PowerCalculator from "./PowerCalculator";
 
 export default function PowerPage() {
   return (

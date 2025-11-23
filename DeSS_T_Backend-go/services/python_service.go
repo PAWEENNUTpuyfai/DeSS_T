@@ -37,19 +37,20 @@ func CallPythonAPI(num int) (int, error) {
 }
 
 func CallPythonAPIPOWER(number int) (int, error) {
-	payload := map[string]int{"number": number}
-	data, _ := json.Marshal(payload)
+    payload := map[string]int{"number": number}
+    data, _ := json.Marshal(payload)
 
-	resp, err := http.Post("http://localhost:5000/api/power", "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
+    // URL ต้องตรงกับ prefix + router path
+    resp, err := http.Post("http://localhost:5000/api/power", "application/json", bytes.NewBuffer(data))
+    if err != nil {
+        return 0, err
+    }
+    defer resp.Body.Close()
 
-	var res map[string]int
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return 0, err
-	}
+    var res map[string]int
+    if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+        return 0, err
+    }
 
-	return res["result"], nil
+    return res["result"], nil
 }

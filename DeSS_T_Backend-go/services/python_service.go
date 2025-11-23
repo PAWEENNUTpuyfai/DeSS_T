@@ -53,3 +53,20 @@ func CallPythonAPIPOWER(number int) (int, error) {
 
 	return res["result"], nil
 }
+
+//เริ่มโค้ดของจริง
+func CallPythonDistributionFit(data interface{}) (map[string]interface{}, error) {
+
+    payload, _ := json.Marshal(data)
+
+    resp, err := http.Post("http://localhost:5000/api/distribution_fit", "application/json", bytes.NewBuffer(payload))
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+
+    return result, nil
+}

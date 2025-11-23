@@ -1,35 +1,34 @@
 package main
 
 import (
-    "github.com/gofiber/fiber/v2"
-    "DeSS_T_Backend-go/config"
-    "DeSS_T_Backend-go/routes"
+	"DeSS_T_Backend-go/config"
+	"DeSS_T_Backend-go/routes"
 
-    "DeSS_T_Backend-go/seed"
-    "github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func main() {
-    app := fiber.New()
+	app := fiber.New()
 
-    app.Use(cors.New(cors.Config{
-        AllowOrigins: "*", // หรือ "http://localhost:5173"
-        AllowMethods: "GET,POST,OPTIONS",
-        AllowHeaders: "Content-Type",
-    }))
-    config.ConnectDatabase()
-	config.ConnectMongo()
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*", // หรือ "http://localhost:5173"
+		AllowMethods: "GET,POST,OPTIONS",
+		AllowHeaders: "Content-Type",
+	}))
+	config.ConnectDatabase()
+	// config.ConnectMongo()
 
+	// seed.SeedData() // insert initial data
+	// seed.SeedMongo()
 
-    seed.SeedData() // insert initial data
-	seed.SeedMongo()
-    
-    // Setup routes
-    routes.SetupLogRoutes(app)	
+	// Setup routes
+	routes.SetupLogRoutes(app)
 	routes.SetupRoutes(app)
-    routes.SetupComputeRoutes(app)
+	routes.SetupComputeRoutes(app)
 
-    app.Listen(":8080")
+	app.Listen(":8080")
 }
 
 // package main

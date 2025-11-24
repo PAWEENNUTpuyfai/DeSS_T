@@ -3,6 +3,11 @@ package controllers
 import (
 	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
+	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -14,9 +19,15 @@ func UploadGuestAlightingFit(c *fiber.Ctx) error {
     }
 
     // Save to temp
-    tempPath := "./tmp/" + file.Filename
+    tmpDir := "./tmp"
+    if err := os.MkdirAll(tmpDir, 0o755); err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": "cannot create tmp dir", "detail": err.Error()})
+    }
+
+    safeName := filepath.Base(file.Filename)
+    tempPath := filepath.Join(tmpDir, fmt.Sprintf("%d_%s", time.Now().UnixNano(), safeName))
     if err := c.SaveFile(file, tempPath); err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": "cannot save file"})
+        return c.Status(500).JSON(fiber.Map{"error": "cannot save file", "detail": err.Error()})
     }
 
     // Read Excel → JSON

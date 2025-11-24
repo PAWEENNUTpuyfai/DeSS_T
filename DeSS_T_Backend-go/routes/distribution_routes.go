@@ -5,6 +5,6 @@ import (
     "github.com/gofiber/fiber/v2"
 )
 
-func AlightingRoutes(app *fiber.App) {
-    app.Post("/guest/alighting/distribution_fit", controllers.UploadGuestAlightingFit)
+func SetupAlightingRoutes(app *fiber.App) {
+    app.Post("/api/guest/alighting/distribution_fit", controllers.UploadGuestAlightingFit)
 }

@@ -1,0 +1,37 @@
+# ---------------------------
+# Global Python ignore
+# ---------------------------
+DeSS_T_Backend-python/__pycache__/
+DeSS_T_Backend-python/*.pyc
+DeSS_T_Backend-python/.venv/
+DeSS_T_Backend-python/venv/
+
+# ---------------------------
+# Global Go ignore
+# ---------------------------
+DeSS_T_Backend-go/bin/
+DeSS_T_Backend-go/build/
+DeSS_T_Backend-go/*.exe
+DeSS_T_Backend-go/*.out
+
+# Go module cache (optional)
+DeSS_T_Backend-go/pkg/
+
+# ---------------------------
+# Frontend (Next.js, Node.js)
+# ---------------------------
+DeSS_T_Frontend/node_modules/
+DeSS_T_Frontend/.next/
+DeSS_T_Frontend/dist/
+DeSS_T_Frontend/.pnpm-store/
+
+# ---------------------------
+# Editor configs
+# ---------------------------
+.vscode/
+.idea/
+
+# ---------------------------
+# System files
+# ---------------------------
+.DS_Store

@@ -1,0 +1,48 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables
+.env
+.env.*
+
+# VSCode settings
+.vscode/
+
+# PyCharm
+.idea/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Logs
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# MyPy cache
+.mypy_cache/
+
+# pytest cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# SQLite database (ถ้าใช้)
+*.db
+
+# MacOS metadata
+.DS_Store

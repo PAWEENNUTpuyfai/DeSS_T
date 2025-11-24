@@ -38,7 +38,7 @@ services:
       MONGO_URI: mongodb://DeSS_T:DeSS_T_491@mongo:27017/dess_db?authSource=admin
 
   postgres:
-    image: postgres:16
+    image: postgis/postgis:15-3.4
     container_name: DeSS_T_postgres
     restart: always
     environment:

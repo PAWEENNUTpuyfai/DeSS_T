@@ -1,7 +1,7 @@
 package main
 
 import (
-	"DeSS_T_Backend-go/config"
+	// "DeSS_T_Backend-go/config"
 	"DeSS_T_Backend-go/routes"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,7 +17,7 @@ func main() {
 		AllowMethods: "GET,POST,OPTIONS",
 		AllowHeaders: "Content-Type",
 	}))
-	config.ConnectDatabase()
+	// config.ConnectDatabase()
 	// config.ConnectMongo()
 
 	// seed.SeedData() // insert initial data
@@ -27,6 +27,7 @@ func main() {
 	routes.SetupLogRoutes(app)
 	routes.SetupRoutes(app)
 	routes.SetupComputeRoutes(app)
+	routes.SetupAlightingRoutes(app)
 
 	app.Listen(":8080")
 }

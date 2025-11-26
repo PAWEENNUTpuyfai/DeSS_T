@@ -1,8 +1,10 @@
 package models
 
 import (
-    "github.com/xuri/excelize/v2"
-    "fmt"
+	"fmt"
+	"io"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type Record struct {
@@ -70,6 +72,63 @@ func DistributionExcelToJSON(path string) (Data, error) {
                 Station:        sheet,
                 TimeRange:      header,
                 Records: recs,
+            })
+        }
+    }
+
+    return output, nil
+}
+
+func DistributionExcelToJSONReader(r io.Reader) (Data, error) {
+    f, err := excelize.OpenReader(r)
+    if err != nil {
+        return Data{}, err
+    }
+    defer f.Close()
+
+    output := Data{}
+    recordID := 1
+
+    for _, sheet := range f.GetSheetList() {
+
+        rows, _ := f.GetRows(sheet)
+        if len(rows) < 2 {
+            continue
+        }
+
+        headers := rows[0]
+
+        for colIndex, header := range headers {
+            if header == "" {
+                continue
+            }
+
+            var recs []Record
+
+            for rowIndex := 1; rowIndex < len(rows); rowIndex++ {
+                if colIndex >= len(rows[rowIndex]) {
+                    continue
+                }
+
+                val := rows[rowIndex][colIndex]
+                if val == "" {
+                    continue
+                }
+
+                var num float64
+                fmt.Sscanf(val, "%f", &num)
+
+                recs = append(recs, Record{
+                    RecordID:     recordID,
+                    NumericValue: num,
+                })
+                recordID++
+            }
+
+            output.Data = append(output.Data, Item{
+                Station:   sheet,
+                TimeRange: header,
+                Records:   recs,
             })
         }
     }

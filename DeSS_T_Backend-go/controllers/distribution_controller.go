@@ -3,40 +3,35 @@ package controllers
 import (
 	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
-	"fmt"
-	"os"
-	"path/filepath"
-	"time"
+	// "fmt"
+	// "os"
+	// "path/filepath"
+	// "time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func UploadGuestAlightingFit(c *fiber.Ctx) error {
-
-    file, err := c.FormFile("file")
+    // รับไฟล์
+    f, err := c.FormFile("file")
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "file missing"})
     }
 
-    // Save to temp
-    tmpDir := "./tmp"
-    if err := os.MkdirAll(tmpDir, 0o755); err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": "cannot create tmp dir", "detail": err.Error()})
+    // เปิดไฟล์เป็น reader
+    reader, err := f.Open()
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": "cannot open file", "detail": err.Error()})
     }
+    defer reader.Close()
 
-    safeName := filepath.Base(file.Filename)
-    tempPath := filepath.Join(tmpDir, fmt.Sprintf("%d_%s", time.Now().UnixNano(), safeName))
-    if err := c.SaveFile(file, tempPath); err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": "cannot save file", "detail": err.Error()})
-    }
-
-    // Read Excel → JSON
-    jsonData, err := models.DistributionExcelToJSON(tempPath)
+    // อ่าน Excel → JSON (แก้ฟังก์ชันให้รับ io.Reader)
+    jsonData, err := models.DistributionExcelToJSONReader(reader)
     if err != nil {
         return c.Status(500).JSON(fiber.Map{"error": err.Error()})
     }
 
-    // Send JSON to Python
+    // ส่ง JSON ไป Python
     result, err := services.CallPythonDistributionFit(jsonData)
     if err != nil {
         return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -44,3 +39,5 @@ func UploadGuestAlightingFit(c *fiber.Ctx) error {
 
     return c.JSON(result)
 }
+
+

@@ -1,37 +1,67 @@
 # ---------------------------
 # Global Python ignore
 # ---------------------------
-DeSS_T_Backend-python/__pycache__/
-DeSS_T_Backend-python/*.pyc
-DeSS_T_Backend-python/.venv/
-DeSS_T_Backend-python/venv/
+# Python cache directories (covers all __pycache__ folders)
+__pycache__/
+
+# Compiled Python files (covers *.pyc and specific cpython versions)
+*.pyc
+*.cpython-*.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
 
 # ---------------------------
-# Global Go ignore
+# Global Go ignore (Golang)
 # ---------------------------
-DeSS_T_Backend-go/bin/
-DeSS_T_Backend-go/build/
-DeSS_T_Backend-go/*.exe
-DeSS_T_Backend-go/*.out
+# Compiled binaries and build output
+bin/
+build/
+*.exe
+*.out
 
-# Go module cache (optional)
-DeSS_T_Backend-go/pkg/
+# Go module cache (optional, but good practice to ignore)
+pkg/
+
+# Temporary files (for tests/coverage)
+*.test
+*.prof
 
 # ---------------------------
 # Frontend (Next.js, Node.js)
 # ---------------------------
-DeSS_T_Frontend/node_modules/
-DeSS_T_Frontend/.next/
-DeSS_T_Frontend/dist/
-DeSS_T_Frontend/.pnpm-store/
+# Node package manager directories
+node_modules/
+
+# Next.js build output
+.next/
+out/
+dist/
+
+# Package manager lock files (choose based on what you use)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# PNPM store cache
+.pnpm-store/
+
+# Local configuration files
+.env
+.env.local
 
 # ---------------------------
-# Editor configs
+# Editor configs and Temporary Files
 # ---------------------------
 .vscode/
 .idea/
+*.swp
+*~
 
 # ---------------------------
 # System files
 # ---------------------------
 .DS_Store
+Thumbs.db

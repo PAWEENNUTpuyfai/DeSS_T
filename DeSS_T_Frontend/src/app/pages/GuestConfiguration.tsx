@@ -2,63 +2,207 @@
 
 import { useState } from "react";
 import { DistFitFromXlsx } from "../../utility/api/distribution_fit";
+import MapViewer from "../components/MapViewer";
 
 export default function GuestConfiguration() {
-  const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  // ------------------------ File Upload States ------------------------
+  const [alightingFile, setAlightingFile] = useState<File | null>(null);
+  const [alightingResult, setAlightingResult] = useState<any>(null);
+  const [loadingA, setLoadingA] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!file) {
-      alert("กรุณาเลือกไฟล์ xlsx");
-      return;
-    }
+  // ------------------------ Map States ------------------------
+  const [areaCode, setAreaCode] = useState("");
+  const [minLat, setMinLat] = useState(13.72);
+  const [maxLat, setMaxLat] = useState(13.75);
+  const [minLon, setMinLon] = useState(100.5);
+  const [maxLon, setMaxLon] = useState(100.53);
+
+  const [mapBounds, setMapBounds] = useState({
+    minLat,
+    maxLat,
+    minLon,
+    maxLon,
+  });
+
+  // ------------------------ File Submit ------------------------
+  const submitAlighting = async () => {
+    if (!alightingFile) return alert("กรุณาเลือกไฟล์ Alighting Data");
 
     try {
-      setLoading(true);
-      const data = await DistFitFromXlsx(file);
-      setResult(data);
-    } catch (err: any) {
-      alert("เกิดข้อผิดพลาด: " + err.message);
+      setLoadingA(true);
+      const output = await DistFitFromXlsx(alightingFile);
+      setAlightingResult(output);
+    } catch (e: any) {
+      alert("เกิดข้อผิดพลาด: " + e.message);
     } finally {
-      setLoading(false);
+      setLoadingA(false);
     }
   };
 
+  // ------------------------ Map Save ------------------------
+  const handleSaveMap = async () => {
+  if (areaCode.trim() !== "") {
+    try {
+      const query = `
+        [out:json][timeout:25];
+        area(${areaCode})->.searchArea;
+        (
+          node(area.searchArea);
+        );
+        out bb;
+      `;
+
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query,
+      });
+
+      const data = await res.json();
+
+      if (!data.elements || data.elements.length === 0)
+        return alert("ไม่พบพื้นที่จาก area code นี้");
+
+      const bb = data.elements[0].bounds;
+
+      setMapBounds({
+        minLat: bb.minlat,
+        maxLat: bb.maxlat,
+        minLon: bb.minlon,
+        maxLon: bb.maxlon,
+      });
+
+    } catch (err) {
+      alert("โหลด area code ไม่สำเร็จ");
+    }
+    return;
+  }
+
+  setMapBounds({ minLat, maxLat, minLon, maxLon });
+};
+
+  // ----------------------------------------------------------------------
   return (
-    <main className="p-6 space-y-6">
+    <main className="p-6 space-y-10">
       <h2 className="text-2xl font-bold">Guest Configuration</h2>
 
-      {/* Upload box */}
-      <div className="border rounded-lg p-4">
-        <label className="block mb-2 font-medium">แนบไฟล์ .xlsx</label>
+      {/* -------------------- Alighting -------------------- */}
+      <section className="border rounded-lg p-4 space-y-4">
+        <h3 className="font-bold text-lg">Alighting Data</h3>
+
         <input
           type="file"
           accept=".xlsx"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="block w-full"
+          onChange={(e) => setAlightingFile(e.target.files?.[0] ?? null)}
         />
 
-        {file && (
-          <p className="mt-2 text-green-600">ไฟล์ที่เลือก: {file.name}</p>
+        {alightingFile && (
+          <p className="text-green-600">ไฟล์: {alightingFile.name}</p>
         )}
-      </div>
 
-      {/* Submit */}
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? "กำลังส่ง..." : "Submit"}
-      </button>
+        <button
+          onClick={submitAlighting}
+          disabled={loadingA}
+          className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50"
+        >
+          {loadingA ? "กำลังประมวลผล..." : "Submit Alighting"}
+        </button>
 
-      {/* Show result */}
-      {result && (
-        <pre className="bg-gray-100 p-4 rounded mt-4">
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      )}
+        {alightingResult && (
+          <pre className="bg-gray-100 p-3 rounded whitespace-pre-wrap">
+            {JSON.stringify(alightingResult, null, 2)}
+          </pre>
+        )}
+      </section>
+
+      {/* -------------------- Map Controller -------------------- */}
+      <section className="border rounded-lg p-4 space-y-4">
+        <h3 className="font-bold text-lg">Map Area Configuration</h3>
+
+        <div className="flex items-center gap-6">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="mapMode"
+              value="area"
+              checked={areaCode !== ""}
+              onChange={() => setAreaCode(" ")}
+            />
+            ใช้ Area Name
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="mapMode"
+              value="manual"
+              checked={areaCode === ""}
+              onChange={() => setAreaCode("")}
+            />
+            ใช้ Lat / Lon
+          </label>
+        </div>
+
+        {areaCode !== "" && (
+          <input
+            type="text"
+            placeholder="กรอกชื่อสถานที่ เช่น Bangkok"
+            value={areaCode}
+            onChange={(e) => setAreaCode(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+        )}
+
+        {areaCode === "" && (
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              type="number"
+              step="0.0001"
+              value={minLat}
+              onChange={(e) => setMinLat(parseFloat(e.target.value))}
+              className="border p-2 rounded"
+              placeholder="minLat"
+            />
+            <input
+              type="number"
+              step="0.0001"
+              value={maxLat}
+              onChange={(e) => setMaxLat(parseFloat(e.target.value))}
+              className="border p-2 rounded"
+              placeholder="maxLat"
+            />
+            <input
+              type="number"
+              step="0.0001"
+              value={minLon}
+              onChange={(e) => setMinLon(parseFloat(e.target.value))}
+              className="border p-2 rounded"
+              placeholder="minLon"
+            />
+            <input
+              type="number"
+              step="0.0001"
+              value={maxLon}
+              onChange={(e) => setMaxLon(parseFloat(e.target.value))}
+              className="border p-2 rounded"
+              placeholder="maxLon"
+            />
+          </div>
+        )}
+
+        <button
+          onClick={handleSaveMap}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Save Map
+        </button>
+      </section>
+
+      <MapViewer
+        minLat={mapBounds.minLat}
+        maxLat={mapBounds.maxLat}
+        minLon={mapBounds.minLon}
+        maxLon={mapBounds.maxLon}
+      />
     </main>
   );
 }

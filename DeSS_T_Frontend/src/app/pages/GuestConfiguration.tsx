@@ -91,172 +91,197 @@ export default function GuestConfiguration() {
       : JSON.stringify(alightingResult, null, 2);
 
   return (
-    <main className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Guest Configuration</h2>
+    <main className="p-6 ">
+      <div className="mb-6 bg-white p-6 rounded-lg shadow">
+        <h2 className="font-lexend text-2xl font-bold mb-4">
+          Guest Configuration
+        </h2>
 
-      <div className="flex gap-6">
-        {/* Left: Map (reduced size) */}
-        <div className="w-2/3 border rounded-lg overflow-hidden">
-          <div className="w-full h-[60vh]">
-            <MapViewer
-              minLat={mapBounds?.minLat}
-              maxLat={mapBounds?.maxLat}
-              minLon={mapBounds?.minLon}
-              maxLon={mapBounds?.maxLon}
-              areaCode={mapMode === "area" ? areaCode : undefined}
-            />
-          </div>
-        </div>
-
-        {/* Right: stacked controls */}
-        <aside className="w-1/3 flex flex-col gap-4">
-          <section className="border rounded-lg p-4 space-y-3">
-            <h3 className="font-bold text-lg">Map Area Configuration</h3>
-
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="mapMode"
-                  value="area"
-                  checked={mapMode === "area"}
-                  onChange={() => setMapMode("area")}
-                />
-                ใช้ Area Code
-              </label>
-
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="mapMode"
-                  value="manual"
-                  checked={mapMode === "manual"}
-                  onChange={() => setMapMode("manual")}
-                />
-                ใช้ Lat / Lon
-              </label>
-            </div>
-
-            {mapMode === "area" ? (
-              <input
-                type="text"
-                placeholder="กรอก area id เช่น 3600062421"
-                value={areaCode}
-                onChange={(e) => setAreaCode(e.target.value)}
-                className="border p-2 w-full rounded"
+        <div className="flex gap-6">
+          {/* Left: Map (reduced size) */}
+          <div className="w-2/3 border rounded-lg overflow-hidden">
+            <div className="w-full h-[60vh]">
+              <MapViewer
+                minLat={mapBounds?.minLat}
+                maxLat={mapBounds?.maxLat}
+                minLon={mapBounds?.minLon}
+                maxLon={mapBounds?.maxLon}
+                areaCode={mapMode === "area" ? areaCode : undefined}
               />
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  step="0.0001"
-                  value={minLat}
-                  onChange={(e) => setMinLat(parseFloat(e.target.value))}
-                  className="border p-2 rounded"
-                  placeholder="minLat"
-                />
-                <input
-                  type="number"
-                  step="0.0001"
-                  value={maxLat}
-                  onChange={(e) => setMaxLat(parseFloat(e.target.value))}
-                  className="border p-2 rounded"
-                  placeholder="maxLat"
-                />
-                <input
-                  type="number"
-                  step="0.0001"
-                  value={minLon}
-                  onChange={(e) => setMinLon(parseFloat(e.target.value))}
-                  className="border p-2 rounded"
-                  placeholder="minLon"
-                />
-                <input
-                  type="number"
-                  step="0.0001"
-                  value={maxLon}
-                  onChange={(e) => setMaxLon(parseFloat(e.target.value))}
-                  className="border p-2 rounded"
-                  placeholder="maxLon"
-                />
+            </div>
+          </div>
+
+          {/* Right: stacked controls */}
+          <aside className="w-1/3 flex flex-col gap-4">
+            <section className="border rounded-lg p-4 space-y-3">
+              <h3 className="font-bold text-lg">Map Area Configuration</h3>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="mapMode"
+                    value="area"
+                    checked={mapMode === "area"}
+                    onChange={() => setMapMode("area")}
+                  />
+                  ใช้ Area Code
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="mapMode"
+                    value="manual"
+                    checked={mapMode === "manual"}
+                    onChange={() => setMapMode("manual")}
+                  />
+                  ใช้ Lat / Lon
+                </label>
               </div>
-            )}
 
-            <div className="flex justify-end">
-              <button
-                onClick={handleConfirmMap}
-                className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700"
-              >
-                Confirm Map
-              </button>
-            </div>
-          </section>
+              {mapMode === "area" ? (
+                <input
+                  type="text"
+                  placeholder="กรอก area id เช่น 3600062421"
+                  value={areaCode}
+                  onChange={(e) => setAreaCode(e.target.value)}
+                  className="border p-2 w-full rounded"
+                />
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={minLat}
+                    onChange={(e) => setMinLat(parseFloat(e.target.value))}
+                    className="border p-2 rounded"
+                    placeholder="minLat"
+                  />
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={maxLat}
+                    onChange={(e) => setMaxLat(parseFloat(e.target.value))}
+                    className="border p-2 rounded"
+                    placeholder="maxLat"
+                  />
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={minLon}
+                    onChange={(e) => setMinLon(parseFloat(e.target.value))}
+                    className="border p-2 rounded"
+                    placeholder="minLon"
+                  />
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={maxLon}
+                    onChange={(e) => setMaxLon(parseFloat(e.target.value))}
+                    className="border p-2 rounded"
+                    placeholder="maxLon"
+                  />
+                </div>
+              )}
 
-          <section className="border rounded-lg p-4 flex-1 flex flex-col">
-            <h3 className="font-bold text-lg mb-2">Alighting Data</h3>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleConfirmMap}
+                  className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700"
+                >
+                  Confirm Map
+                </button>
+              </div>
+            </section>
 
-            {/* Large drag-and-drop area for file upload. Disabled until map confirmed. */}
-            <input
-              id="alight-file"
-              type="file"
-              accept=".xlsx"
-              className="hidden"
-              onChange={(e) => setAlightingFile(e.target.files?.[0] ?? null)}
-              disabled={!mapConfirmed}
-            />
+            <section className="border rounded-lg p-4 flex-1 flex flex-col">
+              <h3 className="font-bold text-lg mb-2">Alighting Data</h3>
 
-            <div
-              className={`mt-3 p-6 border-2 rounded ${mapConfirmed ? "cursor-pointer" : "cursor-not-allowed"} flex flex-col items-center justify-center text-center ${mapConfirmed ? "border-dashed border-gray-300 bg-white" : "opacity-60 bg-gray-50"} min-h-[240px]`}
-              onClick={() => mapConfirmed && (document.getElementById("alight-file") as HTMLInputElement | null)?.click()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!mapConfirmed) return;
-                const f = e.dataTransfer?.files?.[0];
-                if (f) setAlightingFile(f);
-              }}
-            >
-
-              <p className="text-lg text-gray-800 font-semibold mt-3">
-                {mapConfirmed ? "คลิกหรือวางไฟล์ที่นี่ (.xlsx)" : "กด Confirm Map ก่อนอัปโหลดไฟล์"}
-              </p>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!mapConfirmed) return;
-                  (document.getElementById("alight-file") as HTMLInputElement | null)?.click();
-                }}
+              {/* Large drag-and-drop area for file upload. Disabled until map confirmed. */}
+              <input
+                id="alight-file"
+                type="file"
+                accept=".xlsx"
+                className="hidden"
+                onChange={(e) => setAlightingFile(e.target.files?.[0] ?? null)}
                 disabled={!mapConfirmed}
-                className={`mt-4 px-4 py-2 rounded text-white ${mapConfirmed ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
+              />
+
+              <div
+                className={`mt-3 p-6 border-2 rounded ${
+                  mapConfirmed ? "cursor-pointer" : "cursor-not-allowed"
+                } flex flex-col items-center justify-center text-center ${
+                  mapConfirmed
+                    ? "border-dashed border-gray-300 bg-white"
+                    : "opacity-60 bg-gray-50"
+                } min-h-[240px]`}
+                onClick={() =>
+                  mapConfirmed &&
+                  (
+                    document.getElementById(
+                      "alight-file"
+                    ) as HTMLInputElement | null
+                  )?.click()
+                }
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (!mapConfirmed) return;
+                  const f = e.dataTransfer?.files?.[0];
+                  if (f) setAlightingFile(f);
+                }}
               >
-                {mapConfirmed ? "Choose file" : "Confirm map ก่อนเลือกไฟล์"}
-              </button>
-            </div>
+                <p className="text-lg text-gray-800 font-semibold mt-3">
+                  {mapConfirmed
+                    ? "คลิกหรือวางไฟล์ที่นี่ (.xlsx)"
+                    : "กด Confirm Map ก่อนอัปโหลดไฟล์"}
+                </p>
 
-            {alightingFile && (
-              <p className="text-green-600">ไฟล์: {alightingFile.name}</p>
-            )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!mapConfirmed) return;
+                    (
+                      document.getElementById(
+                        "alight-file"
+                      ) as HTMLInputElement | null
+                    )?.click();
+                  }}
+                  disabled={!mapConfirmed}
+                  className={`mt-4 px-4 py-2 rounded text-white ${
+                    mapConfirmed
+                      ? "bg-blue-600 hover:bg-blue-700"
+                      : "bg-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {mapConfirmed ? "Choose file" : "Confirm map ก่อนเลือกไฟล์"}
+                </button>
+              </div>
 
-            <div className="mt-2">
-              <button
-                onClick={submitAlighting}
-                disabled={!mapConfirmed || loadingA}
-                className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50"
-              >
-                {loadingA ? "กำลังประมวลผล..." : "Submit Alighting"}
-              </button>
-            </div>
+              {alightingFile && (
+                <p className="text-green-600">ไฟล์: {alightingFile.name}</p>
+              )}
 
-            {prettyAlightingResult !== null && (
-              <pre className="bg-gray-100 p-3 rounded whitespace-pre-wrap mt-3 overflow-auto">
-                {prettyAlightingResult}
-              </pre>
-            )}
+              <div className="mt-2">
+                <button
+                  onClick={submitAlighting}
+                  disabled={!mapConfirmed || loadingA}
+                  className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50"
+                >
+                  {loadingA ? "กำลังประมวลผล..." : "Submit Alighting"}
+                </button>
+              </div>
 
-          </section>
-        </aside>
+              {prettyAlightingResult !== null && (
+                <pre className="bg-gray-100 p-3 rounded whitespace-pre-wrap mt-3 overflow-auto">
+                  {prettyAlightingResult}
+                </pre>
+              )}
+            </section>
+          </aside>
+        </div>
       </div>
     </main>
   );

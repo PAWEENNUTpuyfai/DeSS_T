@@ -26,6 +26,7 @@ interface MapViewerProps {
   maxLon?: number;
   areaCode?: string;
   areaName?: string;
+  externalBusStops?: BusStop[];
 }
 
 export default function MapViewer({
@@ -34,6 +35,7 @@ export default function MapViewer({
   minLon,
   maxLon,
   areaCode: propsAreaCode,
+  externalBusStops,
 }: MapViewerProps) {
   const [busStops, setBusStops] = useState<BusStop[]>([]);
   const [center, setCenter] = useState<LatLng>([13.75, 100.5]);
@@ -59,6 +61,12 @@ export default function MapViewer({
   useEffect(() => {
     if (!bounds) return;
 
+    // If parent provided explicit bus stops (e.g. area-mode), use those and skip fetching by bbox
+    if (externalBusStops && externalBusStops.length > 0) {
+      setBusStops(externalBusStops);
+      return;
+    }
+
     (async () => {
       try {
         const mapApi = await import("../../utility/api/mapApi");
@@ -75,7 +83,7 @@ export default function MapViewer({
         console.error("fetchBusStops failed:", err);
       }
     })();
-  }, [bounds]);
+  }, [bounds, externalBusStops]);
 
   useEffect(() => {
     if (!propsAreaCode) return;

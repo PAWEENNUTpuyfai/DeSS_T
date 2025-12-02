@@ -1,43 +1,36 @@
-export type LatLng = [number, number];
-
-export interface BusStop {
-  id: number;
-  position: LatLng;
-  name?: string;
+export interface NetworkModel {
+  Network_model: string;
+  Station_detail: StationDetail[];
+  StationPair: StationPair[];
 }
 
 export interface StationDetail {
-  station_detail_id: string;
-  name: string;
-  lat: string;
-  lon: string;
+  StationID: string;
+  StationName: string;
+  location: GeoPoint;
+  Lat: string;
+  Lon: string;
 }
 
-export interface RouteBetween {
-  route_between_id: string;
-  from_station: string;
-  to_station: string;
-  distance: number;
-  travel_time: number;
-  route: {
-    type: "LineString";
-    coordinates: [number, number][];
-  };
+export interface GeoPoint {
+  type: "Point";
+  coordinates: [number, number];
 }
 
 export interface StationPair {
-  station_pair_id: string;
-  fst_station: string;
-  snd_station: string;
-  route_between: string;
-  network_model: string;
+  FstStation: string;
+  SndStation: string;
+  RouteBetween: RouteBetween;
 }
 
-export interface NetworkModel {
-  network_model_id: string;
+export interface RouteBetween {
+  RouteBetweenID: string;
+  TravelTime: number;
+  Route: GeoLineString;
+  Distance: number;
 }
 
-export interface NetworkGraph {
-  nodes: StationDetail[];
-  edges: RouteBetween[];
+export interface GeoLineString {
+  type: "LineString";
+  coordinates: [number, number][];
 }

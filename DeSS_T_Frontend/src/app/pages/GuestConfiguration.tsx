@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { DistFitFromXlsx } from "../../utility/api/distribution_fit";
 import MapViewer from "../components/MapViewer";
-import type { NetworkGraph } from "../models/Network";
+import type { StationDetail } from "../models/Network";
 
 export default function GuestConfiguration() {
   // ------------------------ File Upload States ------------------------
@@ -26,14 +26,13 @@ export default function GuestConfiguration() {
 
   const [mapConfirmed, setMapConfirmed] = useState(false);
 
-  // Store NetworkGraph data (bus stops and area bounds)
-  const [networkGraph, setNetworkGraph] = useState<NetworkGraph | null>(null);
+  const [stationDetails, setStationDetails] = useState<StationDetail[] | null>(null);
 
-  // reset confirmation when user edits map inputs
   const resetConfirmation = () => {
     if (mapConfirmed) {
       setMapConfirmed(false);
       setMapBounds(undefined);
+      setStationDetails(null);
     }
   };
 
@@ -67,18 +66,16 @@ export default function GuestConfiguration() {
         const mapApi = await import("../../utility/api/mapApi");
         const bb = await mapApi.fetchAreaBounds(areaCode);
         
-        // Fetch bus stops within the area
-        const busStopsData = await mapApi.fetchBusStops([
-          [bb.minlat, bb.minlon],
-          [bb.maxlat, bb.maxlon],
-        ]);
+        // Fetch bus stops within the administrative area (use area query to avoid extra outside stops)
+        const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
         
-        // Build NetworkGraph with bus stops
-        const stationDetails = busStopsData.map((stop) => ({
-          station_detail_id: String(stop.id),
-          name: stop.tags?.name || `Bus Stop ${stop.id}`,
-          lat: String(stop.lat),
-          lon: String(stop.lon),
+        // Build NetworkGraph with bus stops (StationDetail format)
+        const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
+          StationID: String(stop.id),
+          StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
+          location: { type: "Point", coordinates: [stop.lon, stop.lat] },
+          Lat: String(stop.lat),
+          Lon: String(stop.lon),
         }));
         
         setMapBounds({
@@ -87,10 +84,7 @@ export default function GuestConfiguration() {
           minLon: bb.minlon,
           maxLon: bb.maxlon,
         });
-        setNetworkGraph({
-          nodes: stationDetails,
-          edges: [],
-        });
+        setStationDetails(stationDetails);
         setMapConfirmed(true);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -111,17 +105,15 @@ export default function GuestConfiguration() {
         [maxLat, maxLon],
       ]);
       
-      const stationDetails = busStopsData.map((stop) => ({
-        station_detail_id: String(stop.id),
-        name: stop.tags?.name || `Bus Stop ${stop.id}`,
-        lat: String(stop.lat),
-        lon: String(stop.lon),
+      const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
+        StationID: String(stop.id),
+        StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
+        location: { type: "Point", coordinates: [stop.lon, stop.lat] },
+        Lat: String(stop.lat),
+        Lon: String(stop.lon),
       }));
       
-      setNetworkGraph({
-        nodes: stationDetails,
-        edges: [],
-      });
+      setStationDetails(stationDetails);
     } catch (err: unknown) {
       console.error("Failed to fetch bus stops for manual bounds:", err);
     }
@@ -151,6 +143,15 @@ export default function GuestConfiguration() {
               minLon={mapBounds?.minLon}
               maxLon={mapBounds?.maxLon}
               areaCode={mapMode === "area" ? areaCode : undefined}
+              externalBusStops={
+                stationDetails
+                  ? stationDetails.map((s) => ({
+                      id: Number(s.StationID),
+                      position: [Number(s.Lat), Number(s.Lon)] as [number, number],
+                      name: s.StationName,
+                    }))
+                  : undefined
+              }
             />
           </div>
         </div>
@@ -305,6 +306,16 @@ export default function GuestConfiguration() {
           </section>
         </aside>
       </div>
+
+      {/* ปริ้นเล่นๆ stationDetails */}
+      {stationDetails && (
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="font-bold text-lg mb-2">Debug: Station Details ({stationDetails.length} stops)</h3>
+          <pre className="bg-white p-3 rounded overflow-auto text-xs">
+            {JSON.stringify(stationDetails, null, 2)}
+          </pre>
+        </div>
+      )}
     </main>
   );
 }

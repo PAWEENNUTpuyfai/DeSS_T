@@ -132,27 +132,6 @@ export default function MapViewer({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {areaPolygons && areaPolygons.length > 0 ? (
-          areaPolygons.map((poly, idx) => (
-            <Polygon
-              key={idx}
-              positions={poly as LatLng[]}
-              pathOptions={{ color: "red", weight: 2, fill: false }}
-            />
-          ))
-        ) : (
-          bounds && (
-            <Rectangle
-              bounds={bounds}
-              pathOptions={{
-                color: "red",
-                weight: 2,
-                fill: false,
-              }}
-            />
-          )
-        )}
-
         {busStops.map((stop) => (
           <CircleMarker
             key={stop.id}

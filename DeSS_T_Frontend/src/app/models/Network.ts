@@ -1,22 +1,28 @@
+export type LatLng = [number, number];
+
+export interface BusStop {
+  id: number;
+  position: LatLng;
+  name?: string;
+}
+
 export interface StationDetail {
   station_detail_id: string;
   name: string;
-  location: {
-    type: "Point";
-    coordinates: [number, number];
-  };
   lat: string;
   lon: string;
 }
 
 export interface RouteBetween {
   route_between_id: string;
+  from_station: string;
+  to_station: string;
+  distance: number;
   travel_time: number;
   route: {
     type: "LineString";
     coordinates: [number, number][];
   };
-  distance: number;
 }
 
 export interface StationPair {
@@ -27,22 +33,11 @@ export interface StationPair {
   network_model: string;
 }
 
-export interface InterArrivalData {
-  inter_arrival_data_id: string;
-  time_period: string;
-  distribution_name: string;
-  argument_list: string;
-  station_id: string;
-}
-
-export interface AlightingData {
-    alighting_data_id: string;
-    time_period: string;
-    distribution_name: string;
-    argument_list: string;
-    station_id: string;
-}
-
 export interface NetworkModel {
   network_model_id: string;
+}
+
+export interface NetworkGraph {
+  nodes: StationDetail[];
+  edges: RouteBetween[];
 }

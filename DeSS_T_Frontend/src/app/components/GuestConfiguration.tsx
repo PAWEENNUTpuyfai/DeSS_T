@@ -8,6 +8,7 @@ import GuestScenario from "./GuestScenario";
 import type { StationDetail } from "../models/Network";
 import type { Configuration } from "../models/Configuration";
 import type { NetworkModel } from "../models/Network";
+import buildNetworkModelFromStations from "../../utility/api/openRouteService";
 import { isDataFitResponse } from "../models/DistriButionFitModel";
 
 export default function GuestConfiguration() {
@@ -120,11 +121,27 @@ export default function GuestConfiguration() {
         if (outI) interRes = outI;
       }
 
-      const network: NetworkModel = {
-        Network_model: "guest_network",
-        Station_detail: stationDetails ?? [],
-        StationPair: [],
-      };
+      let network: NetworkModel;
+      if (stationDetails && stationDetails.length > 0) {
+        try {
+          network = await buildNetworkModelFromStations(stationDetails, "guest_network");
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          console.error("Failed to build network with ORS:", errorMsg);
+          
+          // Show error to user and stop
+          alert(
+            `เกิดข้อผิดพลาดในการดึงข้อมูลจาก OpenRouteService:\n${errorMsg}\n\nกรุณาตรวจสอบ:\n1. VITE_ORS_API_KEY ถูกตั้งค่าใน .env\n2. API key ยังมีเครดิต\n3. จำนวน stations ไม่เกินขีดจำกัด`
+          );
+          throw err; // rethrow to stop submission
+        }
+      } else {
+        network = {
+          Network_model: "guest_network",
+          Station_detail: stationDetails ?? [],
+          StationPair: [],
+        };
+      }
 
       const alightingDist = isDataFitResponse(alightRes)
         ? alightRes

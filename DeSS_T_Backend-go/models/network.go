@@ -12,6 +12,8 @@ type Station_Detail struct {
     StationID   string   `json:"StationID"`
     StationName string   `json:"StationName"`
     Location    GeoPoint `json:"location"`
+    Lat         string   `json:"Lat"`
+    Lon         string   `json:"Lon"`
 }
 
 type GeoPoint struct {

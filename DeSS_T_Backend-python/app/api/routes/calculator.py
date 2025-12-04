@@ -15,5 +15,6 @@ def calculate_power(data: CalculationRequest):
 @router.post("/distribution_fit",response_model=DataFitResponse)
 def fit_distribution(data: DataModelDistRequest):
     # Mockup implementation
-    result = distribution_fitting()
+    result = distribution_fitting(data)
     return result
+

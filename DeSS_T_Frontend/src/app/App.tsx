@@ -6,12 +6,6 @@ import GuestSetup from "./pages/GuestSetup";
 export default function App() {
   return (
     <div className="main-container">
-      {/* <nav>
-        <Link to="/">Home</Link>
-        <Link to="/about">About</Link>
-        <Link to="/guest/config">Config</Link>
-      </nav> */}
-
       <Routes>
         <Route
           path="/"

@@ -57,3 +57,41 @@ button:hover {
   background-color: #535bf2;
 }
 
+.btn_primary {
+  background: #81069e;
+  border-radius: 20px;
+  height: 40px;
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 15px;
+  text-align: center;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.btn_primary:hover {
+  background: #5d0971;
+}
+
+.btn_secondary {
+  background: #ffffff;
+  border: 2px solid #81069e;
+  border-radius: 20px;
+  height: 40px;
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 15px;
+  text-align: center;
+  color: #81069e;
+  cursor: pointer;
+}
+
+.btn_secondary:hover {
+  background: #f4eaff;
+  border: 2px solid #81069e;
+}

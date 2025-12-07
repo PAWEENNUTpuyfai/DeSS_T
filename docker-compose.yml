@@ -9,7 +9,9 @@ services:
       - backend-go
 
   backend-go:
-    image: paweennutpuyfai/dess-t-go:1.0
+    image: paweennutpuyfai/dess-t-go:2.1
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     depends_on:
@@ -24,7 +26,7 @@ services:
       MONGO_URI: mongodb://DeSS_T:DeSS_T_491@mongo:27017/dess_db?authSource=admin
 
   backend-python:
-    image: paweennutpuyfai/dess-t-python:1.0
+    image: paweennutpuyfai/dess-t-python:2.0
     ports:
       - "5000:5000"
     depends_on:
@@ -41,6 +43,8 @@ services:
     image: postgis/postgis:15-3.4
     container_name: DeSS_T_postgres
     restart: always
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: DeSS_T
       POSTGRES_PASSWORD: DeSS_T_491

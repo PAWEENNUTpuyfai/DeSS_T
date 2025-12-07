@@ -4,7 +4,7 @@ from app.schemas.calculation import CalculationRequest, CalculationResponse
 # Real
 from app.schemas.calculation import DataModelDistRequest, DataFitResponse
 from app.services.calculate import power_number, distribution_fitting
-
+from app.services.simulation import run_simulation
 router = APIRouter()
 
 @router.post("/power", response_model=CalculationResponse)
@@ -18,3 +18,7 @@ def fit_distribution(data: DataModelDistRequest):
     result = distribution_fitting(data)
     return result
 
+@router.get("/simulate")
+def run_simulation_route():
+    result = run_simulation()
+    return result

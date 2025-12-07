@@ -1,7 +1,7 @@
 
 from typing import List, Dict
 from scipy import stats
-
+import numpy as np
 from app.schemas.calculation import DataFitResponse, FitItem , RecordDistRequest , DataModelDistRequest
 
 
@@ -38,20 +38,19 @@ def fit_best_distribution(values: List[float]) -> Dict:
 
     best_name = None
     best_params = None
-    best_sse = float("inf")
+    best_aic = float("inf")
 
     for name, dist in distributions.items():
         try:
             params = dist.fit(values)
 
-            # Compute fitted PDF
-            fitted_pdf = dist.pdf(values, *params)
+            # AIC
+            logL = np.sum(dist.logpdf(values, *params))
+            k = len(params)
+            aic = 2 * k - 2 * logL
 
-            # Compute SSE (Sum of squared errors)
-            sse = ((fitted_pdf - stats.gaussian_kde(values)(values)) ** 2).sum()
-
-            if sse < best_sse:
-                best_sse = sse
+            if aic < best_aic:
+                best_aic = aic
                 best_name = name
                 best_params = params
 

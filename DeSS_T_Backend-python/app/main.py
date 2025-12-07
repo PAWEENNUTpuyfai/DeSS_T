@@ -13,7 +13,7 @@
 from fastapi import FastAPI
 import uvicorn
 from app.api.routes.calculator import router as calculator_router
-
+from app.services.simulation import run_simulation
 app = FastAPI()
 
 app.include_router(calculator_router, prefix="/api", tags=["calculator"])
@@ -24,5 +24,5 @@ def root():
 
 
 if __name__ == "__main__":
-    # กำหนด port ที่คุณต้องการ 
+
     uvicorn.run(app, host="127.0.0.1", port=5000, reload=True)

@@ -51,6 +51,7 @@ button {
   cursor: pointer;
   background-color: #646cff;
   color: white;
+  transition: all 0.6s ease;
 }
 
 button:hover {
@@ -70,6 +71,7 @@ button:hover {
   color: #ffffff;
   border: none;
   cursor: pointer;
+  transition: all 0.6s ease;
 }
 
 .btn_primary:hover {
@@ -89,9 +91,18 @@ button:hover {
   text-align: center;
   color: #81069e;
   cursor: pointer;
+  transition: all 0.6s ease;
 }
 
 .btn_secondary:hover {
   background: #f4eaff;
   border: 2px solid #81069e;
+}
+
+.guest_sign_in_icon {
+  background: #dfa7e4;
+  transition: all 0.6s ease;
+}
+.guest_sign_in_icon:hover {
+  background: #2e0238;
 }

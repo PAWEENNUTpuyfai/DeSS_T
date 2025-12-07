@@ -1,0 +1,94 @@
+.btn_primary {
+  background: #81069e;
+  border-radius: 25px;
+  height: 50px;
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 15px;
+  text-align: center;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.6s ease;
+}
+
+.btn_primary:hover {
+  background: #5d0971;
+}
+
+.btn_secondary {
+  background: #ffffff;
+  border: 2px solid #81069e;
+  border-radius: 25px;
+  height: 50px;
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 15px;
+  text-align: center;
+  color: #81069e;
+  cursor: pointer;
+  transition: all 0.6s ease;
+}
+
+.btn_secondary:hover {
+  background: #f4eaff;
+  border: 2px solid #81069e;
+}
+
+.decision_container {
+  width: full;
+  height: 80vb;
+  background: #ffffff;
+  box-shadow: 30px 30px 50px rgba(0, 0, 0, 0.25);
+  border-radius: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.decision_logobar {
+  width: full;
+  height: 10vb;
+  background: #ffffff;
+  box-shadow: 0px 10px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  height: 50px;
+  margin-left: 30px;
+}
+
+.decision_content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+.header {
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 25px;
+  line-height: 44px;
+  text-align: center;
+  color: #323232;
+}
+
+.question {
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 28px;
+  text-align: center;
+
+  color: #323232;
+}

@@ -11,6 +11,7 @@
   text-align: center;
   color: #ffffff;
   cursor: pointer;
+  transition: all 0.6s ease;
 }
 .mapareabtn_selected:hover {
   background: #5d0971;
@@ -34,6 +35,7 @@
   text-align: center;
   color: #81069e;
   cursor: pointer;
+  transition: all 0.6s ease;
 }
 .mapareabtn_unselected:hover {
   background: #f4eaff;
@@ -57,6 +59,7 @@
   color: #ffffff;
   border: none;
   cursor: pointer;
+  transition: all 0.6s ease;
 }
 
 .btn_primary:hover {
@@ -76,6 +79,7 @@
   text-align: center;
   color: #81069e;
   cursor: pointer;
+  transition: all 0.6s ease;
 }
 
 .btn_secondary:hover {
@@ -100,7 +104,8 @@
   right: 0;
   z-index: 100;
   margin: 0;
-  padding: 1.5rem 2rem;
+  padding: 1.5rem 0;
+  padding-left: 2rem;
   height: 60px;
 
   background: #ffffff;
@@ -109,11 +114,14 @@
 }
 
 .nav-content {
-  max-width: 1400px;
-  margin: 0 auto;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 1rem;
+}
+
+.nav-icon {
+  flex-shrink: 0;
 }
 
 .nav-title {

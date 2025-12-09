@@ -36,7 +36,7 @@ export default function ConfigurationFiles({
   const [loadingI, setLoadingI] = useState(false);
 
   const [startHour, setStartHour] = useState<number>(8);
-  const [endHour, setEndHour] = useState<number>(9);
+  const [endHour, setEndHour] = useState<number>(16);
 
   // File Upload Functions
   const submitAlighting = async () => {
@@ -214,8 +214,8 @@ export default function ConfigurationFiles({
   return (
     <>
       <ConfigurationNav mode={mode} configurationName={configurationName} />
-      <main style={{ marginTop: "100px", marginBottom: "40px" }}>
-        <div className="flex flex-col gap-8 w-full px-6 max-w-4xl mx-auto">
+      <main  style={{ marginTop: "50px" }}>
+        <div className="content h-full">
           {/* Time Range Section */}
           <section className="border rounded-lg p-6 space-y-4">
             <h3 className="font-bold text-xl">Time Range</h3>

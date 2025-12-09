@@ -330,19 +330,27 @@ export default function ConfigurationMap({
                 </div>
               </div>
 
-              <div className="mt-2 flex gap-3 justify-end">
-                <button onClick={handleCheckMap} className="btn_secondary">
-                  Check Map
-                </button>
-                <button onClick={handleConfirmMap} className="btn_primary">
-                  Confirm Map
-                </button>
+              <div className="flex justify-between">
+                <h3 className="content_title">Station Lists</h3>
+                {stationDetails && stationDetails.length > 0 && (
+                  <span className="text-sm text-gray-600 mr-2">
+                    Total: {stationDetails.length} stations
+                  </span>
+                )}
               </div>
-
-              <div className="min-h-[100px]">
+              <div
+                className="border border-[#81069e] rounded-[20px]  bg-white space-y-4 p-2"
+                style={{ borderWidth: "2px" }}
+              >
                 {loadingStops && (
                   <div className="border rounded px-3 py-3 text-sm text-gray-600">
-                    กำลังโหลดข้อมูลป้ายรถ...
+                    Loading data ...
+                  </div>
+                )}
+
+                {!loadingStops && !stationDetails && (
+                  <div className="px-3 py-3 text-sm text-gray-600">
+                    Click Check Map to display station list
                   </div>
                 )}
 
@@ -350,12 +358,6 @@ export default function ConfigurationMap({
                   stationDetails &&
                   stationDetails.length > 0 && (
                     <div className="">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold">Bus Stops</h4>
-                        <span className="text-xs text-gray-500">
-                          {stationDetails.length} stops
-                        </span>
-                      </div>
                       <div className="border rounded overflow-hidden max-h-64 overflow-y-auto">
                         <table className="min-w-full text-sm">
                           <thead className="bg-gray-100">
@@ -399,6 +401,15 @@ export default function ConfigurationMap({
                       </div>
                     </div>
                   )}
+              </div>
+
+              <div className="mt-2 flex gap-3 justify-end">
+                <button onClick={handleCheckMap} className="btn_secondary">
+                  Check Map
+                </button>
+                <button onClick={handleConfirmMap} className="btn_primary">
+                  Confirm Map
+                </button>
               </div>
             </div>
           </div>

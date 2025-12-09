@@ -4,6 +4,7 @@ import {
   InterarrivalFitFromXlsx,
 } from "../../utility/api/distribution_fit";
 import ConfigurationNav from "./ConfigurationNav";
+import MapViewer from "./MapViewer";
 import type { StationDetail } from "../models/Network";
 import type { Configuration } from "../models/Configuration";
 import type { NetworkModel } from "../models/Network";
@@ -37,6 +38,7 @@ export default function ConfigurationFiles({
 
   const [startHour, setStartHour] = useState<number>(8);
   const [endHour, setEndHour] = useState<number>(16);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   // File Upload Functions
   const submitAlighting = async () => {
@@ -138,6 +140,7 @@ export default function ConfigurationFiles({
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      setShowTemplateModal(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       alert("สร้างไฟล์ไม่ได้: " + msg);
@@ -214,171 +217,216 @@ export default function ConfigurationFiles({
   return (
     <>
       <ConfigurationNav mode={mode} configurationName={configurationName} />
-      <main  style={{ marginTop: "50px" }}>
+      <main style={{ marginTop: "50px" }}>
         <div className="content h-full">
-          {/* Time Range Section */}
-          <section className="border rounded-lg p-6 space-y-4">
-            <h3 className="font-bold text-xl">Time Range</h3>
-
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                min={0}
-                max={24}
-                value={startHour}
-                onChange={(e) => setStartHour(Number(e.target.value))}
-                className="border p-2 rounded w-20"
-              />
-              <p>:00</p>
-              <span className="text-sm">to</span>
-              <input
-                type="number"
-                min={0}
-                max={24}
-                value={endHour}
-                onChange={(e) => setEndHour(Number(e.target.value))}
-                className="border p-2 rounded w-20"
-              />
-              <p>:00</p>
-            </div>
-
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={downloadTemplate}
-                className="text-blue-600 underline hover:text-blue-800"
-              >
-                Click here
-              </button>
-              <span className="ml-1">to download the .xlsx template</span>
-            </div>
-          </section>
-
-          {/* Alighting Data Section */}
-          <section className="border rounded-lg p-6 space-y-4">
-            <h3 className="font-bold text-xl">Alighting Data</h3>
-
-            <input
-              id="alight-file"
-              type="file"
-              accept=".xlsx"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0] ?? null;
-                setAlightingFile(f);
-              }}
-            />
-
+          <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
+            {/* Left: Map */}
             <div
-              className="p-6 border-2 border-dashed border-gray-300 bg-white rounded cursor-pointer flex flex-col items-center justify-center min-h-[100px] hover:bg-gray-50"
-              onClick={() =>
-                (
-                  document.getElementById(
-                    "alight-file"
-                  ) as HTMLInputElement | null
-                )?.click()
-              }
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const f = e.dataTransfer?.files?.[0];
-                if (f) setAlightingFile(f);
-              }}
+              className="flex-1 border rounded rounded-[25px] overflow-hidden my-8 ml-2"
+              style={{ position: "relative", zIndex: 1 }}
             >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  (
-                    document.getElementById(
-                      "alight-file"
-                    ) as HTMLInputElement | null
-                  )?.click();
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Choose file
-              </button>
+              <MapViewer
+                minLat={mapBounds.minLat}
+                maxLat={mapBounds.maxLat}
+                minLon={mapBounds.minLon}
+                maxLon={mapBounds.maxLon}
+              />
             </div>
 
-            {alightingFile && (
-              <p className="text-green-600">✓ ไฟล์: {alightingFile.name}</p>
-            )}
-          </section>
+            {/* Right: File Upload Section */}
+            <div className="flex-1 flex flex-col gap-6 h-full py-8">
+              <div className="mt-4">
+                <span>
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplateModal(true)}
+                    className="text-blue-600 underline hover:text-blue-900 hover:bg-transparent bg-transparent border-none cursor-pointer p-0 font-inherit"
+                  >
+                    Click here
+                  </button>
+                  <span className="ml-1">to download the .xlsx template</span>
+                </span>
+              </div>
 
-          {/* Interarrival Data Section */}
-          <section className="border rounded-lg p-6 space-y-4">
-            <h3 className="font-bold text-xl">Interarrival Data</h3>
+              {/* Template Download Modal */}
+              {showTemplateModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-[25px] p-8 shadow-lg max-w-md w-full">
+                    <h2 className="content_title mb-6">Set Time Range</h2>
 
-            <input
-              id="inter-file"
-              type="file"
-              accept=".xlsx"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0] ?? null;
-                setInterarrivalFile(f);
-              }}
-            />
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <label className="w-20">Start:</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={23}
+                          value={startHour}
+                          onChange={(e) => setStartHour(Number(e.target.value))}
+                          className="border p-2 rounded  w-20"
+                        />
+                        <span>:00</span>
+                      </div>
 
-            <div
-              className="p-6 border-2 border-dashed border-gray-300 bg-white rounded cursor-pointer flex flex-col items-center justify-center min-h-[100px] hover:bg-gray-50"
-              onClick={() =>
-                (
-                  document.getElementById(
-                    "inter-file"
-                  ) as HTMLInputElement | null
-                )?.click()
-              }
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const f = e.dataTransfer?.files?.[0];
-                if (f) setInterarrivalFile(f);
-              }}
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  (
-                    document.getElementById(
-                      "inter-file"
-                    ) as HTMLInputElement | null
-                  )?.click();
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Choose file
-              </button>
+                      <div className="flex items-center gap-3">
+                        <label className="w-20">End:</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={24}
+                          value={endHour}
+                          onChange={(e) => setEndHour(Number(e.target.value))}
+                          className="border p-2 rounded w-20"
+                        />
+                        <span>:00</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end mt-4">
+                      <button
+                        onClick={() => setShowTemplateModal(false)}
+                        className="btn_secondary"
+                      >
+                        cancel
+                      </button>
+                      <button
+                        onClick={downloadTemplate}
+                        className="btn_primary"
+                      >
+                        download
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Alighting Data Section */}
+              <h3 className="content_title">Alighting Data</h3>
+
+                <input
+                  id="alight-file"
+                  type="file"
+                  accept=".xlsx"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setAlightingFile(f);
+                  }}
+                />
+
+                <div
+                  className="p-6 border-2 border-dashed border-gray-300 bg-white rounded cursor-pointer flex flex-col items-center justify-center min-h-[100px] hover:bg-gray-50"
+                  onClick={() =>
+                    (
+                      document.getElementById(
+                        "alight-file"
+                      ) as HTMLInputElement | null
+                    )?.click()
+                  }
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const f = e.dataTransfer?.files?.[0];
+                    if (f) setAlightingFile(f);
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      (
+                        document.getElementById(
+                          "alight-file"
+                        ) as HTMLInputElement | null
+                      )?.click();
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Choose file
+                  </button>
+                </div>
+
+                {alightingFile && (
+                  <p className="text-green-600">✓ ไฟล์: {alightingFile.name}</p>
+                )}
+
+              {/* Interarrival Data Section */}
+              <h3 className="content_title">Interarrival Data</h3>
+
+                <input
+                  id="inter-file"
+                  type="file"
+                  accept=".xlsx"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    setInterarrivalFile(f);
+                  }}
+                />
+
+                <div
+                  className="p-6 border-2 border-dashed border-gray-300 bg-white rounded cursor-pointer flex flex-col items-center justify-center min-h-[100px] hover:bg-gray-50"
+                  onClick={() =>
+                    (
+                      document.getElementById(
+                        "inter-file"
+                      ) as HTMLInputElement | null
+                    )?.click()
+                  }
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const f = e.dataTransfer?.files?.[0];
+                    if (f) setInterarrivalFile(f);
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      (
+                        document.getElementById(
+                          "inter-file"
+                        ) as HTMLInputElement | null
+                      )?.click();
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Choose file
+                  </button>
+                </div>
+
+                {interarrivalFile && (
+                  <p className="text-green-600">
+                    ✓ ไฟล์: {interarrivalFile.name}
+                  </p>
+                )}
+
+              {/* Action Buttons */}
+              <div className="mt-2 flex justify-end">
+                <button
+                  onClick={onBack}
+                  className="btn_secondary"
+                >
+                  Map Configuration
+                </button>
+                <button
+                  onClick={submitSelected}
+                  disabled={
+                    (!alightingFile && !interarrivalFile) ||
+                    loadingA ||
+                    loadingI
+                  }
+                  className="btn_primary"
+                >
+                  {loadingA || loadingI
+                    ? "กำลังประมวลผล..."
+                    : mode === "user"
+                    ? "Save"
+                    : "Apply"}
+                </button>
+              </div>
             </div>
-
-            {interarrivalFile && (
-              <p className="text-green-600">✓ ไฟล์: {interarrivalFile.name}</p>
-            )}
-          </section>
-
-          {/* Action Buttons */}
-          <div className="flex gap-4 justify-end py-4 border-t">
-            <button
-              onClick={onBack}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
-            >
-              Back
-            </button>
-            <button
-              onClick={submitSelected}
-              disabled={
-                (!alightingFile && !interarrivalFile) || loadingA || loadingI
-              }
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loadingA || loadingI
-                ? "กำลังประมวลผล..."
-                : mode === "user"
-                ? "Save"
-                : "Apply"}
-            </button>
           </div>
         </div>
       </main>

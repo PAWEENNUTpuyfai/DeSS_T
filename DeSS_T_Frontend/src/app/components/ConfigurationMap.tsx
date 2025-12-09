@@ -245,6 +245,7 @@ export default function ConfigurationMap({
                 minLon={mapBounds?.minLon}
                 maxLon={mapBounds?.maxLon}
                 areaCode={mapMode === "area" ? areaCode : undefined}
+                stationDetails={stationDetails || undefined} 
               />
             </div>
 

@@ -234,18 +234,6 @@ export default function GuestConfiguration() {
                 minLon={mapBounds?.minLon}
                 maxLon={mapBounds?.maxLon}
                 areaCode={mapMode === "area" ? areaCode : undefined}
-                externalBusStops={
-                  stationDetails
-                    ? stationDetails.map((s) => ({
-                        id: Number(s.StationID),
-                        position: [Number(s.Lat), Number(s.Lon)] as [
-                          number,
-                          number
-                        ],
-                        name: s.StationName,
-                      }))
-                    : undefined
-                }
               />
             </div>
 

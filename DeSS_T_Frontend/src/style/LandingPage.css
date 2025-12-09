@@ -80,7 +80,7 @@
   color: #323232;
 }
 
-.google-sign-in {
+.google-login {
   width: 370px;
   height: 70px;
   background: linear-gradient(
@@ -105,11 +105,11 @@
   color: #ffffff;
 }
 
-.google-sign-in:hover {
+.google-login:hover {
   transform: scale(1.02);
 }
 
-.google-sign-in::before {
+.google-login::before {
   content: "";
   position: absolute;
   top: 0;
@@ -129,13 +129,13 @@
   z-index: 0;
 }
 
-.google-sign-in svg,
-.google-sign-in span {
+.google-login svg,
+.google-login span {
   position: relative;
   z-index: 1;
 }
 
-.google-sign-in:hover::before {
+.google-login:hover::before {
   opacity: 1;
 }
 

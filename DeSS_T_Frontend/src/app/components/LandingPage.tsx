@@ -20,7 +20,7 @@ export default function LandingPage() {
           alt="DeSS-T"
           className="h-[50px] my-2"
         />
-        <div className="google-sign-in my-4">
+        <div className="google-login my-4">
           <svg
             width="40"
             height="40"
@@ -36,7 +36,7 @@ export default function LandingPage() {
               fill="white"
             />
           </svg>
-          <span className="w-full mr-8">Sign in with Google</span>
+          <span className="w-full mr-8">Log in with Google</span>
         </div>
         <div className="use-as-guest" onClick={handleGuestClick}>
           <svg

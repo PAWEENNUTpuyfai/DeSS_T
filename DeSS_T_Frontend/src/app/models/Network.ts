@@ -4,6 +4,8 @@ export interface NetworkModel {
   StationPair: StationPair[];
 }
 
+export type LatLng = [number, number];
+
 export interface StationDetail {
   StationID: string;
   StationName: string;

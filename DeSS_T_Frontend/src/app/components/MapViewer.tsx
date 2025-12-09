@@ -5,14 +5,16 @@ import {
   Popup,
   CircleMarker,
   useMap,
-  Rectangle,
-  Polygon,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-import type { LatLng, BusStop } from "../models/Network";
-import type { OverpassNode } from "../../utility/api/mapApi";
+import type { LatLng } from "../models/Network";
+import type {
+  StationDetail,
+  GeoPoint,
+} from "../models/NetworkModel";
+
 L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -25,8 +27,7 @@ interface MapViewerProps {
   minLon?: number;
   maxLon?: number;
   areaCode?: string;
-  areaName?: string;
-  externalBusStops?: BusStop[];
+  stationDetails?: StationDetail[];  // NEW ✔
 }
 
 export default function MapViewer({
@@ -34,15 +35,22 @@ export default function MapViewer({
   maxLat,
   minLon,
   maxLon,
-  areaCode: propsAreaCode,
-  externalBusStops,
+  areaCode,
+  stationDetails,
 }: MapViewerProps) {
-  const [busStops, setBusStops] = useState<BusStop[]>([]);
   const [center, setCenter] = useState<LatLng>([13.75, 100.5]);
   const [bounds, setBounds] =
     useState<[[number, number], [number, number]] | undefined>();
-  const [areaPolygons, setAreaPolygons] = useState<[number, number][][] | undefined>(undefined);
+  const [areaPolygons, setAreaPolygons] =
+    useState<[number, number][][] | undefined>();
 
+  // Convert GeoPoint → LatLng (Leaflet format)
+  const geoPointToLatLng = (g: GeoPoint): LatLng => {
+    const [lon, lat] = g.coordinates; // GeoJSON = [lon, lat]
+    return [lat, lon];               // Leaflet = [lat, lon]
+  };
+
+  // If manual bounds provided
   useEffect(() => {
     if (
       minLat !== undefined &&
@@ -58,40 +66,39 @@ export default function MapViewer({
     }
   }, [minLat, maxLat, minLon, maxLon]);
 
+  // Auto calculate bounds from stationDetails
   useEffect(() => {
-    if (!bounds) return;
+    if (!stationDetails || stationDetails.length === 0) return;
 
-    // If parent provided explicit bus stops (e.g. area-mode), use those and skip fetching by bbox
-    if (externalBusStops && externalBusStops.length > 0) {
-      setBusStops(externalBusStops);
-      return;
+    let minLat = Infinity,
+      minLon = Infinity,
+      maxLat = -Infinity,
+      maxLon = -Infinity;
+
+    for (const st of stationDetails) {
+      const [lat, lon] = geoPointToLatLng(st.location);
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
     }
 
-    (async () => {
-      try {
-        const mapApi = await import("../../utility/api/mapApi");
-        const nodes = await mapApi.fetchBusStops(bounds as [[number, number], [number, number]]);
+    setBounds([
+      [minLat, minLon],
+      [maxLat, maxLon],
+    ]);
 
-        const stops: BusStop[] = (nodes as OverpassNode[]).map((n) => ({
-          id: n.id,
-          position: [n.lat, n.lon] as LatLng,
-          name: n.tags?.name,
-        }));
+    setCenter([(minLat + maxLat) / 2, (minLon + maxLon) / 2]);
+  }, [stationDetails]);
 
-        setBusStops(stops);
-      } catch (err) {
-        console.error("fetchBusStops failed:", err);
-      }
-    })();
-  }, [bounds, externalBusStops]);
-
+  // Load area polygons
   useEffect(() => {
-    if (!propsAreaCode) return;
+    if (!areaCode) return;
 
     (async () => {
       try {
         const mapApi = await import("../../utility/api/mapApi");
-        const polys = await mapApi.fetchAreaGeometry(propsAreaCode);
+        const polys = await mapApi.fetchAreaGeometry(areaCode);
         if (!polys || polys.length === 0) return;
 
         setAreaPolygons(polys);
@@ -112,7 +119,7 @@ export default function MapViewer({
         console.error("fetchAreaGeometry failed:", err);
       }
     })();
-  }, [propsAreaCode]);
+  }, [areaCode]);
 
   function UpdateMapView({ boundsProp }: { boundsProp?: [[number, number], [number, number]] }) {
     const map = useMap();
@@ -128,7 +135,7 @@ export default function MapViewer({
       <MapContainer
         center={center}
         zoom={13}
-        style={{ width: "100%", height: "600px" }}
+        style={{ width: "100%", height: "100%" }}
         doubleClickZoom={false}
         keyboard={false}
         touchZoom={false}
@@ -140,17 +147,17 @@ export default function MapViewer({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {busStops.map((stop) => (
+        {/* Render stations */}
+        {stationDetails?.map((st) => (
           <CircleMarker
-            key={stop.id}
-            center={stop.position}
+            key={st.StationID}
+            center={geoPointToLatLng(st.location)}
             radius={5}
-            color="#eeb34b"
-            fillColor="#eeb34b"
-            fillOpacity={0.8}
-            weight={1}
+            color="#3399ff"
+            fillColor="#3399ff"
+            fillOpacity={0.9}
           >
-            <Popup>{stop.name ?? `ID:${stop.id}`}</Popup>
+            <Popup>{st.StationName}</Popup>
           </CircleMarker>
         ))}
 

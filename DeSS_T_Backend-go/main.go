@@ -28,6 +28,7 @@ func main() {
 	routes.SetupRoutes(app)
 	routes.SetupComputeRoutes(app)
 	routes.SetupDistributionRoutes(app)
+	routes.NetworkRoutes(app)
 
 	app.Listen(":8080")
 }

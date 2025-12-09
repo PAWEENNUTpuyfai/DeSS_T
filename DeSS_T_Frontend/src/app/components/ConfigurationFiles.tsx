@@ -235,16 +235,15 @@ export default function ConfigurationFiles({
 
             {/* Right: File Upload Section */}
             <div className="flex-1 flex flex-col gap-6 h-full py-8">
-              <div className="mt-4">
+              <div>
                 <span>
-                  <button
-                    type="button"
+                  <span
                     onClick={() => setShowTemplateModal(true)}
-                    className="text-blue-600 underline hover:text-blue-900 hover:bg-transparent bg-transparent border-none cursor-pointer p-0 font-inherit"
+                    className="text-[#81069e] underline hover:text-[#323232] cursor-pointer"
                   >
                     Click here
-                  </button>
-                  <span className="ml-1">to download the .xlsx template</span>
+                  </span>
+                  <span className="ml-3">to download the .xlsx template</span>
                 </span>
               </div>
 
@@ -303,111 +302,88 @@ export default function ConfigurationFiles({
               {/* Alighting Data Section */}
               <h3 className="content_title">Alighting Data</h3>
 
-                <input
-                  id="alight-file"
-                  type="file"
-                  accept=".xlsx"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setAlightingFile(f);
-                  }}
-                />
+              <input
+                id="alight-file"
+                type="file"
+                accept=".xlsx"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setAlightingFile(f);
+                }}
+              />
 
-                <div
-                  className="p-6 border-2 border-dashed border-gray-300 bg-white rounded cursor-pointer flex flex-col items-center justify-center min-h-[100px] hover:bg-gray-50"
-                  onClick={() =>
-                    (
-                      document.getElementById(
-                        "alight-file"
-                      ) as HTMLInputElement | null
-                    )?.click()
-                  }
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const f = e.dataTransfer?.files?.[0];
-                    if (f) setAlightingFile(f);
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      (
-                        document.getElementById(
-                          "alight-file"
-                        ) as HTMLInputElement | null
-                      )?.click();
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Choose file
-                  </button>
-                </div>
+              <div
+                className="p-6 border-2 border-dashed border-[#81069e] rounded-[20px] bg-white cursor-pointer flex flex-col items-center justify-center min-h-[120px] hover:bg-gray-50"
+                onClick={() =>
+                  (
+                    document.getElementById(
+                      "alight-file"
+                    ) as HTMLInputElement | null
+                  )?.click()
+                }
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const f = e.dataTransfer?.files?.[0];
+                  if (f) setAlightingFile(f);
+                }}
+              >
+                <p className="text-gray-600 mb-2">
+                  Drag and drop file here (.xlsx)
+                </p>
+                <p className="text-gray-400 text-sm">or click to select file</p>
+              </div>
 
-                {alightingFile && (
-                  <p className="text-green-600">✓ ไฟล์: {alightingFile.name}</p>
-                )}
+              {alightingFile && (
+                <p className="text-green-600">✓ ไฟล์: {alightingFile.name}</p>
+              )}
 
               {/* Interarrival Data Section */}
               <h3 className="content_title">Interarrival Data</h3>
 
-                <input
-                  id="inter-file"
-                  type="file"
-                  accept=".xlsx"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setInterarrivalFile(f);
-                  }}
-                />
+              <input
+                id="inter-file"
+                type="file"
+                accept=".xlsx"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setInterarrivalFile(f);
+                }}
+              />
 
-                <div
-                  className="p-6 border-2 border-dashed border-gray-300 bg-white rounded cursor-pointer flex flex-col items-center justify-center min-h-[100px] hover:bg-gray-50"
-                  onClick={() =>
-                    (
-                      document.getElementById(
-                        "inter-file"
-                      ) as HTMLInputElement | null
-                    )?.click()
-                  }
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const f = e.dataTransfer?.files?.[0];
-                    if (f) setInterarrivalFile(f);
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      (
-                        document.getElementById(
-                          "inter-file"
-                        ) as HTMLInputElement | null
-                      )?.click();
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Choose file
-                  </button>
-                </div>
+              <div
+                className="p-6 border-2 border-dashed border-[#81069e] rounded-[20px] bg-white cursor-pointer flex flex-col items-center justify-center min-h-[120px] hover:bg-gray-50"
+                onClick={() =>
+                  (
+                    document.getElementById(
+                      "inter-file"
+                    ) as HTMLInputElement | null
+                  )?.click()
+                }
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const f = e.dataTransfer?.files?.[0];
+                  if (f) setInterarrivalFile(f);
+                }}
+              >
+                <p className="text-gray-600 mb-2">
+                  Drag and drop file here (.xlsx)
+                </p>
+                <p className="text-gray-400 text-sm">or click to select file</p>
+              </div>
 
-                {interarrivalFile && (
-                  <p className="text-green-600">
-                    ✓ ไฟล์: {interarrivalFile.name}
-                  </p>
-                )}
+              {interarrivalFile && (
+                <p className="text-green-600">
+                  ✓ ไฟล์: {interarrivalFile.name}
+                </p>
+              )}
 
               {/* Action Buttons */}
               <div className="mt-2 flex justify-end">
-                <button
-                  onClick={onBack}
-                  className="btn_secondary"
-                >
+                <button onClick={onBack} className="btn_secondary">
                   Map Configuration
                 </button>
                 <button

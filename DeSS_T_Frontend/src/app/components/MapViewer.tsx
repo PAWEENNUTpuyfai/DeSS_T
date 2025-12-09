@@ -153,8 +153,8 @@ export default function MapViewer({
             key={st.StationID}
             center={geoPointToLatLng(st.location)}
             radius={5}
-            color="#3399ff"
-            fillColor="#3399ff"
+            color="#eeb34b"
+            fillColor="#ffffffff"
             fillOpacity={0.9}
           >
             <Popup>{st.StationName}</Popup>

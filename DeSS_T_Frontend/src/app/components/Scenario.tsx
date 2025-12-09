@@ -2,14 +2,19 @@ import React, { useState } from "react";
 import type { Configuration } from "../models/Configuration";
 import type { StationDetail, StationPair } from "../models/Network";
 
-export default function GuestScenario({
+export default function Scenario({
   configuration,
   onBack,
+  mode = "guest",
+  projectName,
 }: {
   configuration: Configuration;
   onBack?: () => void;
+  mode?: "guest" | "user";
+  projectName?: string;
 }) {
-  const nodes: StationDetail[] = configuration?.Network_model?.Station_detail ?? [];
+  const nodes: StationDetail[] =
+    configuration?.Network_model?.Station_detail ?? [];
   const edges: StationPair[] = configuration?.Network_model?.StationPair ?? [];
 
   const itemsPerPage = 50;
@@ -46,17 +51,29 @@ export default function GuestScenario({
             <table className="w-full text-sm border-collapse border border-gray-300">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="border border-gray-300 p-2 text-left">StationID</th>
-                  <th className="border border-gray-300 p-2 text-left">StationName</th>
-                  <th className="border border-gray-300 p-2 text-left">Latitude</th>
-                  <th className="border border-gray-300 p-2 text-left">Longitude</th>
+                  <th className="border border-gray-300 p-2 text-left">
+                    StationID
+                  </th>
+                  <th className="border border-gray-300 p-2 text-left">
+                    StationName
+                  </th>
+                  <th className="border border-gray-300 p-2 text-left">
+                    Latitude
+                  </th>
+                  <th className="border border-gray-300 p-2 text-left">
+                    Longitude
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {nodes.map((node, idx) => (
                   <tr key={idx} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 p-2 font-mono">{node.StationID}</td>
-                    <td className="border border-gray-300 p-2">{node.StationName}</td>
+                    <td className="border border-gray-300 p-2 font-mono">
+                      {node.StationID}
+                    </td>
+                    <td className="border border-gray-300 p-2">
+                      {node.StationName}
+                    </td>
                     <td className="border border-gray-300 p-2">{node.Lat}</td>
                     <td className="border border-gray-300 p-2">{node.Lon}</td>
                   </tr>
@@ -65,7 +82,9 @@ export default function GuestScenario({
             </table>
           </div>
         ) : (
-          <p className="text-sm text-gray-600">No stations in Network_model.Station_detail</p>
+          <p className="text-sm text-gray-600">
+            No stations in Network_model.Station_detail
+          </p>
         )}
       </section>
 
@@ -83,17 +102,29 @@ export default function GuestScenario({
               <table className="w-full text-sm border-collapse border border-gray-300">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border border-gray-300 p-2 text-left">From Station</th>
-                    <th className="border border-gray-300 p-2 text-left">To Station</th>
-                    <th className="border border-gray-300 p-2 text-right">Distance (m)</th>
-                    <th className="border border-gray-300 p-2 text-right">Travel Time (s)</th>
+                    <th className="border border-gray-300 p-2 text-left">
+                      From Station
+                    </th>
+                    <th className="border border-gray-300 p-2 text-left">
+                      To Station
+                    </th>
+                    <th className="border border-gray-300 p-2 text-right">
+                      Distance (m)
+                    </th>
+                    <th className="border border-gray-300 p-2 text-right">
+                      Travel Time (s)
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedEdges.map((edge, idx) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 p-2 font-mono">{edge.FstStation}</td>
-                      <td className="border border-gray-300 p-2 font-mono">{edge.SndStation}</td>
+                      <td className="border border-gray-300 p-2 font-mono">
+                        {edge.FstStation}
+                      </td>
+                      <td className="border border-gray-300 p-2 font-mono">
+                        {edge.SndStation}
+                      </td>
                       <td className="border border-gray-300 p-2 text-right">
                         {edge.RouteBetween.Distance.toFixed(0)}
                       </td>
@@ -121,8 +152,14 @@ export default function GuestScenario({
                   {/* Helper function to generate visible page numbers with smart windowing */}
                   {(() => {
                     const windowSize = 7; // Show max 7 buttons around current page
-                    let startPage = Math.max(1, currentPage - Math.floor(windowSize / 2));
-                    let endPage = Math.min(totalPages, startPage + windowSize - 1);
+                    let startPage = Math.max(
+                      1,
+                      currentPage - Math.floor(windowSize / 2)
+                    );
+                    let endPage = Math.min(
+                      totalPages,
+                      startPage + windowSize - 1
+                    );
 
                     // Adjust if we're near the end
                     if (endPage - startPage < windowSize - 1) {
@@ -175,7 +212,9 @@ export default function GuestScenario({
                 </div>
 
                 <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  onClick={() =>
+                    setCurrentPage(Math.min(totalPages, currentPage + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="px-3 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
                 >
@@ -183,14 +222,16 @@ export default function GuestScenario({
                 </button>
 
                 <div className="w-full text-xs text-gray-600 text-center">
-                  Page {currentPage} of {totalPages} ({startIdx + 1}-{Math.min(endIdx, edges.length)} of{" "}
-                  {edges.length})
+                  Page {currentPage} of {totalPages} ({startIdx + 1}-
+                  {Math.min(endIdx, edges.length)} of {edges.length})
                 </div>
               </div>
             )}
           </>
         ) : (
-          <p className="text-sm text-gray-600">No edges present in Network_model.StationPair</p>
+          <p className="text-sm text-gray-600">
+            No edges present in Network_model.StationPair
+          </p>
         )}
       </section>
 

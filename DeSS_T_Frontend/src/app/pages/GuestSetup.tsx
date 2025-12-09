@@ -1,5 +1,5 @@
-import GuestConfiguration from "../components/GuestConfiguration";
+import ConfigurationMap from "../components/ConfigurationMap";
 
 export default function GuestSetup() {
-  return <main><GuestConfiguration></GuestConfiguration>  </main>;
+  return <main><ConfigurationMap mode="guest" ></ConfigurationMap>  </main>;
 }

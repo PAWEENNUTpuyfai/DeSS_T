@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
 import MapViewer from "./MapViewer";
-import GuestScenario from "./GuestScenario";
+import Scenario from "./Scenario";
 import ConfigurationNav from "./ConfigurationNav";
-import GuestConfigurationFiles from "./GuestConfigurationFiles";
+import ConfigurationFiles from "./ConfigurationFiles";
 import type { StationDetail } from "../models/Network";
 import type { Configuration } from "../models/Configuration";
 
-export default function GuestConfiguration() {
+interface ConfigurationMapProps {
+  mode?: "guest" | "user";
+  configurationName?: string;
+}
+
+export default function ConfigurationMap({
+  mode = "guest",
+  configurationName,
+}: ConfigurationMapProps = {}) {
   // File upload state - cleared when going back
   const [submittedConfig, setSubmittedConfig] = useState<Configuration | null>(
     null
@@ -193,8 +201,9 @@ export default function GuestConfiguration() {
   // Render GuestScenario if config submitted
   if (submittedConfig) {
     return (
-      <GuestScenario
+      <Scenario
         configuration={submittedConfig}
+        mode={mode}
         onBack={() => setSubmittedConfig(null)}
       />
     );
@@ -203,9 +212,11 @@ export default function GuestConfiguration() {
   // Render file upload page if map confirmed
   if (mapConfirmed && mapBounds && stationDetails) {
     return (
-      <GuestConfigurationFiles
+      <ConfigurationFiles
         stationDetails={stationDetails}
         mapBounds={mapBounds}
+        mode={mode}
+        configurationName={configurationName}
         onBack={() => {
           setMapConfirmed(false);
           setMapBounds(undefined);
@@ -219,7 +230,7 @@ export default function GuestConfiguration() {
   // Default: render map configuration page
   return (
     <>
-      <ConfigurationNav mode="guest" />
+      <ConfigurationNav mode={mode} configurationName={configurationName} />
       <main style={{ marginTop: "50px" }}>
         <div className="content h-full">
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
@@ -242,7 +253,7 @@ export default function GuestConfiguration() {
               <h3 className="content_title">Map Area Configuration</h3>
               <div
                 className="border border-[#81069e] rounded-[20px]  bg-white space-y-4 p-2"
-                style={{ borderWidth: "3px" }}
+                style={{ borderWidth: "2px" }}
               >
                 <div className="flex">
                   <button

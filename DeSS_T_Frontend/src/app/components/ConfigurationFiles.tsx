@@ -15,13 +15,17 @@ interface GuestConfigurationFilesProps {
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
   onBack: () => void;
   onSubmit: (config: Configuration) => void;
+  mode?: "guest" | "user";
+  configurationName?: string;
 }
 
-export default function GuestConfigurationFiles({
+export default function ConfigurationFiles({
   stationDetails,
   mapBounds,
   onBack,
   onSubmit,
+  mode = "guest",
+  configurationName,
 }: GuestConfigurationFilesProps) {
   const [alightingFile, setAlightingFile] = useState<File | null>(null);
   const [alightingResult, setAlightingResult] = useState<unknown>(null);
@@ -141,6 +145,11 @@ export default function GuestConfigurationFiles({
   };
 
   const submitSelected = async () => {
+    if (mode === "user") {
+      // For user mode, do nothing on save click
+      return;
+    }
+
     if (!alightingFile && !interarrivalFile)
       return alert("กรุณาเลือกไฟล์ Alighting หรือ Interarrival ก่อนกด Submit");
 
@@ -204,7 +213,7 @@ export default function GuestConfigurationFiles({
 
   return (
     <>
-      <ConfigurationNav mode="guest" />
+      <ConfigurationNav mode={mode} configurationName={configurationName} />
       <main style={{ marginTop: "100px", marginBottom: "40px" }}>
         <div className="flex flex-col gap-8 w-full px-6 max-w-4xl mx-auto">
           {/* Time Range Section */}
@@ -263,7 +272,11 @@ export default function GuestConfigurationFiles({
             <div
               className="p-6 border-2 border-dashed border-gray-300 bg-white rounded cursor-pointer flex flex-col items-center justify-center min-h-[100px] hover:bg-gray-50"
               onClick={() =>
-                (document.getElementById("alight-file") as HTMLInputElement | null)?.click()
+                (
+                  document.getElementById(
+                    "alight-file"
+                  ) as HTMLInputElement | null
+                )?.click()
               }
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -276,7 +289,11 @@ export default function GuestConfigurationFiles({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  (document.getElementById("alight-file") as HTMLInputElement | null)?.click();
+                  (
+                    document.getElementById(
+                      "alight-file"
+                    ) as HTMLInputElement | null
+                  )?.click();
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
@@ -307,7 +324,11 @@ export default function GuestConfigurationFiles({
             <div
               className="p-6 border-2 border-dashed border-gray-300 bg-white rounded cursor-pointer flex flex-col items-center justify-center min-h-[100px] hover:bg-gray-50"
               onClick={() =>
-                (document.getElementById("inter-file") as HTMLInputElement | null)?.click()
+                (
+                  document.getElementById(
+                    "inter-file"
+                  ) as HTMLInputElement | null
+                )?.click()
               }
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -320,7 +341,11 @@ export default function GuestConfigurationFiles({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  (document.getElementById("inter-file") as HTMLInputElement | null)?.click();
+                  (
+                    document.getElementById(
+                      "inter-file"
+                    ) as HTMLInputElement | null
+                  )?.click();
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
@@ -343,10 +368,16 @@ export default function GuestConfigurationFiles({
             </button>
             <button
               onClick={submitSelected}
-              disabled={!alightingFile && !interarrivalFile || loadingA || loadingI}
+              disabled={
+                (!alightingFile && !interarrivalFile) || loadingA || loadingI
+              }
               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loadingA || loadingI ? "กำลังประมวลผล..." : "Apply"}
+              {loadingA || loadingI
+                ? "กำลังประมวลผล..."
+                : mode === "user"
+                ? "Save"
+                : "Apply"}
             </button>
           </div>
         </div>

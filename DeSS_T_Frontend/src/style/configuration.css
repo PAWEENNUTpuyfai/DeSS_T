@@ -340,3 +340,30 @@
   justify-content: center;
   gap: 12px;
 }
+
+/* Number input spinner styling for dark mode support */
+input[type="number"] {
+  color-scheme: light;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  opacity: 1;
+}
+
+input[type="number"]::-webkit-outer-spin-button:hover,
+input[type="number"]::-webkit-inner-spin-button:hover {
+  opacity: 1;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-moz-number-spin-up,
+input[type="number"]::-moz-number-spin-down {
+  cursor: pointer;
+}

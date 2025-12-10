@@ -3,6 +3,7 @@ import MapViewer from "./MapViewer";
 import Scenario from "./Scenario";
 import ConfigurationNav from "./ConfigurationNav";
 import ConfigurationFiles from "./ConfigurationFiles";
+import LoadingModal from "./LoadingModal";
 import type { StationDetail } from "../models/Network";
 import type { Configuration } from "../models/Configuration";
 import HelpButton from "./HelpButton";
@@ -294,12 +295,12 @@ export default function ConfigurationMap({
                       placeholder="e.g. 189632187 (Chiang Mai University)"
                       value={areaCode}
                       onChange={(e) => setAreaCode(e.target.value)}
-                      className="border p-3 w-[90%] rounded mx-4 mb-4"
+                      className="border p-3 w-[90%] rounded-[20px] mx-4 mb-4 bg-white"
                     />
                   ) : (
                     <div className="mx-4 mb-4">
                       <div className="grid grid-cols-3 gap-2">
-                        <div className="col-start-2 flex flex-col">
+                        <div className="col-start-2 flex flex-col items-center">
                           <label className="text-xs text-gray-600 mb-1">
                             North - Max Latitude
                           </label>
@@ -310,14 +311,14 @@ export default function ConfigurationMap({
                             onChange={(e) =>
                               setMaxLat(parseFloat(e.target.value))
                             }
-                            className="border p-2 rounded"
+                            className="border p-2 rounded-[20px] bg-white w-full"
                             placeholder="Max Lat"
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 mt-2">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col items-center">
                           <label className="text-xs text-gray-600 mb-1">
                             West - Min Longitude
                           </label>
@@ -328,7 +329,7 @@ export default function ConfigurationMap({
                             onChange={(e) =>
                               setMinLon(parseFloat(e.target.value))
                             }
-                            className="border p-2 rounded"
+                            className="border p-2 rounded-[20px] bg-white w-full"
                             placeholder="Min Lon"
                           />
                         </div>
@@ -337,7 +338,7 @@ export default function ConfigurationMap({
                             Map Area
                           </span>
                         </div>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col items-center">
                           <label className="text-xs text-gray-600 mb-1">
                             East - Max Longitude
                           </label>
@@ -348,14 +349,14 @@ export default function ConfigurationMap({
                             onChange={(e) =>
                               setMaxLon(parseFloat(e.target.value))
                             }
-                            className="border p-2 rounded"
+                            className="border p-2 rounded-[20px] bg-white w-full"
                             placeholder="Max Lon"
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-3 gap-2 mt-2">
-                        <div className="col-start-2 flex flex-col">
+                        <div className="col-start-2 flex flex-col items-center">
                           <label className="text-xs text-gray-600 mb-1">
                             South - Min Latitude
                           </label>
@@ -366,7 +367,7 @@ export default function ConfigurationMap({
                             onChange={(e) =>
                               setMinLat(parseFloat(e.target.value))
                             }
-                            className="border p-2 rounded"
+                            className="border p-2 rounded-[20px] bg-white w-full"
                             placeholder="Min Lat"
                           />
                         </div>
@@ -461,6 +462,8 @@ export default function ConfigurationMap({
             </div>
           </div>
         </div>
+
+        <LoadingModal isOpen={loadingStops} message="Loading data..." />
       </main>
     </>
   );

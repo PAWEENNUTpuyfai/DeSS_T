@@ -5,6 +5,7 @@ import {
 } from "../../utility/api/distribution_fit";
 import ConfigurationNav from "./ConfigurationNav";
 import MapViewer from "./MapViewer";
+import LoadingModal from "./LoadingModal";
 import type { StationDetail } from "../models/Network";
 import type { Configuration } from "../models/Configuration";
 import type { NetworkModel } from "../models/Network";
@@ -221,6 +222,10 @@ export default function ConfigurationFiles({
   return (
     <>
       <ConfigurationNav mode={mode} configurationName={configurationName} />
+      <LoadingModal
+        isOpen={loadingA || loadingI}
+        message="Processing files..."
+      />
       <main style={{ marginTop: "50px" }}>
         <div className="content h-full">
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
@@ -414,9 +419,7 @@ export default function ConfigurationFiles({
                 </button>
                 <button
                   onClick={submitSelected}
-                  disabled={
-                    !alightingFile || !interarrivalFile || loadingA || loadingI
-                  }
+                  disabled={loadingA || loadingI}
                   className="btn_primary"
                 >
                   {loadingA || loadingI

@@ -5,6 +5,7 @@ import ConfigurationNav from "./ConfigurationNav";
 import ConfigurationFiles from "./ConfigurationFiles";
 import type { StationDetail } from "../models/Network";
 import type { Configuration } from "../models/Configuration";
+import HelpButton from "./HelpButton";
 
 interface ConfigurationMapProps {
   mode?: "guest" | "user";
@@ -245,13 +246,16 @@ export default function ConfigurationMap({
                 minLon={mapBounds?.minLon}
                 maxLon={mapBounds?.maxLon}
                 areaCode={mapMode === "area" ? areaCode : undefined}
-                stationDetails={stationDetails || undefined} 
+                stationDetails={stationDetails || undefined}
               />
             </div>
 
             {/* Right: Map Configuration */}
-            <div className="flex-1 flex flex-col gap-6 h-full py-8">
-              <h3 className="content_title">Map Area Configuration</h3>
+            <div className="flex-1 flex flex-col gap-3 h-full py-6">
+              <div className="flex justify-between items-center mt-2 pr-1">
+                <h3 className="content_title">Map Area Configuration</h3>{" "}
+                <HelpButton helpType="Map" />
+              </div>
               <div
                 className="border border-[#81069e] rounded-[20px]  bg-white space-y-4 p-2"
                 style={{ borderWidth: "2px" }}
@@ -267,7 +271,7 @@ export default function ConfigurationMap({
                         : "mapareabtn_unselected"
                     }`}
                   >
-                    Area Code
+                    area code
                   </button>
 
                   <button
@@ -280,58 +284,99 @@ export default function ConfigurationMap({
                         : "mapareabtn_unselected"
                     }`}
                   >
-                    Lat / Lon
+                    coordinate
                   </button>
                 </div>
                 <div>
                   {mapMode === "area" ? (
                     <input
                       type="text"
-                      placeholder="กรอก area code เช่น 189632187 (มหาวิทยาลัยเชียงใหม่)"
+                      placeholder="e.g. 189632187 (Chiang Mai University)"
                       value={areaCode}
                       onChange={(e) => setAreaCode(e.target.value)}
                       className="border p-3 w-[90%] rounded mx-4 mb-4"
                     />
                   ) : (
-                    <div className="grid grid-cols-2 gap-3 mx-4 mb-4">
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={minLat}
-                        onChange={(e) => setMinLat(parseFloat(e.target.value))}
-                        className="border p-2 rounded"
-                        placeholder="minLat"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={maxLat}
-                        onChange={(e) => setMaxLat(parseFloat(e.target.value))}
-                        className="border p-2 rounded"
-                        placeholder="maxLat"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={minLon}
-                        onChange={(e) => setMinLon(parseFloat(e.target.value))}
-                        className="border p-2 rounded"
-                        placeholder="minLon"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={maxLon}
-                        onChange={(e) => setMaxLon(parseFloat(e.target.value))}
-                        className="border p-2 rounded"
-                        placeholder="maxLon"
-                      />
+                    <div className="mx-4 mb-4">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="col-start-2 flex flex-col">
+                          <label className="text-xs text-gray-600 mb-1">
+                            North - Max Latitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={maxLat}
+                            onChange={(e) =>
+                              setMaxLat(parseFloat(e.target.value))
+                            }
+                            className="border p-2 rounded"
+                            placeholder="Max Lat"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="flex flex-col">
+                          <label className="text-xs text-gray-600 mb-1">
+                            West - Min Longitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={minLon}
+                            onChange={(e) =>
+                              setMinLon(parseFloat(e.target.value))
+                            }
+                            className="border p-2 rounded"
+                            placeholder="Min Lon"
+                          />
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <span className="text-gray-400 text-sm">
+                            Map Area
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <label className="text-xs text-gray-600 mb-1">
+                            East - Max Longitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={maxLon}
+                            onChange={(e) =>
+                              setMaxLon(parseFloat(e.target.value))
+                            }
+                            className="border p-2 rounded"
+                            placeholder="Max Lon"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="col-start-2 flex flex-col">
+                          <label className="text-xs text-gray-600 mb-1">
+                            South - Min Latitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={minLat}
+                            onChange={(e) =>
+                              setMinLat(parseFloat(e.target.value))
+                            }
+                            className="border p-2 rounded"
+                            placeholder="Min Lat"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between mt-4 mb-2">
                 <h3 className="content_title">Station Lists</h3>
                 {stationDetails && stationDetails.length > 0 && (
                   <span className="text-sm text-gray-600 mr-2">
@@ -350,8 +395,9 @@ export default function ConfigurationMap({
                 )}
 
                 {!loadingStops && !stationDetails && (
-                  <div className="px-3 py-3 text-sm text-gray-600">
-                    Click Check Map to display station list
+                  <div className="px-3 py-3 text-sm text-gray-600 flex gap-2">
+                    Click <p className="text-[#81069e]">Check Map</p> to display
+                    station list
                   </div>
                 )}
 

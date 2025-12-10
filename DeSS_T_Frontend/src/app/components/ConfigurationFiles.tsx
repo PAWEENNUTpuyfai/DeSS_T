@@ -10,6 +10,7 @@ import type { Configuration } from "../models/Configuration";
 import type { NetworkModel } from "../models/Network";
 import buildNetworkModelFromStations from "../../utility/api/openRouteService";
 import { isDataFitResponse } from "../models/DistriButionFitModel";
+import HelpButton from "./HelpButton";
 
 interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
@@ -238,7 +239,7 @@ export default function ConfigurationFiles({
             </div>
 
             {/* Right: File Upload Section */}
-            <div className="flex-1 flex flex-col gap-6 h-full py-8">
+            <div className="flex-1 flex flex-col gap-3 h-full py-8">
               <div>
                 <span>
                   <span
@@ -255,34 +256,33 @@ export default function ConfigurationFiles({
               {showTemplateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                   <div className="bg-white rounded-[25px] p-8 shadow-lg max-w-md w-full">
-                    <h2 className="content_title mb-6">Set Time Range</h2>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <label className="w-20">Start:</label>
-                        <input
-                          type="number"
-                          min={0}
-                          max={23}
-                          value={startHour}
-                          onChange={(e) => setStartHour(Number(e.target.value))}
-                          className="border p-2 rounded  w-20"
-                        />
-                        <span>:00</span>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <label className="w-20">End:</label>
-                        <input
-                          type="number"
-                          min={1}
-                          max={24}
-                          value={endHour}
-                          onChange={(e) => setEndHour(Number(e.target.value))}
-                          className="border p-2 rounded w-20"
-                        />
-                        <span>:00</span>
-                      </div>
+                    <div className="flex">
+                      <h2 className="content_title mb-6">Set Time Range </h2>{" "}
+                      <p className="ml-2 text-gray-500">(Only for template)</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-gray-700 font-medium">
+                        Time range :
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={23}
+                        value={startHour}
+                        onChange={(e) => setStartHour(Number(e.target.value))}
+                        className="border p-2 rounded w-14"
+                      />
+                      <span>:00</span>
+                      <span className="text-gray-600">to</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={24}
+                        value={endHour}
+                        onChange={(e) => setEndHour(Number(e.target.value))}
+                        className="border p-2 rounded w-14"
+                      />
+                      <span>:00</span>
                     </div>
 
                     <div className="flex justify-end mt-4">
@@ -304,7 +304,10 @@ export default function ConfigurationFiles({
               )}
 
               {/* Alighting Data Section */}
-              <h3 className="content_title">Alighting Data</h3>
+              <div className="flex justify-between items-center mt-2 pr-1">
+                <h3 className="content_title">Alighting Data</h3>{" "}
+                <HelpButton helpType="Alighting" />
+              </div>
 
               <input
                 id="alight-file"
@@ -344,7 +347,10 @@ export default function ConfigurationFiles({
               )}
 
               {/* Interarrival Data Section */}
-              <h3 className="content_title">Interarrival Data</h3>
+              <div className="flex justify-between items-center mt-2 pr-1">
+                <h3 className="content_title">Interarrival Data</h3>{" "}
+                <HelpButton helpType="Interarrival" />
+              </div>
 
               <input
                 id="inter-file"

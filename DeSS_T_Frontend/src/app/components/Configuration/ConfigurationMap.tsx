@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import MapViewer from "./MapViewer";
-import Scenario from "./Scenario";
+import MapViewer from "../MapViewer";
+import Scenario from "../Scenario";
 import ConfigurationNav from "./ConfigurationNav";
 import ConfigurationFiles from "./ConfigurationFiles";
-import LoadingModal from "./LoadingModal";
-import type { StationDetail } from "../models/Network";
-import type { Configuration } from "../models/Configuration";
-import HelpButton from "./HelpButton";
+import LoadingModal from "../LoadingModal";
+import type { StationDetail } from "../../models/Network";
+import HelpButton from "../HelpButton";
+import type { Configuration } from "../../models/Configuration";
 
 interface ConfigurationMapProps {
   mode?: "guest" | "user";
@@ -71,7 +71,7 @@ export default function ConfigurationMap({
       }
 
       try {
-        const mapApi = await import("../../utility/api/mapApi");
+        const mapApi = await import("../../../utility/api/mapApi");
         const bb = await mapApi.fetchAreaBounds(areaCode);
 
         // Fetch bus stops within the administrative area (use area query to avoid extra outside stops)
@@ -109,7 +109,7 @@ export default function ConfigurationMap({
 
     // For manual mode, also fetch bus stops and create NetworkGraph
     try {
-      const mapApi = await import("../../utility/api/mapApi");
+      const mapApi = await import("../../../utility/api/mapApi");
       const busStopsData = await mapApi.fetchBusStops([
         [minLat, minLon],
         [maxLat, maxLon],
@@ -144,7 +144,7 @@ export default function ConfigurationMap({
       }
 
       try {
-        const mapApi = await import("../../utility/api/mapApi");
+        const mapApi = await import("../../../utility/api/mapApi");
         const bb = await mapApi.fetchAreaBounds(areaCode);
         const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
 
@@ -175,7 +175,7 @@ export default function ConfigurationMap({
 
     // manual lat/lon mode
     try {
-      const mapApi = await import("../../utility/api/mapApi");
+      const mapApi = await import("../../../utility/api/mapApi");
       const busStopsData = await mapApi.fetchBusStops([
         [minLat, minLon],
         [maxLat, maxLon],
@@ -233,8 +233,9 @@ export default function ConfigurationMap({
   return (
     <>
       <ConfigurationNav mode={mode} configurationName={configurationName} />
-      <main style={{ marginTop: "50px" }}>
-        <div className="content h-full">
+      <main>
+        <div className="h-[12vh]"></div>
+        <div className="content h-full mx-auto">
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
             {/* Left: Map */}
             <div
@@ -279,7 +280,7 @@ export default function ConfigurationMap({
                     type="button"
                     aria-pressed={mapMode === "manual"}
                     onClick={() => setMapMode("manual")}
-                    className={`${
+                    className={`ml-2 ${
                       mapMode === "manual"
                         ? "mapareabtn_selected"
                         : "mapareabtn_unselected"

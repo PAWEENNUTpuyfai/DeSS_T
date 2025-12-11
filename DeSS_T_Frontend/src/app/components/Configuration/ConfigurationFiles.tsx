@@ -2,16 +2,16 @@ import { useState } from "react";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
-} from "../../utility/api/distribution_fit";
+} from "../../../utility/api/distribution_fit";
 import ConfigurationNav from "./ConfigurationNav";
-import MapViewer from "./MapViewer";
-import LoadingModal from "./LoadingModal";
-import type { StationDetail } from "../models/Network";
-import type { Configuration } from "../models/Configuration";
-import type { NetworkModel } from "../models/Network";
-import buildNetworkModelFromStations from "../../utility/api/openRouteService";
-import { isDataFitResponse } from "../models/DistriButionFitModel";
-import HelpButton from "./HelpButton";
+import MapViewer from "../MapViewer";
+import LoadingModal from "../LoadingModal";
+import type { StationDetail } from "../../models/Network";
+import type { Configuration } from "../../models/Configuration";
+import type { NetworkModel } from "../../models/Network";
+import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
+import { isDataFitResponse } from "../../models/DistriButionFitModel";
+import HelpButton from "../HelpButton";
 
 interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
@@ -226,8 +226,9 @@ export default function ConfigurationFiles({
         isOpen={loadingA || loadingI}
         message="Processing files..."
       />
-      <main style={{ marginTop: "50px" }}>
-        <div className="content h-full">
+      <main>
+        <div className="h-[12vh]"></div>
+        <div className="content h-full mx-auto">
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
             {/* Left: Map */}
             <div
@@ -275,7 +276,7 @@ export default function ConfigurationFiles({
                         max={23}
                         value={startHour}
                         onChange={(e) => setStartHour(Number(e.target.value))}
-                        className="border p-2 rounded w-14"
+                        className="border p-2 rounded w-10"
                       />
                       <span>:00</span>
                       <span className="text-gray-600">to</span>
@@ -285,7 +286,7 @@ export default function ConfigurationFiles({
                         max={24}
                         value={endHour}
                         onChange={(e) => setEndHour(Number(e.target.value))}
-                        className="border p-2 rounded w-14"
+                        className="border p-2 rounded w-10"
                       />
                       <span>:00</span>
                     </div>
@@ -420,7 +421,7 @@ export default function ConfigurationFiles({
                 <button
                   onClick={submitSelected}
                   disabled={loadingA || loadingI}
-                  className="btn_primary"
+                  className="btn_primary ml-3"
                 >
                   {loadingA || loadingI
                     ? "Processing..."

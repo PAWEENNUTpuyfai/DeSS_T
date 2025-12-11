@@ -1,6 +1,6 @@
 import { useState } from "react";
 // import { useEffect, useRef } from "react";
-import "../../style/configuration.css";
+import "../../../style/configuration.css";
 
 interface ConfigurationNavProps {
   mode: "guest" | "user";

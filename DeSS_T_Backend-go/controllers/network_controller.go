@@ -5,6 +5,9 @@ import (
 	"DeSS_T_Backend-go/services"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,12 +18,8 @@ type BuildNetworkRequest struct {
 }
 
 func BuildNetworkModel(c *fiber.Ctx) error {
-
-	// ⬇ ดึง ORS KEY จาก backend (.env)
+	// ORS key is optional — we will fallback if absent
 	orsKey := os.Getenv("ORS_API_KEY")
-	if orsKey == "" {
-		return fiber.NewError(fiber.StatusInternalServerError, "ORS_API_KEY is missing in backend .env")
-	}
 
 	var req BuildNetworkRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -31,19 +30,68 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Stations cannot be empty")
 	}
 
-	// 1. Build ORS Matrix; if it fails (quota/limits), fallback to local matrix
-	matrix, err := services.OrsMatrix(req.Stations, orsKey)
-	if err != nil {
-		// Fallback with straight-line distance and constant speed (30 km/h)
-		// 30 km/h = 8.333... m/s
-		matrix, _ = services.LocalMatrix(req.Stations, 30_000.0/3600.0)
+	// 1) Matrix mode selection
+	// Defaults to local for speed and reliability. Enable ORS via env when desired.
+	matrixMode := strings.ToLower(os.Getenv("MATRIX_MODE")) // "local" | "ors"
+	if matrixMode == "" {
+		matrixMode = "local"
+	}
+	maxStations := 30
+	if v := os.Getenv("MATRIX_MAX_STATIONS"); v != "" {
+		if p, perr := strconv.Atoi(v); perr == nil && p > 0 {
+			maxStations = p
+		}
+	}
+	fallbackSpeedKmh := 30.0
+	if v := os.Getenv("FALLBACK_SPEED_KMH"); v != "" {
+		if f, ferr := strconv.ParseFloat(v, 64); ferr == nil && f > 0 {
+			fallbackSpeedKmh = f
+		}
+	}
+	metersPerSecond := fallbackSpeedKmh * 1000.0 / 3600.0
+
+	var matrix *services.ORSMatrixResponse
+	var err error
+	useORSMatrix := (matrixMode == "ors" && orsKey != "" && len(req.Stations) <= maxStations)
+	if useORSMatrix {
+		// Soft timeout guard: ensure the handler returns fast even if ORS is slow
+		done := make(chan struct{})
+		var mErr error
+		go func() {
+			matrix, mErr = services.OrsMatrix(req.Stations, orsKey)
+			close(done)
+		}()
+		select {
+		case <-done:
+			err = mErr
+		case <-time.After(20 * time.Second):
+			err = fmt.Errorf("ORS matrix timed out")
+		}
+	}
+	if err != nil || matrix == nil {
+		matrix, _ = services.LocalMatrix(req.Stations, metersPerSecond)
 	}
 
 	// 2. Create pair list
 	pairs := []models.Station_Pair{}
 
-	for i := 0; i < len(req.Stations); i++ {
-		for j := 0; j < len(req.Stations); j++ {
+	n := len(req.Stations)
+	// Decide whether to call ORS for per-pair route geometry.
+	// Default: straight line for speed/reliability.
+	routeMode := strings.ToLower(os.Getenv("ROUTE_GEOMETRY_MODE")) // "straight" | "ors"
+	if routeMode == "" {
+		routeMode = "straight"
+	}
+	maxPairs := 500 // directed pairs cap when using ORS
+	if v := os.Getenv("ROUTE_GEOMETRY_MAX_PAIRS"); v != "" {
+		if p, perr := strconv.Atoi(v); perr == nil && p > 0 {
+			maxPairs = p
+		}
+	}
+	useORSRoute := (routeMode == "ors") && (orsKey != "") && (n*(n-1) <= maxPairs)
+
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
 			if i == j {
 				continue
 			}
@@ -51,9 +99,30 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 			start := req.Stations[i].Location.Coordinates
 			end := req.Stations[j].Location.Coordinates
 
-			// Route geometry; if ORS fails, use straight line
-			coords, err := services.OrsRoute(start, end, orsKey)
-			if err != nil {
+			// Route geometry; optionally call ORS, else use straight line
+			var coords [][2]float64
+			if useORSRoute {
+				// Soft timeout guard for each route fetch
+				type routeRes struct {
+					c   [][2]float64
+					err error
+				}
+				ch := make(chan routeRes, 1)
+				go func() {
+					r, e := services.OrsRoute(start, end, orsKey)
+					ch <- routeRes{c: r, err: e}
+				}()
+				select {
+				case rr := <-ch:
+					if rr.err != nil || len(rr.c) == 0 {
+						coords = [][2]float64{start, end}
+					} else {
+						coords = rr.c
+					}
+				case <-time.After(2 * time.Second):
+					coords = [][2]float64{start, end}
+				}
+			} else {
 				coords = [][2]float64{start, end}
 			}
 

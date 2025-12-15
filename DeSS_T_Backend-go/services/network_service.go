@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"time"
 
 	"DeSS_T_Backend-go/models"
 )
@@ -50,7 +51,7 @@ func OrsMatrix(stations []models.Station_Detail, key string) (*ORSMatrixResponse
 	req.Header.Set("Authorization", key)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("ORS Matrix request failed: %v", err)
@@ -80,7 +81,8 @@ func OrsRoute(start [2]float64, end [2]float64, key string) ([][2]float64, error
 		key, start[0], start[1], end[0], end[1],
 	)
 
-	resp, err := http.Get(url)
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("ORS Route request failed: %v", err)
 	}

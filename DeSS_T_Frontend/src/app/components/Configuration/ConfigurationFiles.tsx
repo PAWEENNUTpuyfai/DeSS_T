@@ -37,6 +37,7 @@ export default function ConfigurationFiles({
   const [interarrivalFile, setInterarrivalFile] = useState<File | null>(null);
   const [interarrivalResult, setInterarrivalResult] = useState<unknown>(null);
   const [loadingI, setLoadingI] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [startHour, setStartHour] = useState<number>(8);
   const [endHour, setEndHour] = useState<number>(16);
@@ -156,6 +157,9 @@ export default function ConfigurationFiles({
       return;
     }
 
+    // Prevent rapid repeated clicks while submitting
+    if (isSubmitting) return;
+
     if (!alightingFile || !interarrivalFile)
       return alert(
         "Please attach both Alighting and Interarrival files before submitting"
@@ -165,6 +169,7 @@ export default function ConfigurationFiles({
     let interRes: any = interarrivalResult;
 
     try {
+      setIsSubmitting(true);
       if (alightingFile) {
         const outA = await submitAlighting();
         if (outA) alightRes = outA;
@@ -184,12 +189,11 @@ export default function ConfigurationFiles({
           );
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err);
-          console.error("Failed to build network with ORS:", errorMsg);
-
-          alert(
-            `Failed to fetch data from OpenRouteService:\n${errorMsg}\n\nPlease check:\n1. VITE_ORS_API_KEY is set in .env\n2. API key has remaining credits\n3. Number of stations does not exceed the limit`
+          console.error("Failed to build network:", errorMsg);
+          // Surface a single clear error; outer catch will alert
+          throw new Error(
+            "Failed to build network. Ensure the backend is running and try again."
           );
-          throw err;
         }
       } else {
         network = {
@@ -216,6 +220,8 @@ export default function ConfigurationFiles({
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       alert("Submit failed: " + msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -223,8 +229,8 @@ export default function ConfigurationFiles({
     <>
       <ConfigurationNav mode={mode} configurationName={configurationName} />
       <LoadingModal
-        isOpen={loadingA || loadingI}
-        message="Processing files..."
+        isOpen={loadingA || loadingI || isSubmitting}
+        message={isSubmitting ? "Applying configuration..." : "Processing files..."}
       />
       <main>
         <div className="h-[12vh]"></div>
@@ -420,11 +426,11 @@ export default function ConfigurationFiles({
                 </button>
                 <button
                   onClick={submitSelected}
-                  disabled={loadingA || loadingI}
+                  disabled={loadingA || loadingI || isSubmitting}
                   className="btn_primary ml-3"
                 >
-                  {loadingA || loadingI
-                    ? "Processing..."
+                  {isSubmitting || loadingA || loadingI
+                    ? "Applying..."
                     : mode === "user"
                     ? "Save"
                     : "Apply"}

@@ -16,14 +16,27 @@ export async function buildNetworkModelFromStations(
     return { Network_model: networkName, Station_detail: [], StationPair: [] };
   }
 
-  const res = await fetch(`${API_BASE_URL}/network/build`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      stations,
-      network_name: networkName,
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/network/build`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stations,
+        network_name: networkName,
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if ((err as any)?.name === "AbortError") {
+      throw new Error("Network build request timed out. Please try again.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");

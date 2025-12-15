@@ -17,7 +17,7 @@ export default function TopRoutesChart({
     () =>
       route.length
         ? route
-        : [
+        : ([
             ["1", "สาย 1", "#c084fc"],
             ["2", "สาย 2", "#2e9f4d"],
             ["3", "สาย 3", "#86efac"],
@@ -27,7 +27,7 @@ export default function TopRoutesChart({
             ["7", "สาย 7", "#2747b3"],
             ["8", "สาย 8", "#87ceeb"],
             ["9", "สาย 9", "#9ca3af"],
-          ] as [string, string, string][],
+          ] as [string, string, string][]),
     [route]
   );
 
@@ -59,12 +59,14 @@ export default function TopRoutesChart({
     [topRoutes]
   );
 
-  const paddingLeft = 100;
+  const paddingLeft = 50;
+  const paddingRight = 60;
   const paddingBottom = 40;
-  const chartWidth = 500;
+  const chartWidth = 520; // widen to balance left/right padding and center the plot
   const chartHeight = 250;
-  const maxBarWidth = chartWidth - paddingLeft - 20;
-  const barSpacing = (chartHeight - paddingBottom) / Math.max(topRoutes.length, 1);
+  const maxBarWidth = chartWidth - paddingLeft - paddingRight;
+  const barSpacing =
+    (chartHeight - paddingBottom) / Math.max(topRoutes.length, 1);
 
   // X-axis gridlines and ticks
   const gridLines = 5;
@@ -74,13 +76,19 @@ export default function TopRoutesChart({
 
   return (
     <div className="top-routes-container">
-      <div className="top-routes-title">Top 3: Most popular line by customer</div>
+      <div className="top-routes-title">
+        Top 3: Most popular line by customer
+      </div>
 
       {topRoutes.length === 0 ? (
         <div className="top-routes-empty">No data available</div>
       ) : (
         <div className="top-routes-chart-wrapper">
-          <svg width={chartWidth} height={chartHeight} className="top-routes-svg">
+          <svg
+            width={chartWidth}
+            height={chartHeight}
+            className="top-routes-svg"
+          >
             {/* Y-axis (vertical line on left) */}
             <line
               x1={paddingLeft}
@@ -103,20 +111,25 @@ export default function TopRoutesChart({
 
             {/* X-axis arrow */}
             <polygon
-              points={`${chartWidth - 5},${chartHeight - paddingBottom - 5} ${chartWidth},${chartHeight - paddingBottom} ${chartWidth - 5},${chartHeight - paddingBottom + 5}`}
+              points={`${chartWidth - 5},${
+                chartHeight - paddingBottom - 5
+              } ${chartWidth},${chartHeight - paddingBottom} ${
+                chartWidth - 5
+              },${chartHeight - paddingBottom + 5}`}
               fill="#9ca3af"
             />
 
             {/* Y-axis arrow */}
             <polygon
-              points={`${paddingLeft - 5},8 ${paddingLeft},0 ${paddingLeft + 5},8`}
+              points={`${paddingLeft - 5},8 ${paddingLeft},0 ${
+                paddingLeft + 5
+              },8`}
               fill="#9ca3af"
             />
 
             {/* X-axis gridlines and labels */}
             {xTicks.map((tick, idx) => {
-              const xPos =
-                paddingLeft + (tick / maxCount) * maxBarWidth;
+              const xPos = paddingLeft + (tick / maxCount) * maxBarWidth;
               return (
                 <g key={`grid-${idx}`}>
                   {/* Dashed gridline */}
@@ -192,7 +205,7 @@ export default function TopRoutesChart({
               return (
                 <text
                   key={`label-${route.id}`}
-                  x={paddingLeft - 12}
+                  x={paddingLeft - 8}
                   y={yPos + 4}
                   fontSize={12}
                   textAnchor="end"

@@ -46,11 +46,11 @@ export default function Dashboard() {
 
   // Sample customer data for TopRoutesChart
   const customerData: [string, number][] = [
-    ["2", 450],
+    ["2", 500],
     ["7", 380],
     ["4", 320],
     ["1", 280],
-    ["5", 250],
+    ["5", 1250],
   ];
 
   const dataset = useMemo(

@@ -306,7 +306,7 @@ export default function ConfigurationFiles({
                       </button>
                       <button
                         onClick={downloadTemplate}
-                        className="btn_primary"
+                        className="btn_primary ml-2"
                       >
                         download
                       </button>

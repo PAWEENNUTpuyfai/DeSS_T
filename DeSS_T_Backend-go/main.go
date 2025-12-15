@@ -3,13 +3,19 @@ package main
 import (
 	// "DeSS_T_Backend-go/config"
 	"DeSS_T_Backend-go/routes"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
-
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found")
+	}
+
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
@@ -28,7 +34,7 @@ func main() {
 	routes.SetupRoutes(app)
 	routes.SetupComputeRoutes(app)
 	routes.SetupDistributionRoutes(app)
-	routes.NetworkRoutes(app)
+	routes.RegisterNetworkRoutes(app)
 
 	app.Listen(":8080")
 }

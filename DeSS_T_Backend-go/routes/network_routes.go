@@ -1,11 +1,15 @@
 package routes
 
 import (
-    "github.com/gofiber/fiber/v2"
-    "DeSS_T_Backend-go/controllers"
+	"DeSS_T_Backend-go/controllers"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func NetworkRoutes(app *fiber.App) {
-    api := app.Group("/api/network")
-    api.Post("/build", controllers.BuildNetwork)
+func RegisterNetworkRoutes(app *fiber.App) {
+	// Keep network endpoints consistent with other /api routes (e.g., distribution)
+	app.Post("/api/network/build", controllers.BuildNetworkModel)
+	app.Post("/api/network/area-bounds", controllers.GetAreaBounds)
+	app.Post("/api/network/bus-stops", controllers.GetBusStops)
+	app.Post("/api/network/bus-stops-area", controllers.GetBusStopsInArea)
 }

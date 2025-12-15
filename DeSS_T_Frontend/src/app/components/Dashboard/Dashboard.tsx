@@ -2,6 +2,7 @@ import "../../../style/Output.css";
 import "../../../style/configuration.css";
 import { useMemo, useState } from "react";
 import LineChart from "./LineChart";
+import TopRoutesChart from "./TopRoutesChart";
 
 export default function Dashboard() {
   const [mode, setMode] = useState<
@@ -42,6 +43,15 @@ export default function Dashboard() {
         : [...prev, routeId]
     );
   };
+
+  // Sample customer data for TopRoutesChart
+  const customerData: [string, number][] = [
+    ["2", 450],
+    ["7", 380],
+    ["4", 320],
+    ["1", 280],
+    ["5", 250],
+  ];
 
   const dataset = useMemo(
     () =>
@@ -214,75 +224,79 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-bg ">
-      <div className="w-[45%]  dashboard-block flex">
-        <div className="w-[85%]">
-          <div className="flex flex-wrap justify-around mb-4 mx-auto">
-            <button
-              type="button"
-              className={`whitespace-nowrap ${
-                mode === "avg-waiting-time"
-                  ? "mapareabtn_selected"
-                  : "mapareabtn_unselected"
-              }`}
-              onClick={() => setMode("avg-waiting-time")}
-            >
-              Avg. Waiting Time
-            </button>
-            <button
-              type="button"
-              className={`whitespace-nowrap ${
-                mode === "avg-queue-length"
-                  ? "mapareabtn_selected"
-                  : "mapareabtn_unselected"
-              }`}
-              onClick={() => setMode("avg-queue-length")}
-            >
-              Avg. Queue Length
-            </button>
-            <button
-              type="button"
-              className={`whitespace-nowrap ${
-                mode === "avg-utilization"
-                  ? "mapareabtn_selected"
-                  : "mapareabtn_unselected"
-              }`}
-              onClick={() => setMode("avg-utilization")}
-            >
-              Avg. Utilization
-            </button>
-          </div>
-          <div className="m-3 items-end h-full">
-            <LineChart
-              timeslot={15}
-              route={routes}
-              dataset={dataset}
-              mode={mode}
-            />
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center w-[15%]">
-          <div className="legend-container p-3 flex-col justify-center items-center mx-auto overflow-y-auto max-h-[600px]">
-            {allRoutes.map(([id, name, color]) => (
-              <label
-                key={id}
-                className="flex items-center gap-1 p-1 rounded hover:bg-gray-100 cursor-pointer"
+      <div className="flex gap-6 w-full">
+        <div className="w-[50%] dashboard-block flex">
+          <div className="w-[85%]">
+            <div className="flex flex-wrap justify-around mb-4 mx-auto">
+              <button
+                type="button"
+                className={`whitespace-nowrap ${
+                  mode === "avg-waiting-time"
+                    ? "mapareabtn_selected"
+                    : "mapareabtn_unselected"
+                }`}
+                onClick={() => setMode("avg-waiting-time")}
               >
-                <span
-                  onClick={() => toggleRoute(id)}
-                  className={`inline-block w-4 h-4 rounded cursor-pointer transition-all ${
-                    selectedRoutes.includes(id) ? "" : "bg-white"
-                  }`}
-                  style={
-                    selectedRoutes.includes(id)
-                      ? { backgroundColor: color }
-                      : { border: `2px solid ${color}` }
-                  }
-                ></span>
-                <span className="text-sm">{name}</span>
-              </label>
-            ))}
+                Avg. Waiting Time
+              </button>
+              <button
+                type="button"
+                className={`whitespace-nowrap ${
+                  mode === "avg-queue-length"
+                    ? "mapareabtn_selected"
+                    : "mapareabtn_unselected"
+                }`}
+                onClick={() => setMode("avg-queue-length")}
+              >
+                Avg. Queue Length
+              </button>
+              <button
+                type="button"
+                className={`whitespace-nowrap ${
+                  mode === "avg-utilization"
+                    ? "mapareabtn_selected"
+                    : "mapareabtn_unselected"
+                }`}
+                onClick={() => setMode("avg-utilization")}
+              >
+                Avg. Utilization
+              </button>
+            </div>
+            <div className="m-3 items-end h-full">
+              <LineChart
+                timeslot={15}
+                route={routes}
+                dataset={dataset}
+                mode={mode}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col items-center justify-center w-[15%]">
+            <div className="legend-container p-3 flex-col justify-center items-center mx-auto overflow-y-auto max-h-[600px]">
+              {allRoutes.map(([id, name, color]) => (
+                <label
+                  key={id}
+                  className="flex items-center gap-1 p-1 rounded hover:bg-gray-100 cursor-pointer"
+                >
+                  <span
+                    onClick={() => toggleRoute(id)}
+                    className={`inline-block w-4 h-4 rounded cursor-pointer transition-all ${
+                      selectedRoutes.includes(id) ? "" : "bg-white"
+                    }`}
+                    style={
+                      selectedRoutes.includes(id)
+                        ? { backgroundColor: color }
+                        : { border: `2px solid ${color}` }
+                    }
+                  ></span>
+                  <span className="text-sm">{name}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
+
+          <TopRoutesChart route={allRoutes} customerData={customerData} limit={3} />
       </div>
     </div>
   );

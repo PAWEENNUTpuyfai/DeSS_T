@@ -1,41 +1,40 @@
 package models
 
 type Network_Model struct {
-    NetworkModel  string          `json:"Network_model"`
-    StationDetail []Station_Detail `json:"Station_detail"`
-    StationPair   []Station_Pair   `json:"StationPair"`
+	NetworkModel  string           `json:"Network_model"`
+	StationDetail []Station_Detail `json:"Station_detail"`
+	StationPair   []Station_Pair   `json:"StationPair"`
 }
 
 /* ─────────────── Station Detail ─────────────── */
 
 type Station_Detail struct {
-    StationID   string   `json:"StationID"`
-    StationName string   `json:"StationName"`
-    Location    GeoPoint `json:"location"`
+	StationID   string   `json:"StationID"`
+	StationName string   `json:"StationName"`
+	Location    GeoPoint `json:"Location"`
 }
 
 type GeoPoint struct {
-    Type        string     `json:"type"`
-    Coordinates [2]float64 `json:"coordinates"`
-} 
+	Type        string     `json:"type"`
+	Coordinates [2]float64 `json:"coordinates"`
+}
 
 /* ─────────────── Station Pair ─────────────── */
 
 type Station_Pair struct {
-    FstStation   string        `json:"FstStation"`
-    SndStation   string        `json:"SndStation"`
-    RouteBetween Route_Between  `json:"RouteBetween"`
+	FstStation   string        `json:"FstStation"`
+	SndStation   string        `json:"SndStation"`
+	RouteBetween Route_Between `json:"RouteBetween"`
 }
 
 type Route_Between struct {
-    RouteBetweenID string         `json:"RouteBetweenID"`
-    TravelTime     float64        `json:"TravelTime"`
-    Route          GeoLineString  `json:"Route"`
-    Distance       float64        `json:"Distance"`
+	RouteBetweenID string        `json:"RouteBetweenID"`
+	TravelTime     float64       `json:"TravelTime"`
+	Route          GeoLineString `json:"Route"`
+	Distance       float64       `json:"Distance"`
 }
 
 type GeoLineString struct {
-    Type        string        `json:"type"`
-    Coordinates [][2]float64  `json:"coordinates"`
+	Type        string       `json:"type"`
+	Coordinates [][2]float64 `json:"coordinates"`
 }
-

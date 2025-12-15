@@ -75,3 +75,56 @@
   border: 2px solid #9b9b9b;
   border-radius: 25px;
 }
+
+/* Top Routes Chart Styles */
+.top-routes-container {
+  background-color: white;
+  border-radius: 20px;
+  border: 2px solid #81069e;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.top-routes-title {
+  font-family: "Lexend";
+  font-size: 16px;
+  font-weight: 500;
+  color: #81069e;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.top-routes-chart-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.top-routes-svg {
+  background-color: #ffffff;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.top-routes-empty {
+  font-family: "Lexend";
+  font-size: 14px;
+  color: #9b9b9b;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* SVG Text Styles */
+.top-routes-svg text {
+  font-family: "Lexend";
+}
+
+.top-routes-svg rect {
+  transition: filter 0.2s ease;
+}
+
+.top-routes-svg rect:hover {
+  filter: brightness(0.9);
+}

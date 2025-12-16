@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from "react";
 import type { Configuration } from "../models/Configuration";
 import type { StationDetail, StationPair } from "../models/Network";
+import ScenarioMap from "./ScenarioMap";
+import type { RouteSegment } from "./ScenarioMap";
+import { fetchRouteGeometry } from "../../utility/api/routeApi";
 import "../../style/Scenario.css";
 
 export default function Scenario({
@@ -18,6 +21,7 @@ export default function Scenario({
     configuration?.Network_model?.Station_detail ?? [];
   const edges: StationPair[] = configuration?.Network_model?.StationPair ?? [];
   const [transportMode, setTransportMode] = useState<"Route" | "Bus">("Route");
+  console.log("🔍 Scenario nodes count:", nodes.length, "nodes:", nodes);
   const colorOptions = useMemo(
     () => [
       "#3b82f6",
@@ -37,6 +41,7 @@ export default function Scenario({
     name: string;
     color: string;
     stations: string[];
+    segments: RouteSegment[];
     hidden: boolean;
     locked: boolean;
     maxDistance: number;
@@ -50,6 +55,7 @@ export default function Scenario({
     name: `Route ${idx + 1}`,
     color: colorOptions[idx % colorOptions.length],
     stations: [], // stations will be selected from map later
+    segments: [],
     hidden: false,
     locked: false,
     maxDistance: 40,
@@ -60,6 +66,7 @@ export default function Scenario({
 
   const [routes, setRoutes] = useState<SimpleRoute[]>([createRoute(0)]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [isFetchingSegment, setIsFetchingSegment] = useState(false);
 
   const updateBusInfo = (
     routeId: string,
@@ -124,7 +131,105 @@ export default function Scenario({
   };
 
   const editRoute = (routeId: string) => {
-    console.log("Edit route", routeId);
+    setSelectedRouteId(routeId);
+  };
+
+  const resetRoutePath = (routeId: string) => {
+    setRoutes((prev) =>
+      prev.map((r) =>
+        r.id === routeId ? { ...r, stations: [], segments: [] } : r
+      )
+    );
+  };
+
+  // Helper: Get station name from ID
+  const getStationName = (stationId: string): string => {
+    const station = nodes.find((n) => n.StationID === stationId);
+    return station?.StationName || stationId;
+  };
+
+  // Helper: Get pre-computed route geometry from network model if available
+  const getRouteGeometryFromModel = (fromStationId: string, toStationId: string): [number, number][] | null => {
+    const pair = edges.find(
+      (p) => p.FstStation === fromStationId && p.SndStation === toStationId
+    );
+    if (pair?.RouteBetween?.Route?.coordinates) {
+      return pair.RouteBetween.Route.coordinates;
+    }
+    return null;
+  };
+
+  const handleSelectStationOnMap = async (stationId: string) => {
+    if (!selectedRouteId) return;
+    const route = routes.find((r) => r.id === selectedRouteId);
+    if (!route || route.locked) return;
+
+    // If first station, just set it
+    if (route.stations.length === 0) {
+      setRoutes((prev) =>
+        prev.map((r) =>
+          r.id === route.id ? { ...r, stations: [stationId], segments: [] } : r
+        )
+      );
+      return;
+    }
+
+    const lastStationId = route.stations[route.stations.length - 1];
+    if (lastStationId === stationId) return;
+
+    const lastStation = nodes.find((n) => n.StationID === lastStationId);
+    const nextStation = nodes.find((n) => n.StationID === stationId);
+    if (!lastStation || !nextStation) return;
+
+    setIsFetchingSegment(true);
+    try {
+      // Try to get route geometry from pre-computed network model first
+      let segmentCoords = getRouteGeometryFromModel(lastStationId, stationId);
+      
+      // If not available in model, fetch from backend API
+      if (!segmentCoords) {
+        console.log(`ℹ️ Route geometry not in model, fetching from API...`);
+        const getCoordinates = (st: StationDetail): [number, number] | null => {
+          if (st.Location?.coordinates) return st.Location.coordinates as [number, number];
+          if (st.location?.coordinates) return st.location.coordinates as [number, number];
+          return null;
+        };
+
+        const lastCoords = getCoordinates(lastStation);
+        const nextCoords = getCoordinates(nextStation);
+        if (!lastCoords || !nextCoords) {
+          console.error("Station missing coordinates", { lastStation, nextStation });
+          return;
+        }
+
+        const segment = await fetchRouteGeometry(lastCoords, nextCoords);
+        segmentCoords = segment.coordinates;
+      } else {
+        console.log(`✅ Using route geometry from network model`);
+      }
+
+      const newSeg: RouteSegment = {
+        from: lastStationId,
+        to: stationId,
+        coords: segmentCoords,
+      };
+
+      setRoutes((prev) =>
+        prev.map((r) =>
+          r.id === route.id
+            ? {
+                ...r,
+                stations: [...r.stations, stationId],
+                segments: [...r.segments, newSeg],
+              }
+            : r
+        )
+      );
+    } catch (err) {
+      console.error("Fetch route failed", err);
+    } finally {
+      setIsFetchingSegment(false);
+    }
   };
 
   return (
@@ -184,7 +289,8 @@ export default function Scenario({
           </span>
         </div>
 
-        <div className="side-bar h-[90vb] w-[25%]">
+        <div className="flex gap-4">
+          <div className="side-bar h-[90vb] w-[25%]">
           {transportMode === "Route" && (
             <div className="mt-4 p-4 w-full h-[85vh] flex flex-col">
               {/* Scrollable Routes List */}
@@ -217,7 +323,7 @@ export default function Scenario({
                     <div className="mt-3 text-sm text-gray-800 flex flex-wrap items-center gap-1">
                       {r.stations.map((s, sIdx) => (
                         <React.Fragment key={`${r.id}-st-${sIdx}`}>
-                          <span>{s}</span>
+                          <span className="font-medium">{getStationName(s)}</span>
                           {sIdx < r.stations.length - 1 && (
                             <span className="text-gray-500">→</span>
                           )}
@@ -380,6 +486,27 @@ export default function Scenario({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+
+          {/* Map editor */}
+          {transportMode === "Route" && (
+            <div className="flex-1 h-[85vh] mt-4">
+              <ScenarioMap
+                stations={nodes}
+                route={
+                  routes.find((r) => r.id === selectedRouteId) ||
+                  (routes.length ? routes[0] : null)
+                }
+                onSelectStation={handleSelectStationOnMap}
+                onResetRoute={() =>
+                  selectedRouteId && resetRoutePath(selectedRouteId)
+                }
+              />
+              {isFetchingSegment && (
+                <div className="text-sm text-gray-600 mt-2">Building route...</div>
+              )}
             </div>
           )}
         </div>

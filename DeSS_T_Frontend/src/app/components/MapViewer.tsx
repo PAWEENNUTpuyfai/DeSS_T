@@ -9,11 +9,11 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-import type { LatLng } from "../models/Network";
 import type {
+  LatLng,
   StationDetail,
   GeoPoint,
-} from "../models/NetworkModel";
+} from "../models/Network";
 
 L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -50,6 +50,18 @@ export default function MapViewer({
     return [lat, lon];               // Leaflet = [lat, lon]
   };
 
+  // Safe station to LatLng conversion with fallback
+  const stationToLatLng = (s: StationDetail): LatLng => {
+    if (s.location && s.location.coordinates) {
+      const [lon, lat] = s.location.coordinates;
+      return [lat, lon];
+    }
+    if (s.Lat && s.Lon) {
+      return [parseFloat(s.Lat), parseFloat(s.Lon)];
+    }
+    return [13.75, 100.5];
+  };
+
   // If manual bounds provided
   useEffect(() => {
     if (
@@ -76,7 +88,7 @@ export default function MapViewer({
       maxLon = -Infinity;
 
     for (const st of stationDetails) {
-      const [lat, lon] = geoPointToLatLng(st.location);
+      const [lat, lon] = stationToLatLng(st);
       if (lat < minLat) minLat = lat;
       if (lat > maxLat) maxLat = lat;
       if (lon < minLon) minLon = lon;
@@ -151,13 +163,13 @@ export default function MapViewer({
         {stationDetails?.map((st) => (
           <CircleMarker
             key={st.StationID}
-            center={geoPointToLatLng(st.location)}
+            center={stationToLatLng(st)}
             radius={5}
             color="#eeb34b"
             fillColor="#ffffffff"
             fillOpacity={0.9}
           >
-            <Popup>{st.StationName}</Popup>
+            <Popup>{st.StationName || st.StationID}</Popup>
           </CircleMarker>
         ))}
 

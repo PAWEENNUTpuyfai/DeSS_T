@@ -3,7 +3,9 @@ package main
 import (
 	// "DeSS_T_Backend-go/config"
 	"DeSS_T_Backend-go/routes"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -11,9 +13,18 @@ import (
 )
 
 func main() {
-	// Load .env file
-	if err := godotenv.Load(); err != nil {
-		log.Println("Warning: .env file not found")
+	// Load .env file from current directory or parent
+	envPath := ".env"
+	if err := godotenv.Load(envPath); err != nil {
+		log.Printf("⚠️ Warning: Could not load .env from %s: %v\n", envPath, err)
+	}
+
+	// Verify ORS_API_KEY is loaded
+	orsKey := os.Getenv("ORS_API_KEY")
+	if orsKey == "" {
+		fmt.Println("❌ ORS_API_KEY is empty - backend will use straight lines only")
+	} else {
+		fmt.Println("✅ ORS_API_KEY loaded successfully")
 	}
 
 	app := fiber.New()

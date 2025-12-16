@@ -21,6 +21,13 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 	// ORS key is optional — we will fallback if absent
 	orsKey := os.Getenv("ORS_API_KEY")
 
+	// DEBUG: Log if ORS key is available
+	if orsKey == "" {
+		fmt.Println("⚠️ WARNING: ORS_API_KEY not found in environment - will use straight lines only")
+	} else {
+		fmt.Println("✅ ORS_API_KEY found - will use OpenRouteService for route geometry")
+	}
+
 	var req BuildNetworkRequest
 	if err := c.BodyParser(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid JSON: "+err.Error())
@@ -77,10 +84,10 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 
 	n := len(req.Stations)
 	// Decide whether to call ORS for per-pair route geometry.
-	// Default: straight line for speed/reliability.
-	routeMode := strings.ToLower(os.Getenv("ROUTE_GEOMETRY_MODE")) // "straight" | "ors"
+	// Default: ORS for accurate road routing (can be overridden by ROUTE_GEOMETRY_MODE=straight)
+	routeMode := strings.ToLower(os.Getenv("ROUTE_GEOMETRY_MODE")) // "ors" | "straight"
 	if routeMode == "" {
-		routeMode = "straight"
+		routeMode = "ors" // Changed default to "ors" for road-accurate routing
 	}
 	maxPairs := 500 // directed pairs cap when using ORS
 	if v := os.Getenv("ROUTE_GEOMETRY_MAX_PAIRS"); v != "" {
@@ -155,4 +162,47 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(result)
+}
+
+// GetRouteGeometry returns a LineString between two coordinates using ORS when available,
+// otherwise falls back to a straight line.
+// Request body: {"start": [lon, lat], "end": [lon, lat]}
+func GetRouteGeometry(c *fiber.Ctx) error {
+	orsKey := os.Getenv("ORS_API_KEY")
+
+	var body struct {
+		Start [2]float64 `json:"start"`
+		End   [2]float64 `json:"end"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid JSON: "+err.Error())
+	}
+
+	coords := [][2]float64{body.Start, body.End}
+	if orsKey != "" {
+		// Soft timeout guard for the single route
+		type routeRes struct {
+			c   [][2]float64
+			err error
+		}
+		ch := make(chan routeRes, 1)
+		go func() {
+			r, e := services.OrsRoute(body.Start, body.End, orsKey)
+			ch <- routeRes{c: r, err: e}
+		}()
+		select {
+		case rr := <-ch:
+			if rr.err == nil && len(rr.c) > 0 {
+				coords = rr.c
+			}
+		case <-time.After(3 * time.Second):
+			// fallback to straight line
+		}
+	}
+
+	return c.JSON(models.GeoLineString{
+		Type:        "LineString",
+		Coordinates: coords,
+	})
 }

@@ -31,15 +31,15 @@ export default function LineChart({
   const slot = timeslot > 0 ? timeslot : 15;
   // Build route meta (id, name, color)
   const fallbackColors = [
-    "#3b82f6",
-    "#22c55e",
-    "#f59e0b",
-    "#ef4444",
-    "#8b5cf6",
-    "#10b981",
-    "#f97316",
-    "#06b6d4",
-    "#ec4899",
+    "#76218a",
+    "#3a8345",
+    "#49fd36",
+    "#f80512",
+    "#f7bc16",
+    "#fc2898",
+    "#0e16b2",
+    "#83c8f9",
+    "#7a644e",
   ];
 
   const routes = route.length
@@ -252,18 +252,28 @@ export default function LineChart({
               );
             })}
 
-            {/* Data points */}
+            {/* Data points with labels */}
             {dataByRoute.map(({ id, points }, idx) => {
               const [, , color] = routes[idx];
-              return points.map((p, i) => (
-                <circle
-                  key={`${id}-${i}`}
-                  cx={xPos(p.t) - paddingLeft}
-                  cy={yPos(p.v)}
-                  r={3}
-                  fill={color}
-                />
-              ));
+              return points.map((p, i) => {
+                const svgX = xPos(p.t) - paddingLeft;
+                const svgY = yPos(p.v);
+                return (
+                  <g key={`${id}-${i}`}>
+                    <circle cx={svgX} cy={svgY} r={3} fill={color} />
+                    {/* <text
+                      x={svgX}
+                      y={svgY - 8}
+                      fontSize={9}
+                      textAnchor="middle"
+                      fill={color}
+                      fontWeight="600"
+                    >
+                      {p.v.toFixed(1)}
+                    </text> */}
+                  </g>
+                );
+              });
             })}
           </svg>
         </div>

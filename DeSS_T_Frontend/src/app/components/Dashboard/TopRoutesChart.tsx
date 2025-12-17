@@ -18,15 +18,15 @@ export default function TopRoutesChart({
       route.length
         ? route
         : ([
-            ["1", "สาย 1", "#c084fc"],
-            ["2", "สาย 2", "#2e9f4d"],
-            ["3", "สาย 3", "#86efac"],
-            ["4", "สาย 4", "#ef4444"],
-            ["5", "สาย 5", "#fbbf24"],
-            ["6", "สาย 6", "#ec4899"],
-            ["7", "สาย 7", "#2747b3"],
-            ["8", "สาย 8", "#87ceeb"],
-            ["9", "สาย 9", "#9ca3af"],
+            ["1", "สาย 1", "#76218a"],
+            ["2", "สาย 2", "#3a8345"],
+            ["3", "สาย 3", "#49fd36"],
+            ["4", "สาย 4", "#f80512"],
+            ["5", "สาย 5", "#f7bc16"],
+            ["6", "สาย 6", "#fc2898"],
+            ["7", "สาย 7", "#0e16b2"],
+            ["8", "สาย 8", "#83c8f9"],
+            ["9", "สาย 9", "#7a644e"],
           ] as [string, string, string][]),
     [route]
   );
@@ -75,11 +75,7 @@ export default function TopRoutesChart({
   );
 
   return (
-    <div className="top-routes-container">
-      <div className="top-routes-title">
-        Top 3: Most popular line by customer
-      </div>
-
+    <div className="">
       {topRoutes.length === 0 ? (
         <div className="top-routes-empty">No data available</div>
       ) : (

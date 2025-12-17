@@ -1,27 +1,31 @@
 import "../../../style/Output.css";
-import "../../../style/configuration.css";
 import { useMemo, useState } from "react";
 import LineChart from "./LineChart";
 import TopRoutesChart from "./TopRoutesChart";
+import RouteBarChart from "./RouteBarChart";
 
 export default function Dashboard() {
-  const [mode, setMode] = useState<
+  const [moded1, setModed1] = useState<
     "avg-waiting-time" | "avg-queue-length" | "avg-utilization"
   >("avg-waiting-time");
+
+  const [moded4, setModed4] = useState<
+    "avg-traveling-time" | "avg-traveling-distance"
+  >("avg-traveling-time");
 
   // All available routes with colors
   const allRoutes = useMemo(
     () =>
       [
-        ["1", "สาย 1", "#c084fc"],
-        ["2", "สาย 2", "#2e9f4d"],
-        ["3", "สาย 3", "#86efac"],
-        ["4", "สาย 4", "#ef4444"],
-        ["5", "สาย 5", "#fbbf24"],
-        ["6", "สาย 6", "#ec4899"],
-        ["7", "สาย 7", "#2747b3"],
-        ["8", "สาย 8", "#87ceeb"],
-        ["9", "สาย 9", "#9ca3af"],
+        ["1", "สาย 1", "#76218a"],
+        ["2", "สาย 2", "#3a8345"],
+        ["3", "สาย 3", "#49fd36"],
+        ["4", "สาย 4", "#f80512"],
+        ["5", "สาย 5", "#f7bc16"],
+        ["6", "สาย 6", "#fc2898"],
+        ["7", "สาย 7", "#0e16b2"],
+        ["8", "สาย 8", "#83c8f9"],
+        ["9", "สาย 9", "#7a644e"],
       ] as [string, string, string][],
     []
   );
@@ -51,6 +55,32 @@ export default function Dashboard() {
     ["4", 320],
     ["1", 280],
     ["5", 1250],
+  ];
+
+  // Mock data for RouteBarChart (avg traveling time in minutes)
+  const travelingTimeData: [string, number][] = [
+    ["1", 18.5],
+    ["2", 15.2],
+    ["3", 9.3],
+    ["4", 21.0],
+    ["5", 12.8],
+    ["6", 8.9],
+    ["7", 6.5],
+    ["8", 18.2],
+    ["9", 19.5],
+  ];
+
+  // Mock data for RouteBarChart (avg traveling distance in km)
+  const travelingDistanceData: [string, number][] = [
+    ["1", 12.5],
+    ["2", 10.2],
+    ["3", 8.3],
+    ["4", 15.8],
+    ["5", 9.7],
+    ["6", 7.2],
+    ["7", 5.8],
+    ["8", 11.9],
+    ["9", 13.2],
   ];
 
   const dataset = useMemo(
@@ -223,41 +253,41 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="dashboard-bg ">
-      <div className="flex gap-6 w-full">
+    <div className="w-[100vw] flex flex-col ">
+      <div className="flex gap-3 w-full justify-center items-stretch">
         <div className="w-[50%] dashboard-block flex">
           <div className="w-[85%]">
-            <div className="flex flex-wrap justify-around mb-4 mx-auto">
+            <div className="flex flex-wrap mx-auto gap-4">
               <button
                 type="button"
                 className={`whitespace-nowrap ${
-                  mode === "avg-waiting-time"
-                    ? "mapareabtn_selected"
-                    : "mapareabtn_unselected"
+                  moded1 === "avg-waiting-time"
+                    ? "dashboard-btn_selected"
+                    : "dashboard-btn_unselected"
                 }`}
-                onClick={() => setMode("avg-waiting-time")}
+                onClick={() => setModed1("avg-waiting-time")}
               >
                 Avg. Waiting Time
               </button>
               <button
                 type="button"
                 className={`whitespace-nowrap ${
-                  mode === "avg-queue-length"
-                    ? "mapareabtn_selected"
-                    : "mapareabtn_unselected"
+                  moded1 === "avg-queue-length"
+                    ? "dashboard-btn_selected"
+                    : "dashboard-btn_unselected"
                 }`}
-                onClick={() => setMode("avg-queue-length")}
+                onClick={() => setModed1("avg-queue-length")}
               >
                 Avg. Queue Length
               </button>
               <button
                 type="button"
                 className={`whitespace-nowrap ${
-                  mode === "avg-utilization"
-                    ? "mapareabtn_selected"
-                    : "mapareabtn_unselected"
+                  moded1 === "avg-utilization"
+                    ? "dashboard-btn_selected"
+                    : "dashboard-btn_unselected"
                 }`}
-                onClick={() => setMode("avg-utilization")}
+                onClick={() => setModed1("avg-utilization")}
               >
                 Avg. Utilization
               </button>
@@ -267,7 +297,7 @@ export default function Dashboard() {
                 timeslot={15}
                 route={routes}
                 dataset={dataset}
-                mode={mode}
+                mode={moded1}
               />
             </div>
           </div>
@@ -295,8 +325,83 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        <div className="w-[45%] dashboard-block flex flex-col">
+          <p className="chart-header mb-2">
+            Top 3 : Most popular line by customer
+          </p>
+          <TopRoutesChart
+            route={allRoutes}
+            customerData={customerData}
+            limit={3}
+          />
+        </div>
+      </div>
 
-          <TopRoutesChart route={allRoutes} customerData={customerData} limit={3} />
+      {/* Route Bar Charts Section */}
+      <div className="flex gap-3 w-full mt-3 justify-center items-stretch">
+        <div className="w-[40%] dashboard-block">
+          <p className="chart-header mb-2">Passenger Waiting Density</p>
+          <div className="bg-gray-200 rounded flex items-center justify-center h-[90%]">
+            <span className="text-gray-500">Map placeholder</span>
+          </div>
+        </div>
+        <div className="w-[40%] dashboard-block">
+          <div className="flex flex-wrap mb-4 mx-auto gap-4">
+            <button
+              type="button"
+              className={`whitespace-nowrap ${
+                moded4 === "avg-traveling-time"
+                  ? "dashboard-btn_selected"
+                  : "dashboard-btn_unselected"
+              }`}
+              onClick={() => setModed4("avg-traveling-time")}
+            >
+              Avg. Traveling Time
+            </button>
+            <button
+              type="button"
+              className={`whitespace-nowrap ${
+                moded4 === "avg-traveling-distance"
+                  ? "dashboard-btn_selected"
+                  : "dashboard-btn_unselected"
+              }`}
+              onClick={() => setModed4("avg-traveling-distance")}
+            >
+              Avg. Traveling Distance
+            </button>
+          </div>
+          <RouteBarChart
+            route={allRoutes}
+            dataset={
+              moded4 === "avg-traveling-time"
+                ? travelingTimeData
+                : travelingDistanceData
+            }
+            mode={moded4}
+          />
+        </div>
+        <div className="w-[14%] flex flex-col justify-between">
+          <div className="dashboard-card flex flex-col items-center justify-center">
+            <p className="chart-header">13 mins</p>
+            <p className="chart-context">Avg. Waiting Time</p>
+          </div>
+          <div className="dashboard-card flex flex-col items-center justify-center">
+            <p className="chart-header">5 persons</p>
+            <p className="chart-context">Avg. Queue Length</p>
+          </div>
+          <div className="dashboard-card flex flex-col items-center justify-center">
+            <p className="chart-header">24%</p>
+            <p className="chart-context">Avg. Utilization</p>
+          </div>
+          <div className="dashboard-card flex flex-col items-center justify-center">
+            <p className="chart-header">18 mins</p>
+            <p className="chart-context">Avg. Traveling Time</p>
+          </div>
+          <div className="dashboard-card flex flex-col items-center justify-center">
+            <p className="chart-header">48 km</p>
+            <p className="chart-context">Avg. Traveling Distance</p>
+          </div>
+        </div>
       </div>
     </div>
   );

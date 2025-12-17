@@ -10,17 +10,18 @@ TRAVEL_TIMES = {
     ('A', 'C'): 11, ('C', 'B'): 14, ('B', 'A'): 13,
 }
 
-# Docking capacity per station
+# Docking capacity per station (Bus bays/platforms)
 DOCK_CAPACITY = {'A': 2, 'B': 1, 'C': 1}
 
-# Train routes (Route ID: [Station 1, Station 2, ...])
-TRAIN_ROUTES = {
+# Bus routes (Route ID: [Station 1, Station 2, ...])
+BUS_ROUTES = { 
     'RedLine': ['A', 'B', 'C'],
     'BlueLine': ['A', 'C', 'B'],
 }
 
 STATION_STOP_TIME = 3          # Stop/Load/Unload time (minutes)
-TRAIN_CAPACITY = 5             # Maximum passenger capacity
+# BUS_CAPACITY = 5               # Maximum passenger capacity (Renamed from TRAIN_CAPACITY)
+BUS_CAPACITY = { 'B1': 5, 'B2': 3, 'B3': 12 }  # Different capacities per bus
 PASSENGER_INTERARRIVAL_MEAN = 5 # Mean inter-arrival time for passengers
 SIMULATION_DURATION = 200      # Simulation duration (minutes)
 
@@ -56,44 +57,47 @@ class Passenger(sim.Component):
         yield self.passivate()
         add_log(f'{self.env.now():.1f}: {self.name} unloads (exits system)')
 
-
-# --- 4. Component: Train ---
-class Train(sim.Component):
+# --- 4. Component: Bus --- (Renamed from Train)
+class Bus(sim.Component):
     registry = []
 
-    def __init__(self, route_id, route_stations, *args, **kwargs):
+    def __init__(self, route_id, route_stations, bus_type, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        Train.registry.append(self)
+        Bus.registry.append(self)
 
         self.route_id = route_id
         self.route = [stations[name] for name in route_stations]
-        self.capacity = TRAIN_CAPACITY
+
+        # ---------------------------
+        # กำหนดความจุจาก bus_type
+        # ---------------------------
+        self.bus_type = bus_type
+        self.capacity = BUS_CAPACITY[bus_type]   # ← ใช้ dictionary ที่ตั้งไว้
+
         self.passengers_on_board = []
-        self.name = f"Train_{route_id}"
+        self.name = f"Bus_{route_id}_{bus_type}"
         self.route_index = 0
         self.current_station = self.route[0]
 
     def process(self):
         while True:
             yield self.request(self.current_station.dock)
-            add_log(f"\n{self.env.now():.1f}: {self.name} is docking at {self.current_station.name}")
+            add_log(f"\n{self.env.now():.1f}: {self.name} docking at {self.current_station.name}")
 
             # --- UNLOAD ---
-            # NOTE: Unloading logic is simplified/randomized in this version
             is_last_station = (self.route_index == len(self.route) - 1)
-            # Randomly decide how many passengers to unload (or all at the last station)
-            n_unload = len(self.passengers_on_board) if is_last_station else random.randint(0, len(self.passengers_on_board)) 
+            n_unload = len(self.passengers_on_board) if is_last_station else random.randint(0, len(self.passengers_on_board))
 
             if n_unload > 0:
                 for p in self.passengers_on_board[:n_unload]:
-                    add_log(f"{self.env.now():.1f}: {self.name} - drops off {p.name}")
+                    add_log(f"{self.env.now():.1f}: {self.name} drops off {p.name}")
                     p.activate()
 
                 self.passengers_on_board = self.passengers_on_board[n_unload:]
             else:
-                add_log(f"{self.env.now():.1f}: {self.name} has no passengers to unload")
+                add_log(f"{self.env.now():.1f}: {self.name} no passengers to unload")
 
-            add_log(f"{self.env.now():.1f}: {self.name} remaining passengers: {len(self.passengers_on_board)}")
+            add_log(f"{self.env.now():.1f}: {self.name} remaining {len(self.passengers_on_board)} passengers")
 
             # --- STOP TIME ---
             yield self.hold(STATION_STOP_TIME)
@@ -108,15 +112,14 @@ class Train(sim.Component):
                 loaded += 1
                 add_log(f"{self.env.now():.1f}: {self.name} picks up {p.name}")
 
-            add_log(f"{self.env.now():.1f}: {self.name} loaded {loaded} | Total {len(self.passengers_on_board)} passengers")
+            add_log(f"{self.env.now():.1f}: {self.name} loaded {loaded} | total {len(self.passengers_on_board)}")
 
             self.release(self.current_station.dock)
 
             # --- MOVE ---
             next_index = (self.route_index + 1) % len(self.route)
             next_station = self.route[next_index]
-            travel_key = (self.current_station.name, next_station.name)
-            travel_time = TRAVEL_TIMES[travel_key]
+            travel_time = TRAVEL_TIMES[(self.current_station.name, next_station.name)]
 
             add_log(f"{self.env.now():.1f}: {self.name} traveling to {next_station.name} ({travel_time} minutes)")
             yield self.hold(travel_time)
@@ -141,14 +144,14 @@ class ArrivalGenerator(sim.Component):
 # --- 6. Run simulation function ---
 def run_simulation():
     """
-    Sets up and runs the Salabim transport system simulation model.
+    Sets up and runs the Salabim transport system simulation model using buses.
     """
     global stations, SIM_LOGS
     SIM_LOGS = []
     stations = {}
 
     # reset registry
-    Train.registry = []
+    Bus.registry = [] # Changed registry
     Passenger.registry = []
 
     env = sim.Environment(random_seed=42)
@@ -163,9 +166,9 @@ def run_simulation():
     ArrivalGenerator(station_B, name='Gen_B')
     ArrivalGenerator(station_C, name='Gen_C')
 
-    # trains
-    Train('R1', TRAIN_ROUTES['RedLine'])
-    Train('R2', TRAIN_ROUTES['BlueLine'])
+    # buses (Renamed from trains)
+    Bus('R1', BUS_ROUTES['RedLine'],'B1') # Changed class and route dict reference
+    Bus('R2', BUS_ROUTES['BlueLine'],'B2') # Changed class and route dict reference
 
     add_log("Starting simulation system")
     env.run(till=SIMULATION_DURATION)
@@ -180,19 +183,19 @@ def run_simulation():
         for name, st in stations.items()
     }
 
-    # --- Train stats ---
-    train_stats = [
+    # --- Bus stats --- (Renamed from Train stats)
+    bus_stats = [
         {
-            "train": t.name,
+            "bus": t.name, # Changed key
             "route": [s.name for s in t.route],
             "final_station": t.current_station.name,
             "passengers_on_board": len(t.passengers_on_board)
         }
-        for t in Train.registry
+        for t in Bus.registry # Changed registry reference
     ]
 
     return {
         "station_stats": station_stats,
-        "train_stats": train_stats,
+        "bus_stats": bus_stats, # Changed key
         "logs": SIM_LOGS
     }

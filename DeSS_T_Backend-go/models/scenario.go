@@ -2,8 +2,8 @@ package models
 
 
 type Scenario struct {
-    RouteScenario []RouteScenario `json:"RouteScenario"`
-    BusScenario   []BusScenario   `json:"BusScenario"`
+    Route_Scenario []Route_Scenario `json:"RouteScenario"`
+    Bus_Scenario   []Bus_Scenario   `json:"BusScenario"`
 }
 
 // ------------------- MODEL ROUTE --------------------
@@ -22,7 +22,7 @@ type Route_Path struct {
 type Order_Path struct {
     OrderID     string  `json:"OrderID"`
     OrderNumber int     `json:"OrderNumber"`
-    StationPair string  `json:"StationPair"`
+    StationPairID string  `json:"StationPairID"`
 }
 
 
@@ -38,6 +38,7 @@ type Bus_Scenario struct {
 type Bus_Schedule struct {
     BusScheduleID string `json:"BusScheduleID"`
     RoutePathID   string `json:"RoutePathID"`
+    ScheduleData   string `json:"ScheduleData"`
 }
 
 type Bus_Information struct {

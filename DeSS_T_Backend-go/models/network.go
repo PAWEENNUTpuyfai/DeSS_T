@@ -24,6 +24,7 @@ type GeoPoint struct {
 /* ─────────────── Station Pair ─────────────── */
 
 type Station_Pair struct {
+    StationPairID string        `json:"StationPairID"`
     FstStation   string        `json:"FstStation"`
     SndStation   string        `json:"SndStation"`
     RouteBetween Route_Between  `json:"RouteBetween"`

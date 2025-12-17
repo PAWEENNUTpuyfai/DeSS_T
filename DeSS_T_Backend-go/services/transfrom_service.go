@@ -2,6 +2,7 @@ package services
 import (
     "sort"
     "strings"
+	"strconv"
 	"DeSS_T_Backend-go/models"
 )
 
@@ -9,15 +10,18 @@ import (
 func TransformSimulationRequest(
     scenario models.Scenario,
     cfg models.Configuration,
+    timePeriods string,
 ) models.SimulationRequest {
 
     scenarioData := TransformScenario(scenario)
-    configurationData := TransformConfiguration(cfg)
+    configurationData := TransformConfiguration(cfg, timePeriods)
+
     return models.SimulationRequest{
         ConfigurationData: configurationData,
         ScenarioData:      scenarioData,
     }
 }
+
 
 func buildRouteOrder(orders []models.Order_Path) string {
     sort.Slice(orders, func(i, j int) bool {
@@ -93,28 +97,31 @@ func TransformScenario(
 
     return result
 }
+func TransformConfiguration(
+    cfg models.Configuration,
+    timePeriods string,
+) models.ConfigurationData {
 
-func TransformConfiguration(cfg models.Configuration) models.ConfigurationData {
-
-    // 1. RoutePair
     routePairs := make([]models.RoutePair, 0)
-
     for _, sp := range cfg.NetworkModel.StationPair {
-        rp := models.RoutePair{
-            RoutePairID: sp.StationPairID, // <-- จุดที่แก้
+        routePairs = append(routePairs, models.RoutePair{
+            RoutePairID: sp.StationPairID,
             FstStation:  sp.FstStation,
             SndStation:  sp.SndStation,
             TravelTime:  sp.RouteBetween.TravelTime,
             Distance:    sp.RouteBetween.Distance,
-        }
-        routePairs = append(routePairs, rp)
+        })
     }
 
-    // 2. Alighting Distribution
-    alightingData := groupFitItemsToSimData(cfg.AlightingDistribution.DataFitResponse)
+    alightingData := groupFitItemsToSimData(
+        cfg.AlightingDistribution.DataFitResponse,
+        timePeriods,
+    )
 
-    // 3. Interarrival Distribution
-    interarrivalData := groupFitItemsToSimData(cfg.InterarrivalDistribution.DataFitResponse)
+    interarrivalData := groupFitItemsToSimData(
+        cfg.InterarrivalDistribution.DataFitResponse,
+        timePeriods,
+    )
 
     return models.ConfigurationData{
         RoutePair:           routePairs,
@@ -124,27 +131,62 @@ func TransformConfiguration(cfg models.Configuration) models.ConfigurationData {
 }
 
 
-func groupFitItemsToSimData(items []models.FitItem) []models.SimData {
+func groupFitItemsToSimData(
+    items []models.FitItem,
+    timePeriods string,
+) []models.SimData {
 
     groups := make(map[string][]models.DisRecord)
 
     for _, item := range items {
+
+        if !isTimeRangeInPeriod(item.TimeRange, timePeriods) {
+            continue
+        }
+
         rec := models.DisRecord{
             Station:      item.Station,
             Distribution: item.Distribution,
             ArgumentList: item.ArgumentList,
         }
+
         groups[item.TimeRange] = append(groups[item.TimeRange], rec)
     }
 
-    // Convert map → slice
     result := make([]models.SimData, 0)
-    for timerange, recs := range groups {
+    for tr, recs := range groups {
         result = append(result, models.SimData{
-            TimeRange:        timerange,
+            TimeRange:  tr,
             DisRecords: recs,
         })
     }
 
     return result
+}
+
+func timeToMinute(t string) int {
+    parts := strings.Split(t, ".")
+    hour := atoi(parts[0])
+    min := 0
+    if len(parts) > 1 {
+        min = atoi(parts[1])
+    }
+    return hour*60 + min
+}
+
+func atoi(s string) int {
+    v, _ := strconv.Atoi(s)
+    return v
+}
+
+func isTimeRangeInPeriod(timeRange, period string) bool {
+
+    tr := strings.Split(timeRange, "-")
+    pr := strings.Split(period, "-")
+
+    trStart := timeToMinute(tr[0])
+    prStart := timeToMinute(pr[0])
+    prEnd := timeToMinute(pr[1])
+
+    return trStart >= prStart && trStart < prEnd
 }

@@ -35,8 +35,10 @@ L.Icon.Default.mergeOptions({
 interface ScenarioMapProps {
   stations: StationDetail[];
   route: EditableRoute | null;
+  allRoutes?: EditableRoute[]; // For Route mode - show all non-hidden routes
   onSelectStation: (stationId: string) => void;
   onResetRoute: () => void;
+  isEditingMode?: boolean; // True when editing a route
 }
 
 function geoPointToLatLng(g: GeoPoint): [number, number] {
@@ -74,8 +76,10 @@ function BoundsUpdater({ bounds }: { bounds?: [[number, number], [number, number
 export default function ScenarioMap({
   stations,
   route,
+  allRoutes,
   onSelectStation,
   onResetRoute,
+  isEditingMode = false,
 }: ScenarioMapProps) {
   const [center, setCenter] = useState<[number, number]>([13.75, 100.5]);
   const bounds = useMemo(() => {
@@ -107,13 +111,15 @@ export default function ScenarioMap({
   return (
     <div className="w-full h-full relative">
       <div className="absolute right-3 top-3 z-[1000] flex gap-2">
-        <button
-          className="px-3 py-1 rounded bg-white border text-sm shadow"
-          onClick={onResetRoute}
-          disabled={!route || route.stations.length === 0}
-        >
-          Clear path
-        </button>
+        {route && (
+          <button
+            className="px-3 py-1 rounded bg-white border text-sm shadow"
+            onClick={onResetRoute}
+            disabled={!route || route.stations.length === 0}
+          >
+            Clear path
+          </button>
+        )}
         {route && (
           <div className="px-3 py-1 rounded bg-white border text-sm shadow flex items-center gap-2">
             <span
@@ -146,7 +152,12 @@ export default function ScenarioMap({
             fillColor="#fff"
             fillOpacity={0.9}
             eventHandlers={{
-              click: () => onSelectStation(st.StationID),
+              click: () => {
+                // Only allow selection if not in editing mode, or if selecting for the current route
+                if (!isEditingMode || route?.stations.includes(st.StationID) === false) {
+                  onSelectStation(st.StationID);
+                }
+              },
             }}
           >
             <Popup>{st.StationName || st.StationID}</Popup>
@@ -154,7 +165,7 @@ export default function ScenarioMap({
         ))}
 
         {/* Route segments */}
-        {route?.segments.map((seg, idx) => (
+        {!route?.hidden && route?.segments.map((seg, idx) => (
           <Polyline
             key={`${seg.from}-${seg.to}-${idx}`}
             positions={seg.coords.map(([lon, lat]) => [lat, lon])}
@@ -168,6 +179,24 @@ export default function ScenarioMap({
             }}
           />
         ))}
+
+        {/* All routes (for Bus mode) */}
+        {allRoutes?.map((r) =>
+          !r.hidden && r.segments.map((seg, idx) => (
+            <Polyline
+              key={`${r.id}-${seg.from}-${seg.to}-${idx}`}
+              positions={seg.coords.map(([lon, lat]) => [lat, lon])}
+              pathOptions={{
+                color: r.color,
+                weight: 4,
+                opacity: 0.85,
+                dashArray: undefined,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+          ))
+        )}
 
         <BoundsUpdater bounds={bounds} />
       </MapContainer>

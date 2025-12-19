@@ -75,77 +75,65 @@ func OrsMatrix(stations []models.Station_Detail, key string) (*ORSMatrixResponse
 /* ───────────────────────────── ORS ROUTE ───────────────────────────── */
 
 func OrsRoute(start [2]float64, end [2]float64, key string) ([][2]float64, error) {
+	// Use /geojson suffix in URL path to get GeoJSON format
+	url := "https://api.openrouteservice.org/v2/directions/driving-car/geojson"
+	body := map[string]interface{}{
+		"coordinates": [][]float64{
+			{start[0], start[1]},
+			{end[0], end[1]},
+		},
+	}
 
-	url := fmt.Sprintf(
-		"https://api.openrouteservice.org/v2/directions/driving-car?api_key=%s&start=%f,%f&end=%f,%f",
-		key, start[0], start[1], end[0], end[1],
-	)
+	b, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(b))
+	req.Header.Set("Authorization", key)
+	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Get(url)
+	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Printf("❌ ORS request failed: %v\n", err)
 		return nil, fmt.Errorf("ORS Route request failed: %v", err)
 	}
 	defer resp.Body.Close()
 
 	data, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("ORS Route error: %s", string(data))
+		return nil, fmt.Errorf("ORS Route error (%d): %s", resp.StatusCode, string(data))
 	}
 
-	var parsed map[string]interface{}
+	// Parse GeoJSON FeatureCollection
+	var parsed struct {
+		Features []struct {
+			Geometry struct {
+				Coordinates [][]float64 `json:"coordinates"`
+			} `json:"geometry"`
+		} `json:"features"`
+	}
+
 	if err := json.Unmarshal(data, &parsed); err != nil {
-		// If parsing fails, fallback to straight line
-		return [][2]float64{start, end}, nil
+		return nil, fmt.Errorf("ORS parse error: %v", err)
+	}
+	if len(parsed.Features) == 0 {
+		return nil, fmt.Errorf("ORS returned no features")
 	}
 
-	routesAny, ok := parsed["routes"]
-	if !ok || routesAny == nil {
-		return [][2]float64{start, end}, nil
-	}
-	routes, ok := routesAny.([]interface{})
-	if !ok || len(routes) == 0 {
-		return [][2]float64{start, end}, nil
+	coords := parsed.Features[0].Geometry.Coordinates
+	if len(coords) == 0 {
+		return nil, fmt.Errorf("ORS returned empty coordinates")
 	}
 
-	first, ok := routes[0].(map[string]interface{})
-	if !ok {
-		return [][2]float64{start, end}, nil
-	}
-	geomAny, ok := first["geometry"]
-	if !ok || geomAny == nil {
-		return [][2]float64{start, end}, nil
-	}
-	geom, ok := geomAny.(map[string]interface{})
-	if !ok {
-		return [][2]float64{start, end}, nil
-	}
-	coordsAny, ok := geom["coordinates"]
-	if !ok || coordsAny == nil {
-		return [][2]float64{start, end}, nil
-	}
-	rawCoords, ok := coordsAny.([]interface{})
-	if !ok || len(rawCoords) == 0 {
-		return [][2]float64{start, end}, nil
-	}
-
-	result := [][2]float64{}
-	for _, c := range rawCoords {
-		p, ok := c.([]interface{})
-		if !ok || len(p) < 2 {
-			continue
+	result := make([][2]float64, 0, len(coords))
+	for _, c := range coords {
+		if len(c) >= 2 {
+			result = append(result, [2]float64{c[0], c[1]})
 		}
-		lon, lonOk := p[0].(float64)
-		lat, latOk := p[1].(float64)
-		if !lonOk || !latOk {
-			continue
-		}
-		result = append(result, [2]float64{lon, lat})
 	}
 
 	if len(result) == 0 {
-		return [][2]float64{start, end}, nil
+		return nil, fmt.Errorf("ORS coordinates invalid")
 	}
+
 	return result, nil
 }
 

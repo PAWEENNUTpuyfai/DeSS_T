@@ -3,7 +3,8 @@ import type { Configuration } from "../models/Configuration";
 import type { StationDetail, StationPair } from "../models/Network";
 import ScenarioMap from "./ScenarioMap";
 import type { RouteSegment } from "./ScenarioMap";
-import { fetchRouteGeometry } from "../../utility/api/routeApi";
+import { computeRouteSegments } from "../../utility/api/routeBatch";
+import { saveRoutes } from "../../utility/api/routeSave";
 import "../../style/Scenario.css";
 
 export default function Scenario({
@@ -21,7 +22,6 @@ export default function Scenario({
     configuration?.Network_model?.Station_detail ?? [];
   const edges: StationPair[] = configuration?.Network_model?.StationPair ?? [];
   const [transportMode, setTransportMode] = useState<"Route" | "Bus">("Route");
-  console.log("🔍 Scenario nodes count:", nodes.length, "nodes:", nodes);
   const colorOptions = useMemo(
     () => [
       "#3b82f6",
@@ -67,6 +67,7 @@ export default function Scenario({
   const [routes, setRoutes] = useState<SimpleRoute[]>([createRoute(0)]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [isFetchingSegment, setIsFetchingSegment] = useState(false);
+  const [originalStations, setOriginalStations] = useState<Record<string, string[]>>({});
 
   const updateBusInfo = (
     routeId: string,
@@ -131,7 +132,93 @@ export default function Scenario({
   };
 
   const editRoute = (routeId: string) => {
-    setSelectedRouteId(routeId);
+    const route = routes.find(r => r.id === routeId);
+    if (route) {
+      // Save original stations before editing
+      setOriginalStations(prev => ({ ...prev, [routeId]: [...route.stations] }));
+      // Clear stations to start from scratch
+      setRoutes(prev =>
+        prev.map(r => (r.id === routeId ? { ...r, stations: [], segments: [] } : r))
+      );
+      setSelectedRouteId(routeId);
+    }
+  };
+
+  const confirmEdit = async (routeId: string) => {
+    // Fetch route geometry for all consecutive station pairs
+    const route = routes.find((r) => r.id === routeId);
+    if (!route || route.stations.length < 2) {
+      // No stations to build route, just exit editing
+      setSelectedRouteId(null);
+      setOriginalStations(prev => {
+        const newState = { ...prev };
+        delete newState[routeId];
+        return newState;
+      });
+      return;
+    }
+
+    setIsFetchingSegment(true);
+    try {
+      // Build input points for backend: [lon,lat]
+      const pickCoord = (st: StationDetail): [number, number] | null => {
+        if ((st as any).Location?.coordinates) return (st as any).Location.coordinates as [number, number];
+        if ((st as any).location?.coordinates) return (st as any).location.coordinates as [number, number];
+        return null;
+      };
+
+      const points = route.stations
+        .map((id) => {
+          const st = nodes.find((n) => n.StationID === id);
+          const coord = st ? pickCoord(st) : null;
+          return coord ? { id, coord } : null;
+        })
+        .filter((p): p is { id: string; coord: [number, number] } => !!p);
+
+      if (points.length < 2) {
+        throw new Error("Not enough stations with coordinates to build route");
+      }
+
+      const apiSegments = await computeRouteSegments(points);
+      const newSegments: RouteSegment[] = apiSegments.map((s) => ({
+        from: s.from,
+        to: s.to,
+        coords: s.coords,
+      }));
+
+      // Update route with all segments
+      setRoutes((prev) =>
+        prev.map((r) => (r.id === routeId ? { ...r, segments: newSegments } : r))
+      );
+
+      // Clear editing state
+      setSelectedRouteId(null);
+      setOriginalStations(prev => {
+        const newState = { ...prev };
+        delete newState[routeId];
+        return newState;
+      });
+    } catch (err) {
+      console.error("Failed to build route geometry", err);
+    } finally {
+      setIsFetchingSegment(false);
+    }
+  };
+
+  const cancelEdit = (routeId: string) => {
+    // Restore original stations
+    const original = originalStations[routeId];
+    if (original) {
+      setRoutes(prev =>
+        prev.map(r => (r.id === routeId ? { ...r, stations: original } : r))
+      );
+    }
+    setSelectedRouteId(null);
+    setOriginalStations(prev => {
+      const newState = { ...prev };
+      delete newState[routeId];
+      return newState;
+    });
   };
 
   const resetRoutePath = (routeId: string) => {
@@ -159,77 +246,26 @@ export default function Scenario({
     return null;
   };
 
-  const handleSelectStationOnMap = async (stationId: string) => {
+  const handleSelectStationOnMap = (stationId: string) => {
     if (!selectedRouteId) return;
     const route = routes.find((r) => r.id === selectedRouteId);
     if (!route || route.locked) return;
 
-    // If first station, just set it
-    if (route.stations.length === 0) {
-      setRoutes((prev) =>
-        prev.map((r) =>
-          r.id === route.id ? { ...r, stations: [stationId], segments: [] } : r
-        )
-      );
-      return;
-    }
+    // If already in the route, don't add again
+    if (route.stations.includes(stationId)) return;
 
-    const lastStationId = route.stations[route.stations.length - 1];
-    if (lastStationId === stationId) return;
+    // Just add the station without fetching geometry yet
+    // Geometry will be fetched when confirm is clicked
+    setRoutes((prev) =>
+      prev.map((r) =>
+        r.id === route.id ? { ...r, stations: [...r.stations, stationId] } : r
+      )
+    );
+  };
 
-    const lastStation = nodes.find((n) => n.StationID === lastStationId);
-    const nextStation = nodes.find((n) => n.StationID === stationId);
-    if (!lastStation || !nextStation) return;
-
-    setIsFetchingSegment(true);
-    try {
-      // Try to get route geometry from pre-computed network model first
-      let segmentCoords = getRouteGeometryFromModel(lastStationId, stationId);
-      
-      // If not available in model, fetch from backend API
-      if (!segmentCoords) {
-        console.log(`ℹ️ Route geometry not in model, fetching from API...`);
-        const getCoordinates = (st: StationDetail): [number, number] | null => {
-          if (st.Location?.coordinates) return st.Location.coordinates as [number, number];
-          if (st.location?.coordinates) return st.location.coordinates as [number, number];
-          return null;
-        };
-
-        const lastCoords = getCoordinates(lastStation);
-        const nextCoords = getCoordinates(nextStation);
-        if (!lastCoords || !nextCoords) {
-          console.error("Station missing coordinates", { lastStation, nextStation });
-          return;
-        }
-
-        const segment = await fetchRouteGeometry(lastCoords, nextCoords);
-        segmentCoords = segment.coordinates;
-      } else {
-        console.log(`✅ Using route geometry from network model`);
-      }
-
-      const newSeg: RouteSegment = {
-        from: lastStationId,
-        to: stationId,
-        coords: segmentCoords,
-      };
-
-      setRoutes((prev) =>
-        prev.map((r) =>
-          r.id === route.id
-            ? {
-                ...r,
-                stations: [...r.stations, stationId],
-                segments: [...r.segments, newSeg],
-              }
-            : r
-        )
-      );
-    } catch (err) {
-      console.error("Fetch route failed", err);
-    } finally {
-      setIsFetchingSegment(false);
-    }
+  const handleSelectStationDisabled = () => {
+    // Do nothing - other routes disabled during edit mode
+    return;
   };
 
   return (
@@ -295,101 +331,153 @@ export default function Scenario({
             <div className="mt-4 p-4 w-full h-[85vh] flex flex-col">
               {/* Scrollable Routes List */}
               <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                {routes.map((r, idx) => (
-                  <div
-                    key={r.id}
-                    className={`bg-white rounded-xl shadow-md border border-gray-200 p-4 flex-shrink-0 ${
-                      r.hidden ? "opacity-60" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        className="h-9 w-9 rounded-lg border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-100"
-                        style={{ backgroundColor: r.color }}
-                        onClick={() => cycleColor(r.id)}
-                        onKeyDown={(e) => e.key === "Enter" && cycleColor(r.id)}
-                        aria-label="Change color"
-                      />
-                      <span className="text-sm text-gray-600">Name</span>
-                      <input
-                        className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-                        value={r.name}
-                        onChange={(e) => updateName(r.id, e.target.value)}
-                        disabled={r.locked}
-                      />
-                    </div>
-                    <div className="mt-3 text-sm text-gray-800 flex flex-wrap items-center gap-1">
-                      {r.stations.map((s, sIdx) => (
-                        <React.Fragment key={`${r.id}-st-${sIdx}`}>
-                          <span className="font-medium">{getStationName(s)}</span>
-                          {sIdx < r.stations.length - 1 && (
-                            <span className="text-gray-500">→</span>
+                {routes.map((r, idx) => {
+                  const isLocked = r.locked;
+                  const isHidden = r.hidden;
+                  const isBeingEdited = selectedRouteId === r.id;
+                  const isOtherRouteBeingEdited = selectedRouteId !== null && selectedRouteId !== r.id;
+                  const isDisabled = isLocked || isHidden || isOtherRouteBeingEdited;
+                  const bodyStyle = {
+                    opacity: isDisabled ? 0.5 : 1,
+                    pointerEvents: isDisabled ? "none" : "auto",
+                  } as const;
+
+                  return (
+                    <div
+                      key={r.id}
+                      className="rounded-xl border border-gray-200 overflow-hidden"
+                    >
+                      {/* Top row: Eye icon on left purple bg | Rest on white bg */}
+                      <div className="flex">
+                        {/* Left: Eye icon with purple background, rounded left corners, shadow */}
+                        <div className="flex items-center justify-center px-3 py-3 rounded-tl-xl rounded-bl-xl shadow-md" style={{ backgroundColor: "#81069E" }}>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Hide or show route"
+                            className="hover:opacity-80 cursor-pointer text-white text-lg"
+                            onClick={() => toggleHidden(r.id)}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && toggleHidden(r.id)
+                            }
+                          >
+                            {r.hidden ? "👁️‍🗨️" : "👁️"}
+                          </span>
+                        </div>
+                        
+                        {/* Right: Color, Name, Lock, Edit, Delete on white bg, rounded right top and bottom, shadow */}
+                        <div
+                          className="flex-1 flex items-center gap-2 px-4 py-3 bg-white rounded-tr-xl rounded-br-xl shadow-md"
+                          style={bodyStyle}
+                        >
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            className={`h-7 w-7 rounded border border-gray-300 flex-shrink-0 ${
+                              isDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:opacity-80"
+                            }`}
+                            style={{ backgroundColor: r.color }}
+                            onClick={() => !isDisabled && cycleColor(r.id)}
+                            onKeyDown={(e) => e.key === "Enter" && !isDisabled && cycleColor(r.id)}
+                            aria-label="Change color"
+                            aria-disabled={isDisabled}
+                          />
+                          <input
+                            className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+                            placeholder="Route name"
+                            value={r.name}
+                            onChange={(e) => updateName(r.id, e.target.value)}
+                            disabled={isDisabled}
+                          />
+                          {selectedRouteId === r.id ? (
+                            <>
+                              <button
+                                className="px-3 py-1 bg-green-600 text-white text-xs rounded-full hover:bg-green-700 transition-colors disabled:opacity-50"
+                                onClick={() => confirmEdit(r.id)}
+                                disabled={isFetchingSegment}
+                              >
+                                {isFetchingSegment ? "⏳ Building..." : "Confirm"}
+                              </button>
+                              <button
+                                className="px-3 py-1 bg-gray-500 text-white text-xs rounded-full hover:bg-gray-600 transition-colors disabled:opacity-50"
+                                onClick={() => cancelEdit(r.id)}
+                                disabled={isFetchingSegment}
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Lock or unlock route"
+                                className="hover:text-purple-700 cursor-pointer text-gray-600"
+                                onClick={() => toggleLocked(r.id)}
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" && toggleLocked(r.id)
+                                }
+                              >
+                                {r.locked ? "🔒" : "🔓"}
+                              </span>
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Edit route"
+                                className={`text-gray-600 ${
+                                  isDisabled ? "opacity-50 cursor-not-allowed" : "hover:text-purple-700 cursor-pointer"
+                                }`}
+                                onClick={() => !isDisabled && editRoute(r.id)}
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" && !isDisabled && editRoute(r.id)
+                                }
+                                aria-disabled={isDisabled}
+                              >
+                                ✏️
+                              </span>
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Delete route"
+                                className={`text-gray-600 ${
+                                  isDisabled ? "opacity-50 cursor-not-allowed" : "hover:text-purple-700 cursor-pointer"
+                                }`}
+                                onClick={() => !isDisabled && removeRoute(r.id)}
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" && !isDisabled && removeRoute(r.id)
+                                }
+                                aria-disabled={isDisabled}
+                              >
+                                🗑️
+                              </span>
+                            </>
                           )}
-                        </React.Fragment>
-                      ))}
-                      {r.stations.length === 0 && (
-                        <span className="text-gray-400">
-                          Select stations from map
-                        </span>
-                      )}
-                    </div>
-                    {idx === routes.length - 1 && r.stations.length === 0 && (
-                      <div className="text-center text-gray-400 text-sm mt-2">
-                        Empty
+                        </div>
                       </div>
-                    )}
-                    <div className="flex items-center gap-2 text-gray-600 ml-auto">
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Hide or show route"
-                        className="hover:text-purple-700 cursor-pointer"
-                        onClick={() => toggleHidden(r.id)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && toggleHidden(r.id)
-                        }
+
+                      {/* Bottom row: Station names with light gray background */}
+                      <div
+                        className="text-sm text-gray-800 flex flex-wrap items-center gap-1 min-h-[32px] px-4 py-2"
+                        style={{ backgroundColor: "#F4F4F4", ...bodyStyle }}
                       >
-                        {r.hidden ? "👁️‍🗨️" : "👁️"}
-                      </span>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Lock or unlock route"
-                        className="hover:text-purple-700 cursor-pointer"
-                        onClick={() => toggleLocked(r.id)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && toggleLocked(r.id)
-                        }
-                      >
-                        {r.locked ? "🔒" : "🔓"}
-                      </span>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Edit route"
-                        className="hover:text-purple-700 cursor-pointer"
-                        onClick={() => editRoute(r.id)}
-                        onKeyDown={(e) => e.key === "Enter" && editRoute(r.id)}
-                      >
-                        ✏️
-                      </span>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Delete route"
-                        className="hover:text-purple-700 cursor-pointer"
-                        onClick={() => removeRoute(r.id)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && removeRoute(r.id)
-                        }
-                      >
-                        🗑️
-                      </span>
+                        {r.stations.length > 0 ? (
+                          r.stations.map((s, sIdx) => (
+                            <React.Fragment key={`${r.id}-st-${sIdx}`}>
+                              <span className="font-medium">{getStationName(s)}</span>
+                              {sIdx < r.stations.length - 1 && (
+                                <span className="text-gray-500">→</span>
+                              )}
+                            </React.Fragment>
+                          ))
+                        ) : (
+                          <span className="text-gray-400 italic w-full text-center">
+                            empty
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* New Route Button */}
@@ -420,95 +508,111 @@ export default function Scenario({
 
               {/* Scrollable Routes List */}
               <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                {routes.map((route) => (
-                  <div
-                    key={route.id}
-                    className="bg-white rounded-xl shadow-md border border-gray-200 p-4 flex-shrink-0"
-                  >
-                    <div
-                      className="text-white rounded-t-lg -mx-4 -mt-4 px-4 py-3 mb-4"
-                      style={{ backgroundColor: route.color }}
-                    >
-                      <h4 className="text-lg font-semibold">
-                        Bus Information - {route.name}
-                      </h4>
-                    </div>
+                {routes.map((route) => {
+                  const busLocked = route.locked;
+                  const busCardStyle = {
+                    opacity: busLocked ? 0.5 : 1,
+                    pointerEvents: busLocked ? "none" : "auto",
+                  } as const;
 
-                    {/* Parameters */}
-                    <div className="space-y-4">
-                      {[
-                        {
-                          label: "Max Distance :",
-                          key: "maxDistance" as const,
-                          unit: "km",
-                        },
-                        {
-                          label: "Speed :",
-                          key: "speed" as const,
-                          unit: "km/hr",
-                        },
-                        {
-                          label: "Capacity :",
-                          key: "capacity" as const,
-                          unit: "persons",
-                        },
-                        {
-                          label: "Max Bus :",
-                          key: "maxBuses" as const,
-                          unit: "buses",
-                        },
-                      ].map((field) => (
-                        <div
-                          key={field.key}
-                          className="flex items-center gap-3"
-                        >
-                          <span className="text-sm font-medium text-gray-700 min-w-fit">
-                            {field.label}
-                          </span>
-                          <input
-                            type="number"
-                            value={route[field.key] || 0}
-                            onChange={(e) =>
-                              updateBusInfo(
-                                route.id,
-                                field.key,
-                                Number(e.target.value)
-                              )
-                            }
-                            className="border border-gray-300 rounded px-3 py-1 w-20 text-center focus:outline-none focus:ring-2 focus:ring-purple-300"
-                          />
-                          <span className="text-sm text-gray-600">
-                            {field.unit}
-                          </span>
-                        </div>
-                      ))}
+                  return (
+                    <div
+                      key={route.id}
+                      className="bg-white rounded-xl shadow-md border border-gray-200 p-4 flex-shrink-0"
+                      style={busCardStyle}
+                    >
+                      <div
+                        className="text-white rounded-t-lg -mx-4 -mt-4 px-4 py-3 mb-4"
+                        style={{ backgroundColor: route.color }}
+                      >
+                        <h4 className="text-lg font-semibold">
+                          Bus Information - {route.name}
+                        </h4>
+                      </div>
+
+                      {/* Parameters */}
+                      <div className="space-y-4">
+                        {[
+                          {
+                            label: "Max Distance :",
+                            key: "maxDistance" as const,
+                            unit: "km",
+                          },
+                          {
+                            label: "Speed :",
+                            key: "speed" as const,
+                            unit: "km/hr",
+                          },
+                          {
+                            label: "Capacity :",
+                            key: "capacity" as const,
+                            unit: "persons",
+                          },
+                          {
+                            label: "Max Bus :",
+                            key: "maxBuses" as const,
+                            unit: "buses",
+                          },
+                        ].map((field) => (
+                          <div
+                            key={field.key}
+                            className="flex items-center gap-3"
+                          >
+                            <span className="text-sm font-medium text-gray-700 min-w-fit">
+                              {field.label}
+                            </span>
+                            <input
+                              type="number"
+                              value={route[field.key] || 0}
+                              onChange={(e) =>
+                                updateBusInfo(
+                                  route.id,
+                                  field.key,
+                                  Number(e.target.value)
+                                )
+                              }
+                              disabled={busLocked}
+                              className="border border-gray-300 rounded px-3 py-1 w-20 text-center focus:outline-none focus:ring-2 focus:ring-purple-300"
+                            />
+                            <span className="text-sm text-gray-600">
+                              {field.unit}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
 
-          {/* Map editor */}
-          {transportMode === "Route" && (
-            <div className="flex-1 h-[85vh] mt-4">
-              <ScenarioMap
-                stations={nodes}
-                route={
-                  routes.find((r) => r.id === selectedRouteId) ||
-                  (routes.length ? routes[0] : null)
-                }
-                onSelectStation={handleSelectStationOnMap}
-                onResetRoute={() =>
-                  selectedRouteId && resetRoutePath(selectedRouteId)
-                }
-              />
-              {isFetchingSegment && (
-                <div className="text-sm text-gray-600 mt-2">Building route...</div>
-              )}
-            </div>
-          )}
+          {/* Shared map for both Route and Bus modes */}
+          <div className="flex-1 h-[85vh] mt-4">
+            <ScenarioMap
+              stations={nodes}
+              route={
+                transportMode === "Route"
+                  ? routes.find((r) => r.id === selectedRouteId) ||
+                    (routes.length ? routes[0] : null)
+                  : null
+              }
+              allRoutes={
+                transportMode === "Route"
+                  ? routes.filter(r => !r.hidden && r.id !== selectedRouteId)
+                  : routes.filter(r => !r.hidden)
+              }
+              onSelectStation={transportMode === "Route" && selectedRouteId ? handleSelectStationOnMap : handleSelectStationDisabled}
+              onResetRoute={() =>
+                selectedRouteId && resetRoutePath(selectedRouteId)
+              }
+              isEditingMode={transportMode === "Route" && !!selectedRouteId}
+            />
+            {isFetchingSegment && transportMode === "Route" && (
+              <div className="text-sm text-gray-600 mt-2">Building route...</div>
+            )}
+          </div>
         </div>
       </div>
     </main>

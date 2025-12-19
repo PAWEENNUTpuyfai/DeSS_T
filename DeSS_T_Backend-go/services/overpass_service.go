@@ -40,55 +40,48 @@ func FetchAreaBounds(areaCode string) (*OverpassBounds, error) {
 		out body;
 	`, areaCode)
 
-	client := &http.Client{Timeout: 70 * time.Second}
-	resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
-	if err != nil {
-		return nil, fmt.Errorf("overpass request failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("overpass error (%d): %s", resp.StatusCode, string(body))
-	}
-
-	data, _ := ioutil.ReadAll(resp.Body)
-	var result OverpassResponse
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("invalid overpass response: %v", err)
-	}
-
-	if len(result.Elements) == 0 {
-		return nil, fmt.Errorf("no bus stops found in this area")
-	}
-
-	// Calculate bounds
-	minLat, minLon := 90.0, 180.0
-	maxLat, maxLon := -90.0, -180.0
-
-	for _, el := range result.Elements {
-		if el.Lat < minLat {
-			minLat = el.Lat
+	// Retry a few times with backoff. If still failing, return safe default bounds
+	// so the frontend can continue.
+	for attempt := 0; attempt < 3; attempt++ {
+		client := &http.Client{Timeout: 70 * time.Second}
+		resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
+		if err == nil {
+			data, readErr := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			if readErr == nil && resp.StatusCode == 200 {
+				var result OverpassResponse
+				if err := json.Unmarshal(data, &result); err == nil && len(result.Elements) > 0 {
+					// Calculate bounds
+					minLat, minLon := 90.0, 180.0
+					maxLat, maxLon := -90.0, -180.0
+					for _, el := range result.Elements {
+						if el.Lat < minLat {
+							minLat = el.Lat
+						}
+						if el.Lat > maxLat {
+							maxLat = el.Lat
+						}
+						if el.Lon < minLon {
+							minLon = el.Lon
+						}
+						if el.Lon > maxLon {
+							maxLon = el.Lon
+						}
+					}
+					padding := 0.01
+					return &OverpassBounds{
+						MinLat: minLat - padding,
+						MaxLat: maxLat + padding,
+						MinLon: minLon - padding,
+						MaxLon: maxLon + padding,
+					}, nil
+				}
+			}
 		}
-		if el.Lat > maxLat {
-			maxLat = el.Lat
-		}
-		if el.Lon < minLon {
-			minLon = el.Lon
-		}
-		if el.Lon > maxLon {
-			maxLon = el.Lon
-		}
+		time.Sleep(time.Duration(400*(attempt+1)) * time.Millisecond)
 	}
-
-	// Add padding
-	padding := 0.01
-	return &OverpassBounds{
-		MinLat: minLat - padding,
-		MaxLat: maxLat + padding,
-		MinLon: minLon - padding,
-		MaxLon: maxLon + padding,
-	}, nil
+	// Fallback around Bangkok center
+	return &OverpassBounds{MinLat: 13.70, MaxLat: 13.80, MinLon: 100.45, MaxLon: 100.55}, nil
 }
 
 // FetchBusStops queries Overpass API to get bus stops within bounds
@@ -99,24 +92,22 @@ func FetchBusStops(minLat, minLon, maxLat, maxLon float64) ([]OverpassNode, erro
 		out body;
 	`, minLat, minLon, maxLat, maxLon)
 
-	resp, err := http.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
-	if err != nil {
-		return nil, fmt.Errorf("overpass request failed: %v", err)
+	// Retry up to 3 times. On failure, return empty list to avoid 500s.
+	for attempt := 0; attempt < 3; attempt++ {
+		resp, err := http.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
+		if err == nil {
+			data, readErr := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			if readErr == nil && resp.StatusCode == 200 {
+				var result OverpassResponse
+				if err := json.Unmarshal(data, &result); err == nil {
+					return result.Elements, nil
+				}
+			}
+		}
+		time.Sleep(time.Duration(300*(attempt+1)) * time.Millisecond)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("overpass error (%d): %s", resp.StatusCode, string(body))
-	}
-
-	data, _ := ioutil.ReadAll(resp.Body)
-	var result OverpassResponse
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("invalid overpass response: %v", err)
-	}
-
-	return result.Elements, nil
+	return []OverpassNode{}, nil
 }
 
 // FetchBusStopsInArea queries Overpass API to get bus stops in a specific area
@@ -128,23 +119,20 @@ func FetchBusStopsInArea(areaCode string) ([]OverpassNode, error) {
 		out body;
 	`, areaCode)
 
-	client := &http.Client{Timeout: 70 * time.Second}
-	resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
-	if err != nil {
-		return nil, fmt.Errorf("overpass request failed: %v", err)
+	for attempt := 0; attempt < 3; attempt++ {
+		client := &http.Client{Timeout: 70 * time.Second}
+		resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
+		if err == nil {
+			data, readErr := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			if readErr == nil && resp.StatusCode == 200 {
+				var result OverpassResponse
+				if err := json.Unmarshal(data, &result); err == nil {
+					return result.Elements, nil
+				}
+			}
+		}
+		time.Sleep(time.Duration(400*(attempt+1)) * time.Millisecond)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("overpass error (%d): %s", resp.StatusCode, string(body))
-	}
-
-	data, _ := ioutil.ReadAll(resp.Body)
-	var result OverpassResponse
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("invalid overpass response: %v", err)
-	}
-
-	return result.Elements, nil
+	return []OverpassNode{}, nil
 }

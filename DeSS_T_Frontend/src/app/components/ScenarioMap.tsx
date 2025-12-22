@@ -24,11 +24,13 @@ export type EditableRoute = {
   stations: string[];
   segments: RouteSegment[];
   locked?: boolean;
+  hidden?: boolean;
 };
 
 L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
@@ -64,7 +66,11 @@ function stationToLatLng(s: StationDetail): [number, number] {
   return [13.75, 100.5];
 }
 
-function BoundsUpdater({ bounds }: { bounds?: [[number, number], [number, number]] }) {
+function BoundsUpdater({
+  bounds,
+}: {
+  bounds?: [[number, number], [number, number]];
+}) {
   const map = useMap();
   useEffect(() => {
     if (!bounds) return;
@@ -148,13 +154,18 @@ export default function ScenarioMap({
             key={st.StationID}
             center={stationToLatLng(st)}
             radius={6}
-            color={route?.stations.includes(st.StationID) ? route?.color : "#eeb34b"}
+            color={
+              route?.stations.includes(st.StationID) ? route?.color : "#eeb34b"
+            }
             fillColor="#fff"
             fillOpacity={0.9}
             eventHandlers={{
               click: () => {
                 // Only allow selection if not in editing mode, or if selecting for the current route
-                if (!isEditingMode || route?.stations.includes(st.StationID) === false) {
+                if (
+                  !isEditingMode ||
+                  route?.stations.includes(st.StationID) === false
+                ) {
                   onSelectStation(st.StationID);
                 }
               },
@@ -165,29 +176,13 @@ export default function ScenarioMap({
         ))}
 
         {/* Route segments */}
-        {!route?.hidden && route?.segments.map((seg, idx) => (
-          <Polyline
-            key={`${seg.from}-${seg.to}-${idx}`}
-            positions={seg.coords.map(([lon, lat]) => [lat, lon])}
-            pathOptions={{
-              color: route.color,
-              weight: 4,
-              opacity: 0.85,
-              dashArray: undefined,
-              lineCap: "round",
-              lineJoin: "round",
-            }}
-          />
-        ))}
-
-        {/* All routes (for Bus mode) */}
-        {allRoutes?.map((r) =>
-          !r.hidden && r.segments.map((seg, idx) => (
+        {!route?.hidden &&
+          route?.segments.map((seg, idx) => (
             <Polyline
-              key={`${r.id}-${seg.from}-${seg.to}-${idx}`}
+              key={`${seg.from}-${seg.to}-${idx}`}
               positions={seg.coords.map(([lon, lat]) => [lat, lon])}
               pathOptions={{
-                color: r.color,
+                color: route.color,
                 weight: 4,
                 opacity: 0.85,
                 dashArray: undefined,
@@ -195,7 +190,26 @@ export default function ScenarioMap({
                 lineJoin: "round",
               }}
             />
-          ))
+          ))}
+
+        {/* All routes (for Bus mode) */}
+        {allRoutes?.map(
+          (r) =>
+            !r.hidden &&
+            r.segments.map((seg, idx) => (
+              <Polyline
+                key={`${r.id}-${seg.from}-${seg.to}-${idx}`}
+                positions={seg.coords.map(([lon, lat]) => [lat, lon])}
+                pathOptions={{
+                  color: r.color,
+                  weight: 4,
+                  opacity: 0.85,
+                  dashArray: undefined,
+                  lineCap: "round",
+                  lineJoin: "round",
+                }}
+              />
+            ))
         )}
 
         <BoundsUpdater bounds={bounds} />

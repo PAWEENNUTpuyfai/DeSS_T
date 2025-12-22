@@ -188,7 +188,11 @@ export default function LineChart({
         {/* Scrollable chart area */}
         <div
           className="overflow-x-auto pb-2 bg-white"
-          style={{ marginLeft: `${paddingLeft}px` }}
+          style={{ 
+            marginLeft: `${paddingLeft}px`,
+            scrollbarColor: '#d1d5db white',
+            scrollbarWidth: 'thin'
+          }}
         >
           <svg
             width={chartWidth}

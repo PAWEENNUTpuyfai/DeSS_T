@@ -528,7 +528,7 @@ export default function Scenario({
                               </div>
                             )}
                             <input
-                              className="flex-1 border border-[#1b1b1b] border-2 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-[80px]"
+                              className="flex-1 border border-[#1b1b1b] border-2 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-[80px] bg-white text-gray-900"
                               placeholder="Route name"
                               value={r.name}
                               onChange={(e) => updateName(r.id, e.target.value)}

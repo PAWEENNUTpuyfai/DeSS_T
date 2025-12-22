@@ -87,14 +87,16 @@ export default function LineChart({
   const paddingRight = 16;
   const paddingTop = 40;
   const paddingBottom = 28;
+  const dataOffsetLeft = 30; // extra space for first data point
   const minWidthPerTick = 60; // prevent label overlap
   const chartWidth = Math.max(
     400,
     paddingLeft +
       paddingRight +
+      dataOffsetLeft +
       Math.max(0, xTicks.length - 1) * minWidthPerTick
   );
-  const innerWidth = chartWidth - paddingLeft - paddingRight;
+  const innerWidth = chartWidth - paddingLeft - paddingRight - dataOffsetLeft;
   const innerHeight = chartHeight - paddingTop - paddingBottom;
 
   const lineSpacing = 30;
@@ -108,8 +110,8 @@ export default function LineChart({
 
   // Helpers to map data to SVG coords
   const xPos = (t: number) => {
-    if (maxTime === minTime) return paddingLeft;
-    return paddingLeft + ((t - minTime) / (maxTime - minTime)) * innerWidth;
+    if (maxTime === minTime) return paddingLeft + dataOffsetLeft;
+    return paddingLeft + dataOffsetLeft + ((t - minTime) / (maxTime - minTime)) * innerWidth;
   };
 
   const yPos = (v: number) => {
@@ -185,8 +187,12 @@ export default function LineChart({
 
         {/* Scrollable chart area */}
         <div
-          className="overflow-x-auto pb-2 "
-          style={{ marginLeft: `${paddingLeft}px` }}
+          className="overflow-x-auto pb-2 bg-white"
+          style={{ 
+            marginLeft: `${paddingLeft}px`,
+            scrollbarColor: '#d1d5db white',
+            scrollbarWidth: 'thin'
+          }}
         >
           <svg
             width={chartWidth}

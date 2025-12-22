@@ -383,7 +383,7 @@ export default function Scenario({
                             aria-disabled={isDisabled}
                           />
                           <input
-                            className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+                            className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-300"
                             placeholder="Route name"
                             value={r.name}
                             onChange={(e) => updateName(r.id, e.target.value)}

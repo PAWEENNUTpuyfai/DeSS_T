@@ -1,0 +1,20 @@
+.main-btn {
+  background: #ffffff;
+  border: 3px solid #81069e;
+  border-radius: 35px;
+}
+
+.text-dropdown {
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 28px;
+  color: #c296cd;
+}
+
+.option-container {
+  background: #f4f4f4;
+  border: 3px solid #81069e;
+  border-radius: 35px;
+}

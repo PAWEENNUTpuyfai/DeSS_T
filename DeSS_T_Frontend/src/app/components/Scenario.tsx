@@ -8,6 +8,7 @@ import { saveRoutes } from "../../utility/api/routeSave";
 import { SketchPicker, type ColorResult } from "react-color";
 import CustomDropdown from "./CustomDropdown";
 import "../../style/Scenario.css";
+import HelpButton from "./HelpButton";
 
 export default function Scenario({
   configuration,
@@ -63,10 +64,10 @@ export default function Scenario({
     segments: [],
     hidden: false,
     locked: false,
-    maxDistance: 40,
-    speed: 40,
-    capacity: 21,
-    maxBuses: 21,
+    maxDistance: 70,
+    speed: 60,
+    capacity: 16,
+    maxBuses: 4,
   });
 
   const [routes, setRoutes] = useState<SimpleRoute[]>([createRoute(0)]);
@@ -402,7 +403,9 @@ export default function Scenario({
           </div>
           <div className="config-name mr-10 flex gap-2 items-center">
             <p>Configuration Data : </p>
-            <p className="text-[#81069e]">{configurationName || "Guest Setup"}</p>
+            <p className="text-[#81069e]">
+              {configurationName || "Guest Setup"}
+            </p>
           </div>
         </div>
 
@@ -811,12 +814,47 @@ export default function Scenario({
             {transportMode === "Bus" && (
               <div className="mt-4 p-4 w-full h-[85vh] flex flex-col">
                 {/* File Upload */}
-                <div className="mb-6">
-                  <div className="text-sm font-semibold mb-2 text-purple-700">
-                    Bus Schedule (.xlsx)
+                <div className="mb-6 pr-2 ">
+                  <div className="flex justify-between items-center pr-1  mb-2">
+                    <h3 className="content_title">Bus Schedule</h3>{" "}
+                    <HelpButton helpType="Schedule" />
                   </div>
-                  <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 text-center cursor-pointer hover:bg-purple-50">
-                    <div className="text-gray-400">drop file (.xlsx)</div>
+                  <input
+                    id="bus-schedule-file"
+                    type="file"
+                    accept=".xlsx"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      // You can set bus schedule file here
+                      // setBusScheduleFile(f);
+                    }}
+                  />
+                  <div
+                    className="p-6 border-2 border-dashed border-[#81069e] rounded-[20px] bg-white cursor-pointer flex flex-col items-center justify-center min-h-[120px] hover:bg-gray-50"
+                    onClick={() =>
+                      (
+                        document.getElementById(
+                          "bus-schedule-file"
+                        ) as HTMLInputElement | null
+                      )?.click()
+                    }
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const f = e.dataTransfer?.files?.[0];
+                      if (f) {
+                        // Handle file drop
+                        // setBusScheduleFile(f);
+                      }
+                    }}
+                  >
+                    <p className="text-gray-600 mb-2">
+                      Drag and drop file here (.xlsx)
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      or click to select file
+                    </p>
                   </div>
                 </div>
 
@@ -904,7 +942,7 @@ export default function Scenario({
 
           {/* Shared map for both Route and Bus modes */}
           <div className="map-container flex-1 h-[90vh] flex flex-col items-center px-16">
-            <div className="my-4 flex w-full text-header-map justify-between items-center">
+            <div className="my-4 flex w-full text-header-map justify-start gap-10 items-center">
               <div className="flex items-center ">
                 <p>Simulation Period :</p>
                 <div className="time-inputs p-2 px-4 text-[#C296CD] ml-3 my-2 h-[60px] flex items-center">

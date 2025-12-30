@@ -38,7 +38,7 @@ export default function CustomDropdown({
   return (
     <div
       ref={dropdownRef}
-      className="relative inline-block min-w-[200px] z-[9999]"
+      className="relative inline-block min-w-[200px] z-[7000]"
     >
       {/* Main Button */}
       <span

@@ -23,7 +23,6 @@ body {
 
 
 button {
-  background: #81069e;
   border-radius: 20px;
   height: 40px;
   font-family: "Lexend";
@@ -32,12 +31,6 @@ button {
   font-size: 18px;
   line-height: 15px;
   text-align: center;
-  color: #ffffff;
-  border: none;
   cursor: pointer;
   transition: all 0.6s ease;
-}
-
-button:hover {
-  background: #5d0971;
 }

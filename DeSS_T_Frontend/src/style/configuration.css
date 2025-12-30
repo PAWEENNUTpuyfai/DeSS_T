@@ -305,7 +305,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
+  z-index: 8000; /* keep modal above*/
   padding: 1.5rem;
   cursor: pointer;
 }

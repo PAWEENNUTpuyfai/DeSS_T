@@ -4,12 +4,15 @@ export interface NetworkModel {
   StationPair: StationPair[];
 }
 
+export type LatLng = [number, number];
+
 export interface StationDetail {
   StationID: string;
   StationName: string;
-  location: GeoPoint;
-  Lat: string;
-  Lon: string;
+  Location: GeoPoint;
+  location?: GeoPoint;  // fallback lowercase
+  Lat?: string;
+  Lon?: string;
 }
 
 export interface GeoPoint {

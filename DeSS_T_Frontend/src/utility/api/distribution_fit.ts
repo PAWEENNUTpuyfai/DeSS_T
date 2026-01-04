@@ -7,10 +7,23 @@ export async function AlightingFitFromXlsx(
   const form = new FormData();
   form.append("file", file);
 
-  const res = await fetch(`${API_BASE_URL}/guest/alighting/distribution_fit`, {
-    method: "POST",
-    body: form,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/guest/alighting/distribution_fit`, {
+      method: "POST",
+      body: form,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if ((err as any)?.name === "AbortError") {
+      throw new Error("Alighting fit request timed out. Please try again.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     throw new Error(`API error: ${res.statusText}`);
@@ -25,13 +38,28 @@ export async function InterarrivalFitFromXlsx(
   const form = new FormData();
   form.append("file", file);
 
-  const res = await fetch(
-    `${API_BASE_URL}/guest/interarrival/distribution_fit`,
-    {
-      method: "POST",
-      body: form,
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  let res: Response;
+  try {
+    res = await fetch(
+      `${API_BASE_URL}/guest/interarrival/distribution_fit`,
+      {
+        method: "POST",
+        body: form,
+        signal: controller.signal,
+      }
+    );
+  } catch (err) {
+    if ((err as any)?.name === "AbortError") {
+      throw new Error(
+        "Interarrival fit request timed out. Please try again."
+      );
     }
-  );
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     throw new Error(`API error: ${res.statusText}`);

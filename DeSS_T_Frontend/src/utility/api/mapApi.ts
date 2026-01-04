@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+
 export type OverpassBounds = {
   minlat: number;
   maxlat: number;
@@ -12,112 +14,57 @@ export type OverpassNode = {
   tags?: Record<string, any>;
 };
 
-const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
-
 export async function fetchAreaBounds(areaCode: string): Promise<OverpassBounds> {
+  const res = await fetch(`${API_BASE_URL}/network/area-bounds`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ area_code: areaCode }),
+  });
 
-  const query = `
-    [out:json][timeout:60];
-    area(${areaCode})->.searchArea;
-    (
-      node["highway"="bus_stop"](area.searchArea);
-    );
-    out body;
-  `;
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 70000); // 70 second timeout
-
-    const res = await fetch(OVERPASS_URL, { 
-      method: "POST", 
-      body: query,
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (!res.ok) throw new Error(`Overpass error: ${res.statusText}`);
-    const data = await res.json();
-    
-    const elements = data.elements ?? [];
-    if (elements.length === 0) {
-      throw new Error("ไม่พบ bus stop ในพื้นที่นี้");
-    }
-
-    let minlat = Infinity,
-      minlon = Infinity,
-      maxlat = -Infinity,
-      maxlon = -Infinity;
-
-    for (const el of elements) {
-      if (el.lat !== undefined && el.lon !== undefined) {
-        if (el.lat < minlat) minlat = el.lat;
-        if (el.lat > maxlat) maxlat = el.lat;
-        if (el.lon < minlon) minlon = el.lon;
-        if (el.lon > maxlon) maxlon = el.lon;
-      }
-    }
-
-    if (minlat === Infinity) {
-      throw new Error("ไม่พบขอบเขต (bounds) สำหรับ area code นี้");
-    }
-
-    // Add small padding (0.01 degrees ≈ 1km)
-    const padding = 0.01;
-    return {
-      minlat: minlat - padding,
-      maxlat: maxlat + padding,
-      minlon: minlon - padding,
-      maxlon: maxlon + padding,
-    } as OverpassBounds;
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error("Overpass API timeout - ลองใหม่อีกครั้ง");
-    }
-    throw err;
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Backend error: ${error}`);
   }
+
+  return await res.json();
 }
+
 export async function fetchBusStops(bounds: [[number, number], [number, number]]): Promise<OverpassNode[]> {
   const [sw, ne] = bounds;
-  const query = `
-    [out:json][timeout:25];
-    node["highway"="bus_stop"](${sw[0]},${sw[1]},${ne[0]},${ne[1]});
-    out body;
-  `;
+  const res = await fetch(`${API_BASE_URL}/network/bus-stops`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      min_lat: sw[0],
+      min_lon: sw[1],
+      max_lat: ne[0],
+      max_lon: ne[1],
+    }),
+  });
 
-  const res = await fetch(OVERPASS_URL, { method: "POST", body: query });
-  if (!res.ok) throw new Error(`Overpass error: ${res.statusText}`);
-  const data = await res.json();
-  return (data.elements ?? []) as OverpassNode[];
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Backend error: ${error}`);
+  }
+
+  return await res.json();
 }
 
 export async function fetchBusStopsInArea(areaCode: string): Promise<OverpassNode[]> {
-  const query = `
-    [out:json][timeout:60];
-    area(${areaCode})->.searchArea;
-    node["highway"="bus_stop"](area.searchArea);
-    out body;
-  `;
+  const res = await fetch(`${API_BASE_URL}/network/bus-stops-area`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ area_code: areaCode }),
+  });
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 70000);
-
-    const res = await fetch(OVERPASS_URL, { method: "POST", body: query, signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (!res.ok) throw new Error(`Overpass error: ${res.statusText}`);
-    const data = await res.json();
-    return (data.elements ?? []) as OverpassNode[];
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('Overpass API timeout - ลองใหม่อีกครั้ง');
-    }
-    throw err;
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Backend error: ${error}`);
   }
+
+  return await res.json();
 }
 
 export async function fetchAreaGeometry(areaCode: string): Promise<[number, number][][]> {
-
   return [];
 }

@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
-import MapViewer from "./MapViewer";
-import GuestScenario from "./GuestScenario";
+import MapViewer from "../MapViewer";
+import Scenario from "../Scenario";
 import ConfigurationNav from "./ConfigurationNav";
-import GuestConfigurationFiles from "./GuestConfigurationFiles";
-import type { StationDetail } from "../models/Network";
-import type { Configuration } from "../models/Configuration";
+import ConfigurationFiles from "./ConfigurationFiles";
+import LoadingModal from "../LoadingModal";
+import type { StationDetail } from "../../models/Network";
+import HelpButton from "../HelpButton";
+import type { Configuration } from "../../models/Configuration";
 
-export default function GuestConfiguration() {
+interface ConfigurationMapProps {
+  mode?: "guest" | "user";
+  configurationName?: string;
+}
+
+export default function ConfigurationMap({
+  mode = "guest",
+  configurationName,
+}: ConfigurationMapProps = {}) {
   // File upload state - cleared when going back
   const [submittedConfig, setSubmittedConfig] = useState<Configuration | null>(
     null
@@ -61,7 +71,7 @@ export default function GuestConfiguration() {
       }
 
       try {
-        const mapApi = await import("../../utility/api/mapApi");
+        const mapApi = await import("../../../utility/api/mapApi");
         const bb = await mapApi.fetchAreaBounds(areaCode);
 
         // Fetch bus stops within the administrative area (use area query to avoid extra outside stops)
@@ -71,6 +81,7 @@ export default function GuestConfiguration() {
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
           StationID: String(stop.id),
           StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
+          Location: { type: "Point", coordinates: [stop.lon, stop.lat] },
           location: { type: "Point", coordinates: [stop.lon, stop.lat] },
           Lat: String(stop.lat),
           Lon: String(stop.lon),
@@ -99,7 +110,7 @@ export default function GuestConfiguration() {
 
     // For manual mode, also fetch bus stops and create NetworkGraph
     try {
-      const mapApi = await import("../../utility/api/mapApi");
+      const mapApi = await import("../../../utility/api/mapApi");
       const busStopsData = await mapApi.fetchBusStops([
         [minLat, minLon],
         [maxLat, maxLon],
@@ -108,6 +119,7 @@ export default function GuestConfiguration() {
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
         StationID: String(stop.id),
         StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
+        Location: { type: "Point", coordinates: [stop.lon, stop.lat] },
         location: { type: "Point", coordinates: [stop.lon, stop.lat] },
         Lat: String(stop.lat),
         Lon: String(stop.lon),
@@ -134,13 +146,14 @@ export default function GuestConfiguration() {
       }
 
       try {
-        const mapApi = await import("../../utility/api/mapApi");
+        const mapApi = await import("../../../utility/api/mapApi");
         const bb = await mapApi.fetchAreaBounds(areaCode);
         const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
 
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
           StationID: String(stop.id),
           StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
+          Location: { type: "Point", coordinates: [stop.lon, stop.lat] },
           location: { type: "Point", coordinates: [stop.lon, stop.lat] },
           Lat: String(stop.lat),
           Lon: String(stop.lon),
@@ -165,7 +178,7 @@ export default function GuestConfiguration() {
 
     // manual lat/lon mode
     try {
-      const mapApi = await import("../../utility/api/mapApi");
+      const mapApi = await import("../../../utility/api/mapApi");
       const busStopsData = await mapApi.fetchBusStops([
         [minLat, minLon],
         [maxLat, maxLon],
@@ -174,6 +187,7 @@ export default function GuestConfiguration() {
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
         StationID: String(stop.id),
         StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
+        Location: { type: "Point", coordinates: [stop.lon, stop.lat] },
         location: { type: "Point", coordinates: [stop.lon, stop.lat] },
         Lat: String(stop.lat),
         Lon: String(stop.lon),
@@ -193,8 +207,9 @@ export default function GuestConfiguration() {
   // Render GuestScenario if config submitted
   if (submittedConfig) {
     return (
-      <GuestScenario
+      <Scenario
         configuration={submittedConfig}
+        mode={mode}
         onBack={() => setSubmittedConfig(null)}
       />
     );
@@ -203,9 +218,11 @@ export default function GuestConfiguration() {
   // Render file upload page if map confirmed
   if (mapConfirmed && mapBounds && stationDetails) {
     return (
-      <GuestConfigurationFiles
+      <ConfigurationFiles
         stationDetails={stationDetails}
         mapBounds={mapBounds}
+        mode={mode}
+        configurationName={configurationName}
         onBack={() => {
           setMapConfirmed(false);
           setMapBounds(undefined);
@@ -219,9 +236,10 @@ export default function GuestConfiguration() {
   // Default: render map configuration page
   return (
     <>
-      <ConfigurationNav mode="guest" />
-      <main style={{ marginTop: "50px" }}>
-        <div className="content h-full">
+      <ConfigurationNav mode={mode} configurationName={configurationName} />
+      <main>
+        <div className="h-[12vh]"></div>
+        <div className="content h-full mx-auto">
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
             {/* Left: Map */}
             <div
@@ -234,27 +252,19 @@ export default function GuestConfiguration() {
                 minLon={mapBounds?.minLon}
                 maxLon={mapBounds?.maxLon}
                 areaCode={mapMode === "area" ? areaCode : undefined}
-                externalBusStops={
-                  stationDetails
-                    ? stationDetails.map((s) => ({
-                        id: Number(s.StationID),
-                        position: [Number(s.Lat), Number(s.Lon)] as [
-                          number,
-                          number
-                        ],
-                        name: s.StationName,
-                      }))
-                    : undefined
-                }
+                stationDetails={stationDetails || undefined}
               />
             </div>
 
             {/* Right: Map Configuration */}
-            <div className="flex-1 flex flex-col gap-6 h-full py-8">
-              <h3 className="content_title">Map Area Configuration</h3>
+            <div className="flex-1 flex flex-col gap-3 h-full py-6">
+              <div className="flex justify-between items-center mt-2 pr-1">
+                <h3 className="content_title">Map Area Configuration</h3>{" "}
+                <HelpButton helpType="Map" />
+              </div>
               <div
                 className="border border-[#81069e] rounded-[20px]  bg-white space-y-4 p-2"
-                style={{ borderWidth: "3px" }}
+                style={{ borderWidth: "2px" }}
               >
                 <div className="flex">
                   <button
@@ -267,83 +277,133 @@ export default function GuestConfiguration() {
                         : "mapareabtn_unselected"
                     }`}
                   >
-                    Area Code
+                    area code
                   </button>
 
                   <button
                     type="button"
                     aria-pressed={mapMode === "manual"}
                     onClick={() => setMapMode("manual")}
-                    className={`${
+                    className={`ml-2 ${
                       mapMode === "manual"
                         ? "mapareabtn_selected"
                         : "mapareabtn_unselected"
                     }`}
                   >
-                    Lat / Lon
+                    coordinate
                   </button>
                 </div>
                 <div>
                   {mapMode === "area" ? (
                     <input
                       type="text"
-                      placeholder="กรอก area code เช่น 189632187 (มหาวิทยาลัยเชียงใหม่)"
+                      placeholder="e.g. 189632187 (Chiang Mai University)"
                       value={areaCode}
                       onChange={(e) => setAreaCode(e.target.value)}
-                      className="border p-3 w-[90%] rounded mx-4 mb-4"
+                      className="border p-3 w-[90%] rounded-[20px] mx-4 mb-4 bg-white"
                     />
                   ) : (
-                    <div className="grid grid-cols-2 gap-3 mx-4 mb-4">
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={minLat}
-                        onChange={(e) => setMinLat(parseFloat(e.target.value))}
-                        className="border p-2 rounded"
-                        placeholder="minLat"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={maxLat}
-                        onChange={(e) => setMaxLat(parseFloat(e.target.value))}
-                        className="border p-2 rounded"
-                        placeholder="maxLat"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={minLon}
-                        onChange={(e) => setMinLon(parseFloat(e.target.value))}
-                        className="border p-2 rounded"
-                        placeholder="minLon"
-                      />
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={maxLon}
-                        onChange={(e) => setMaxLon(parseFloat(e.target.value))}
-                        className="border p-2 rounded"
-                        placeholder="maxLon"
-                      />
+                    <div className="mx-4 mb-4">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="col-start-2 flex flex-col items-center">
+                          <label className="text-xs text-gray-600 mb-1">
+                            North - Max Latitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={maxLat}
+                            onChange={(e) =>
+                              setMaxLat(parseFloat(e.target.value))
+                            }
+                            className="border p-2 rounded-[20px] bg-white w-full"
+                            placeholder="Max Lat"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="flex flex-col items-center">
+                          <label className="text-xs text-gray-600 mb-1">
+                            West - Min Longitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={minLon}
+                            onChange={(e) =>
+                              setMinLon(parseFloat(e.target.value))
+                            }
+                            className="border p-2 rounded-[20px] bg-white w-full"
+                            placeholder="Min Lon"
+                          />
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <span className="text-gray-400 text-sm">
+                            Map Area
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <label className="text-xs text-gray-600 mb-1">
+                            East - Max Longitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={maxLon}
+                            onChange={(e) =>
+                              setMaxLon(parseFloat(e.target.value))
+                            }
+                            className="border p-2 rounded-[20px] bg-white w-full"
+                            placeholder="Max Lon"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="col-start-2 flex flex-col items-center">
+                          <label className="text-xs text-gray-600 mb-1">
+                            South - Min Latitude
+                          </label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={minLat}
+                            onChange={(e) =>
+                              setMinLat(parseFloat(e.target.value))
+                            }
+                            className="border p-2 rounded-[20px] bg-white w-full"
+                            placeholder="Min Lat"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-2 flex gap-3 justify-end">
-                <button onClick={handleCheckMap} className="btn_secondary">
-                  Check Map
-                </button>
-                <button onClick={handleConfirmMap} className="btn_primary">
-                  Confirm Map
-                </button>
+              <div className="flex justify-between mt-4 mb-2">
+                <h3 className="content_title">Station Lists</h3>
+                {stationDetails && stationDetails.length > 0 && (
+                  <span className="text-sm text-gray-600 mr-2">
+                    Total: {stationDetails.length} stations
+                  </span>
+                )}
               </div>
-
-              <div className="min-h-[100px]">
+              <div
+                className="border border-[#81069e] rounded-[20px]  bg-white space-y-4 p-2"
+                style={{ borderWidth: "2px" }}
+              >
                 {loadingStops && (
                   <div className="border rounded px-3 py-3 text-sm text-gray-600">
-                    กำลังโหลดข้อมูลป้ายรถ...
+                    Loading data ...
+                  </div>
+                )}
+
+                {!loadingStops && !stationDetails && (
+                  <div className="px-3 py-3 text-sm text-gray-600 flex gap-2">
+                    Click <p className="text-[#81069e]">Check Map</p> to display
+                    station list
                   </div>
                 )}
 
@@ -351,12 +411,6 @@ export default function GuestConfiguration() {
                   stationDetails &&
                   stationDetails.length > 0 && (
                     <div className="">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold">Bus Stops</h4>
-                        <span className="text-xs text-gray-500">
-                          {stationDetails.length} stops
-                        </span>
-                      </div>
                       <div className="border rounded overflow-hidden max-h-64 overflow-y-auto">
                         <table className="min-w-full text-sm">
                           <thead className="bg-gray-100">
@@ -401,9 +455,20 @@ export default function GuestConfiguration() {
                     </div>
                   )}
               </div>
+
+              <div className="mt-2 flex gap-3 justify-end">
+                <button onClick={handleCheckMap} className="btn_secondary">
+                  Check Map
+                </button>
+                <button onClick={handleConfirmMap} className="btn_primary">
+                  Confirm Map
+                </button>
+              </div>
             </div>
           </div>
         </div>
+
+        <LoadingModal isOpen={loadingStops} message="Loading data..." />
       </main>
     </>
   );

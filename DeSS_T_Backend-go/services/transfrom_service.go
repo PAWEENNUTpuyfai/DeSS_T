@@ -11,12 +11,15 @@ func TransformSimulationRequest(
     scenario models.Scenario,
     cfg models.Configuration,
     timePeriods string,
+    timeSlot string,
 ) models.SimulationRequest {
 
     scenarioData := TransformScenario(scenario)
     configurationData := TransformConfiguration(cfg, timePeriods)
 
     return models.SimulationRequest{
+        TimePeriod:       timePeriods,
+        TimeSlot:        timeSlot,
         ConfigurationData: configurationData,
         ScenarioData:      scenarioData,
     }
@@ -113,6 +116,14 @@ func TransformConfiguration(
         })
     }
 
+    stationList := make([]models.StationList, 0)
+    for _, s := range cfg.NetworkModel.StationDetail {
+        stationList = append(stationList, models.StationList{
+            StationID:   s.StationID,
+            StationName: s.StationName,
+        })
+    }
+
     alightingData := groupFitItemsToSimData(
         cfg.AlightingDistribution.DataFitResponse,
         timePeriods,
@@ -124,6 +135,7 @@ func TransformConfiguration(
     )
 
     return models.ConfigurationData{
+        StationList:        stationList,
         RoutePair:           routePairs,
         AlightingSimData:    alightingData,
         InterarrivalSimData: interarrivalData,

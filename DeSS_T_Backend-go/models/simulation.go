@@ -1,6 +1,8 @@
 package models
 
 type SimulationRequest struct {
+	TimePeriod string `json:"time_period"`
+	TimeSlot string `json:"time_slot"`
 	ConfigurationData ConfigurationData `json:"configuration_data"`
 	ScenarioData []ScenarioData `json:"scenario_data"`
 }
@@ -25,9 +27,15 @@ type RouteBusInformation struct {
 }
 
 type ConfigurationData struct {
+	StationList []StationList `json:"station_list"`
 	RoutePair []RoutePair `json:"route_pair"`
 	AlightingSimData []SimData `json:"alighting_data"`
 	InterarrivalSimData []SimData `json:"interarrival_data"`
+}
+
+type StationList struct {
+	StationID string `json:"station_id"`
+	StationName string `json:"station_name"`
 }
 
 type RoutePair struct {
@@ -49,7 +57,48 @@ type DisRecord struct {
 	ArgumentList string `json:"ArgumentList"`
 }
 
-type SimulationResponse struct {
-	Result string `json:"result"`
-	Logs   []string `json:"logs"`
+
+// ---------------- SimulationResult ----------------
+
+type SimulationResult struct {
+    ResultSummary ResultSummary          `json:"result_summary"`
+    SlotResults   []SimulationSlotResult `json:"slot_results"`
+}
+
+// ---------------- SimulationSlotResult ----------------
+
+type SimulationSlotResult struct {
+    SlotName       string          `json:"slot_name"`
+    ResultStation  []ResultStation `json:"result_station"`
+    ResultRoute    []ResultRoute   `json:"result_route"`
+}
+
+// ---------------- ResultSummary ----------------
+
+type ResultSummary struct {
+    AverageWaitingTime     float64 `json:"average_waiting_time"`
+    AverageQueueLength    float64 `json:"average_queue_length"`
+    AverageUtilization    float64 `json:"average_utilization"`
+    AverageTravelTime     float64 `json:"average_travel_time"`
+    AverageTravelDistance float64 `json:"average_travel_distance"`
+}
+
+// ---------------- ResultStation ----------------
+
+type ResultStation struct {
+    StationName        string  `json:"station_name"`
+    AverageWaitingTime float64 `json:"average_waiting_time"`
+    AverageQueueLength float64 `json:"average_queue_length"`
+}
+
+// ---------------- ResultRoute ----------------
+
+type ResultRoute struct {
+    RouteID               string  `json:"route_id"`
+    AverageUtilization    float64 `json:"average_utilization"`
+    AverageTravelTime     float64 `json:"average_travel_time"`
+    AverageTravelDistance float64 `json:"average_travel_distance"`
+    AverageWaitingTime    float64 `json:"average_waiting_time"`
+    AverageQueueLength    float64 `json:"average_queue_length"`
+    CustomersCount        int     `json:"customers_count"`
 }

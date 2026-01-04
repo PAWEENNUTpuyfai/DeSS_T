@@ -21,6 +21,7 @@ func TransformSimulationHandler(c *fiber.Ctx) error {
 		req.Scenario,
 		req.Configuration,
         req.TimePeriods,
+		req.TimeSlot,
 	)
 
 	return c.JSON(result)

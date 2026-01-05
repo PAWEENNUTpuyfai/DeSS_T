@@ -67,9 +67,9 @@ func TransformScenario(
 
     var result []models.ScenarioData
 
-    scheduleMap, busInfoMap := indexBusScenario(scenario.BusScenario)
+    scheduleMap, busInfoMap := indexBusScenario(scenario.Bus_Scenario)
 
-    for _, rs := range scenario.RouteScenario {
+    for _, rs := range scenario.Route_Scenario {
         for _, rp := range rs.RoutePath {
 
             routeOrder := buildRouteOrder(rp.Order)

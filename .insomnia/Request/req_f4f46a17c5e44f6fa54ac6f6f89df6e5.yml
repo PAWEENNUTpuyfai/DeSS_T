@@ -1,0 +1,175 @@
+_id: req_f4f46a17c5e44f6fa54ac6f6f89df6e5
+type: Request
+parentId: fld_52fd31d4af8f48a8b54a8593cd81d59c
+modified: 1767518820864
+created: 1767272790237
+url: http://localhost:5000/api/simulate
+name: SIm2
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: >-
+    {
+      "time_period": "10.00-19.00",
+    	"time_slot": 15,
+      "configuration_data": {
+        "station_list": [
+          {"station_id": "A", "station_name": "Station A"},
+          {"station_id": "B", "station_name": "Station B"},
+          {"station_id": "C", "station_name": "Station C"},
+          {"station_id": "D", "station_name": "Station D"},
+          {"station_id": "E", "station_name": "Station E"}
+        ],
+        "route_pair": [
+          {"route_pair_id": "RP01", "fst_station": "A", "snd_station": "B", "travel_time": 5, "distance": 1.2},
+          {"route_pair_id": "RP02", "fst_station": "B", "snd_station": "A", "travel_time": 6, "distance": 1.2},
+          {"route_pair_id": "RP03", "fst_station": "B", "snd_station": "C", "travel_time": 7, "distance": 1.8},
+          {"route_pair_id": "RP04", "fst_station": "C", "snd_station": "B", "travel_time": 7, "distance": 1.8},
+          {"route_pair_id": "RP05", "fst_station": "C", "snd_station": "D", "travel_time": 10, "distance": 2.5},
+          {"route_pair_id": "RP06", "fst_station": "D", "snd_station": "C", "travel_time": 10, "distance": 2.5},
+          {"route_pair_id": "RP07", "fst_station": "B", "snd_station": "E", "travel_time": 8, "distance": 2.0},
+          {"route_pair_id": "RP08", "fst_station": "E", "snd_station": "B", "travel_time": 8, "distance": 2.0},
+          {"route_pair_id": "RP09", "fst_station": "E", "snd_station": "A", "travel_time": 12, "distance": 3.0},
+          {"route_pair_id": "RP10", "fst_station": "A", "snd_station": "E", "travel_time": 12, "distance": 3.0},
+          {"route_pair_id": "RP11", "fst_station": "D", "snd_station": "E", "travel_time": 15, "distance": 4.2},
+          {"route_pair_id": "RP12", "fst_station": "E", "snd_station": "D", "travel_time": 15, "distance": 4.2}
+        ],
+        "alighting_data": [
+          {
+            "time_range": "10.00-12.00",
+            "alighting_records": [
+              {"station": "A", "Distribution": "exponential", "ArgumentList": "rate=0.1"},
+              {"station": "B", "Distribution": "exponential", "ArgumentList": "rate=0.2"},
+              {"station": "C", "Distribution": "exponential", "ArgumentList": "rate=0.1"},
+              {"station": "D", "Distribution": "exponential", "ArgumentList": "rate=0.05"},
+              {"station": "E", "Distribution": "exponential", "ArgumentList": "rate=0.05"}
+            ]
+          },
+          {
+            "time_range": "12.01-14.00",
+            "alighting_records": [
+              {"station": "A", "Distribution": "exponential", "ArgumentList": "rate=0.3"},
+              {"station": "B", "Distribution": "exponential", "ArgumentList": "rate=0.5"},
+              {"station": "C", "Distribution": "exponential", "ArgumentList": "rate=0.4"},
+              {"station": "D", "Distribution": "exponential", "ArgumentList": "rate=0.2"},
+              {"station": "E", "Distribution": "exponential", "ArgumentList": "rate=0.2"}
+            ]
+          },
+          {
+            "time_range": "14.01-16.00",
+            "alighting_records": [
+              {"station": "A", "Distribution": "exponential", "ArgumentList": "rate=0.2"},
+              {"station": "B", "Distribution": "exponential", "ArgumentList": "rate=0.3"},
+              {"station": "C", "Distribution": "exponential", "ArgumentList": "rate=0.25"},
+              {"station": "D", "Distribution": "exponential", "ArgumentList": "rate=0.15"},
+              {"station": "E", "Distribution": "exponential", "ArgumentList": "rate=0.15"}
+            ]
+          },
+          {
+            "time_range": "16.01-19.00",
+            "alighting_records": [
+              {"station": "A", "Distribution": "exponential", "ArgumentList": "rate=0.5"},
+              {"station": "B", "Distribution": "exponential", "ArgumentList": "rate=0.6"},
+              {"station": "C", "Distribution": "exponential", "ArgumentList": "rate=0.5"},
+              {"station": "D", "Distribution": "exponential", "ArgumentList": "rate=0.4"},
+              {"station": "E", "Distribution": "exponential", "ArgumentList": "rate=0.4"}
+            ]
+          }
+        ],
+        "interarrival_data": [
+          {
+            "time_range": "10.00-12.00",
+            "alighting_records": [
+              {"station": "A", "Distribution": "poisson", "ArgumentList": "lambda=6"},
+              {"station": "B", "Distribution": "poisson", "ArgumentList": "lambda=2"},
+              {"station": "C", "Distribution": "poisson", "ArgumentList": "lambda=1"},
+              {"station": "D", "Distribution": "poisson", "ArgumentList": "lambda=3"},
+              {"station": "E", "Distribution": "poisson", "ArgumentList": "lambda=1"}
+            ]
+          },
+          {
+            "time_range": "12.01-14.00",
+            "alighting_records": [
+              {"station": "A", "Distribution": "poisson", "ArgumentList": "lambda=4"},
+              {"station": "B", "Distribution": "poisson", "ArgumentList": "lambda=8"},
+              {"station": "C", "Distribution": "poisson", "ArgumentList": "lambda=5"},
+              {"station": "D", "Distribution": "poisson", "ArgumentList": "lambda=2"},
+              {"station": "E", "Distribution": "poisson", "ArgumentList": "lambda=3"}
+            ]
+          },
+          {
+            "time_range": "14.01-16.00",
+            "alighting_records": [
+              {"station": "A", "Distribution": "poisson", "ArgumentList": "lambda=5"},
+              {"station": "B", "Distribution": "poisson", "ArgumentList": "lambda=4"},
+              {"station": "C", "Distribution": "poisson", "ArgumentList": "lambda=2"},
+              {"station": "D", "Distribution": "poisson", "ArgumentList": "lambda=6"},
+              {"station": "E", "Distribution": "poisson", "ArgumentList": "lambda=2"}
+            ]
+          },
+          {
+            "time_range": "16.01-19.00",
+            "alighting_records": [
+              {"station": "A", "Distribution": "poisson", "ArgumentList": "lambda=10"},
+              {"station": "B", "Distribution": "poisson", "ArgumentList": "lambda=7"},
+              {"station": "C", "Distribution": "poisson", "ArgumentList": "lambda=4"},
+              {"station": "D", "Distribution": "poisson", "ArgumentList": "lambda=8"},
+              {"station": "E", "Distribution": "poisson", "ArgumentList": "lambda=5"}
+            ]
+          }
+        ]
+      },
+      "scenario_data": [
+        {
+          "route_id": "RPATH01",
+          "route_name": "North-South Trunk (A to D)",
+          "route_order": "RP01-RP03-RP05",
+          "route_schedule": [
+            {"departure_time": "10:00"}, {"departure_time": "12:00"}, {"departure_time": "14:00"},
+            {"departure_time": "16:00"}, {"departure_time": "18:00"}
+          ],
+          "bus_information": {
+            "bus_speed": 30, "max_distance": 250, "max_bus": 10, "bus_capacity": 60
+          }
+        },
+        {
+          "route_id": "RPATH02",
+          "route_name": "The Loop (A-B-E-A)",
+          "route_order": "RP01-RP07-RP09",
+          "route_schedule": [
+            {"departure_time": "10:15"}, {"departure_time": "11:15"}, {"departure_time": "12:15"},
+            {"departure_time": "15:15"}, {"departure_time": "17:15"}
+          ],
+          "bus_information": {
+            "bus_speed": 45, "max_distance": 180, "max_bus": 6, "bus_capacity": 35
+          }
+        },
+        {
+          "route_id": "RPATH03",
+          "route_name": "Back-to-Base (D to A via E)",
+          "route_order": "RP11-RP08-RP02",
+          "route_schedule": [
+            {"departure_time": "11:00"}, {"departure_time": "13:30"}, {"departure_time": "16:00"}
+          ],
+          "bus_information": {
+            "bus_speed": 35, "max_distance": 300, "max_bus": 4, "bus_capacity": 50
+          }
+        }
+      ]
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1763435805836.5
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

@@ -1,0 +1,151 @@
+_id: req_d4291892acfd497fb38ce5a83ae8c3fd
+type: Request
+parentId: fld_52fd31d4af8f48a8b54a8593cd81d59c
+modified: 1767445996239
+created: 1763909844360
+url: http://localhost:5000/api/simulate
+name: SIm
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |-
+    {
+    	"time_period": "10.00-19.00",
+    	"time_slot": "15",
+    	"configuration_data": {
+    		"station_list": [
+    			{
+    				"station_id": "A",
+    				"station_name": "Station A"
+    			},
+    			{
+    				"station_id": "B",
+    				"station_name": "Station B"
+    			},
+    			{
+    				"station_id": "C",
+    				"station_name": "Station C"
+    			},
+    			{
+    				"station_id": "D",
+    				"station_name": "Station D"
+    			},
+    			{
+    				"station_id": "E",
+    				"station_name": "Station E"
+    			}
+    		],
+    		"route_pair": [
+    			{
+    				"route_pair_id": "RP01",
+    				"fst_station": "A",
+    				"snd_station": "B",
+    				"travel_time": 5,
+    				"distance": 1.2
+    			},
+    			{
+    				"route_pair_id": "RP02",
+    				"fst_station": "B",
+    				"snd_station": "C",
+    				"travel_time": 7,
+    				"distance": 1.8
+    			}
+    		],
+    		"alighting_data": [
+    			{
+    				"time_range": "12.00-14.00",
+    				"alighting_records": [
+    					{
+    						"station": "A",
+    						"Distribution": "exponential",
+    						"ArgumentList": "rate=0.4"
+    					}
+    				]
+    			},
+    			{
+    				"time_range": "10.00-12.00",
+    				"alighting_records": [
+    					{
+    						"station": "A",
+    						"Distribution": "exponential",
+    						"ArgumentList": "rate=0.3"
+    					}
+    				]
+    			}
+    		],
+    		"interarrival_data": [
+    			{
+    				"time_range": "10.00-12.00",
+    				"alighting_records": [
+    					{
+    						"station": "B",
+    						"Distribution": "exponential",
+    						"ArgumentList": "rate=0.2"
+    					}
+    				]
+    			},
+    			{
+    				"time_range": "14.00-16.00",
+    				"alighting_records": [
+    					{
+    						"station": "B",
+    						"Distribution": "exponential",
+    						"ArgumentList": "rate=0.25"
+    					}
+    				]
+    			}
+    		]
+    	},
+    	"scenario_data": [
+    		{
+    			"route_id": "RPATH01",
+    			"route_name": "Route A-B-C",
+    			"route_order": "RP01-RP02",
+    			"route_schedule": [
+    				{
+    					"departure_time": "10:00"
+    				},
+    				{
+    					"departure_time": "10:15"
+    				},
+    				{
+    					"departure_time": "10:30"
+    				},
+    				{
+    					"departure_time": "11:15"
+    				},
+    				{
+    					"departure_time": "12:30"
+    				},
+    				{
+    					"departure_time": "15:15"
+    				},
+    				{
+    					"departure_time": "16:30"
+    				}
+    			],
+    			"bus_information": {
+    				"bus_speed": 30,
+    				"max_distance": 120,
+    				"max_bus": 5,
+    				"bus_capacity": 40
+    			}
+    		}
+    	]
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1763909844360
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

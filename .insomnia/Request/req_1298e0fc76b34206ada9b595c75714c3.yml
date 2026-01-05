@@ -1,0 +1,53 @@
+_id: req_1298e0fc76b34206ada9b595c75714c3
+type: Request
+parentId: fld_ec46bbdaf87f44f092bd889ab4a3067e
+modified: 1767599739146
+created: 1762961767313
+url: http://localhost:8080/api/power
+name: f go to python
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |
+    {
+      "Data": [
+        {
+          "Station": "norvt",
+          "Time_Range": "08:00-10:00",
+          "Records": [
+            { "Record_ID": 1, "Numeric_Value": 2.1 },
+            { "Record_ID": 2, "Numeric_Value": 3.4 },
+            { "Record_ID": 3, "Numeric_Value": 1.9 },
+            { "Record_ID": 4, "Numeric_Value": 4.8 },
+            { "Record_ID": 5, "Numeric_Value": 2.7 }
+          ]
+        },
+        {
+          "Station": "naart",
+          "Time_Range": "10:00-12:00",
+          "Records": [
+            { "Record_ID": 1, "Numeric_Value": 1.2 },
+            { "Record_ID": 2, "Numeric_Value": 0.9 },
+            { "Record_ID": 3, "Numeric_Value": 1.7 },
+            { "Record_ID": 4, "Numeric_Value": 1.3 },
+            { "Record_ID": 5, "Numeric_Value": 2.0 }
+          ]
+        }
+      ]
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1762961767313
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

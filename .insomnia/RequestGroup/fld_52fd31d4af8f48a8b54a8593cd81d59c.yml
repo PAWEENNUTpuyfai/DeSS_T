@@ -1,0 +1,10 @@
+_id: fld_52fd31d4af8f48a8b54a8593cd81d59c
+type: RequestGroup
+parentId: wrk_d725fd3971c0459083c6e4a870c1555e
+modified: 1762952998319
+created: 1762952998319
+name: test python
+description: ""
+environment: {}
+environmentPropertyOrder: null
+metaSortKey: -1762952998320

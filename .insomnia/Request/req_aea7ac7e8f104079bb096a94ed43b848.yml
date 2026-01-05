@@ -1,0 +1,27 @@
+_id: req_aea7ac7e8f104079bb096a94ed43b848
+type: Request
+parentId: fld_ec46bbdaf87f44f092bd889ab4a3067e
+modified: 1767599734439
+created: 1767599720504
+url: http://localhost:8080/guest/alighting/distribution_fit
+name: f go to python
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: ""
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1762959986635.5
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

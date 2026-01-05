@@ -1,0 +1,23 @@
+_id: req_d0e0a4cdcd0c4473b10e2a4e503651a9
+type: Request
+parentId: fld_ec46bbdaf87f44f092bd889ab4a3067e
+modified: 1762953058560
+created: 1762953035967
+url: http://localhost:8080/api/users
+name: get databse
+description: ""
+method: GET
+body: {}
+parameters: []
+headers:
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1762953035967
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

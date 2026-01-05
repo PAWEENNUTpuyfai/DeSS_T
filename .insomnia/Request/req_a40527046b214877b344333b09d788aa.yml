@@ -1,0 +1,172 @@
+_id: req_a40527046b214877b344333b09d788aa
+type: Request
+parentId: fld_ec46bbdaf87f44f092bd889ab4a3067e
+modified: 1767602897647
+created: 1765960486904
+url: http://localhost:8080/simulation/transform
+name: transfrom
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: >
+    {
+      "project_id": "PROJECT_001",
+      "time_periods": "10.00-19.00",
+    	"time_slot": "15",
+      "configuration": {
+        "Network_model": {
+          "Network_model": "Campus_Electric_Bus",
+          "Station_detail": [
+            {
+              "StationID": "A",
+              "StationName": "Station A",
+              "location": {
+                "type": "Point",
+                "coordinates": [100.5018, 13.7563]
+              },
+              "Lat": "13.7563",
+              "Lon": "100.5018"
+            },
+            {
+              "StationID": "B",
+              "StationName": "Station B",
+              "location": {
+                "type": "Point",
+                "coordinates": [100.5020, 13.7570]
+              },
+              "Lat": "13.7570",
+              "Lon": "100.5020"
+            }
+          ],
+          "StationPair": [
+            {
+              "StationPairID": "RP01",
+              "FstStation": "A",
+              "SndStation": "B",
+              "RouteBetween": {
+                "RouteBetweenID": "RB01",
+                "TravelTime": 5.0,
+                "Distance": 1.2,
+                "Route": {
+                  "type": "LineString",
+                  "coordinates": [
+                    [100.5018, 13.7563],
+                    [100.5020, 13.7570]
+                  ]
+                }
+              }
+            },
+            {
+              "StationPairID": "RP02",
+              "FstStation": "B",
+              "SndStation": "C",
+              "RouteBetween": {
+                "RouteBetweenID": "RB02",
+                "TravelTime": 7.0,
+                "Distance": 1.8,
+                "Route": {
+                  "type": "LineString",
+                  "coordinates": [
+                    [100.5020, 13.7570],
+                    [100.5030, 13.7580]
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "Alighting_Distribution": {
+          "DataFitResponse": [
+            {
+              "Station": "A",
+              "Time_Range": "10.00-12.00",
+              "Distribution": "poisson",
+              "ArgumentList": "lambda=3"
+            },
+            {
+              "Station": "A",
+              "Time_Range": "12.00-14.00",
+              "Distribution": "poisson",
+              "ArgumentList": "lambda=4"
+            },
+            {
+              "Station": "A",
+              "Time_Range": "20.00-22.00",
+              "Distribution": "poisson",
+              "ArgumentList": "lambda=6"
+            }
+          ]
+        },
+        "Interarrival_Distribution": {
+          "DataFitResponse": [
+            {
+              "Station": "B",
+              "Time_Range": "10.00-12.00",
+              "Distribution": "exponential",
+              "ArgumentList": "rate=0.2"
+            },
+            {
+              "Station": "B",
+              "Time_Range": "14.00-16.00",
+              "Distribution": "exponential",
+              "ArgumentList": "rate=0.25"
+            }
+          ]
+        }
+      },
+      "scenario": {
+        "RouteScenario": [
+          {
+            "RouteScenarioID": "RS01",
+            "RoutePath": [
+              {
+                "RoutePathID": "RPATH01",
+                "RoutePathName": "Route A-B-C",
+                "RoutePathColor": "Blue",
+                "Order": [
+                  { "OrderID": "O1", "OrderNumber": 1, "StationPairID": "RP01" },
+                  { "OrderID": "O2", "OrderNumber": 2, "StationPairID": "RP02" }
+                ]
+              }
+            ]
+          }
+        ],
+        "BusScenario": [
+          {
+            "BusScenarioID": "BS01",
+            "ScheduleData": [
+              {
+                "ScheduleDataID": "SCH01",
+                "RoutePathID": "RPATH01",
+                "ScheduleList": "10:00,10:15,10:30"
+              }
+            ],
+            "BusInformation": [
+              {
+                "BusInformationID": "BI01",
+                "BusSpeed": 30.0,
+                "MaxDistance": 120.0,
+                "MaxBus": 5,
+                "BusCapacity": 40
+              }
+            ]
+          }
+        ]
+      }
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1762955620962.5
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

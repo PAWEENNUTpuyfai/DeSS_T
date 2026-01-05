@@ -1,0 +1,32 @@
+_id: req_7e7f9aa169034f869762a0b5b2948168
+type: Request
+parentId: fld_ec46bbdaf87f44f092bd889ab4a3067e
+modified: 1767600470318
+created: 1767599756299
+url: http://localhost:8080/api/guest/alighting/distribution_fit
+name: f go to python des
+description: ""
+method: POST
+body:
+  mimeType: multipart/form-data
+  params:
+    - name: file
+      value: ""
+      id: pair_06e2e177029c466db00e27e4cf7bc9e5
+      type: file
+      fileName: C:\Users\ASUS\Downloads\MockupAlight.xlsx
+parameters: []
+headers:
+  - name: Content-Type
+    value: multipart/form-data
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1762960876974.25
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

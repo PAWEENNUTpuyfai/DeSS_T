@@ -1,0 +1,30 @@
+_id: req_3ea274157f114fb486d0d0aed1401be1
+type: Request
+parentId: fld_ec46bbdaf87f44f092bd889ab4a3067e
+modified: 1762961852472
+created: 1762958205958
+url: http://localhost:8080/api/compute
+name: go to python
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |
+    {
+      "num": 120
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1762958205958
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

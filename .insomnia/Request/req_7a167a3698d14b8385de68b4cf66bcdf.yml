@@ -1,0 +1,30 @@
+_id: req_7a167a3698d14b8385de68b4cf66bcdf
+type: Request
+parentId: fld_52fd31d4af8f48a8b54a8593cd81d59c
+modified: 1763910837573
+created: 1763909859564
+url: http://localhost:5000/api/power
+name: test ^
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |-
+    {
+      "number": 20
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1762953038431.5
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

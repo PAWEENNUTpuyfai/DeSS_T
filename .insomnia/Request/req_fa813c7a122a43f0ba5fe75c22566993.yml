@@ -1,0 +1,30 @@
+_id: req_fa813c7a122a43f0ba5fe75c22566993
+type: Request
+parentId: fld_52fd31d4af8f48a8b54a8593cd81d59c
+modified: 1762953140342
+created: 1762953084425
+url: http://localhost:5000/api/calculate
+name: test *2
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |-
+    {
+      "number": 40
+    }
+parameters: []
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: insomnia/2023.5.8
+authentication: {}
+metaSortKey: -1762953040896
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

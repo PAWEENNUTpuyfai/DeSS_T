@@ -48,13 +48,13 @@ func indexBusScenario(
 
     for _, bs := range busScenarios {
 
-        for _, sch := range bs.BusSchedule {
-            times := strings.Split(sch.ScheduleData, ",")
+        for _, sch := range bs.ScheduleData {
+            times := strings.Split(sch.ScheduleList, ",")
             scheduleMap[sch.RoutePathID] = times
         }
 
-        if len(bs.BusInformation) > 0 && len(bs.BusSchedule) > 0 {
-            routePathID := bs.BusSchedule[0].RoutePathID
+        if len(bs.BusInformation) > 0 && len(bs.ScheduleData) > 0 {
+            routePathID := bs.ScheduleData[0].RoutePathID
             busInfoMap[routePathID] = bs.BusInformation[0]
         }
     }

@@ -37,14 +37,14 @@ type Order_Path struct {
 
 type Bus_Scenario struct {
 	BusScenarioID  string            `json:"BusScenarioID"`
-	BusSchedule    []Bus_Schedule    `json:"BusSchedule"`
+	ScheduleData   []Schedule_Data   `json:"ScheduleData"`
 	BusInformation []Bus_Information `json:"BusInformation"`
 }
 
-type Bus_Schedule struct {
-    BusScheduleID string `json:"BusScheduleID"`
+type Schedule_Data struct {
+    ScheduleDataID string `json:"ScheduleDataID"`
     RoutePathID   string `json:"RoutePathID"`
-    ScheduleData   string `json:"ScheduleData"`
+    ScheduleList string `json:"ScheduleList"`
 }
 
 type Bus_Information struct {

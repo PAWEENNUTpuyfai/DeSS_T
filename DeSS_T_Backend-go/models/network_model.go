@@ -9,11 +9,9 @@ type Network_Model struct {
 /* ─────────────── Station Detail ─────────────── */
 
 type Station_Detail struct {
-    StationID   string   `json:"StationID"`
-    StationName string   `json:"StationName"`
-    Location    GeoPoint `json:"location"`
-    Lat         string   `json:"Lat"`
-    Lon         string   `json:"Lon"`
+	StationID   string   `json:"StationID"`
+	StationName string   `json:"StationName"`
+	Location    GeoPoint `json:"Location"`
 }
 
 type GeoPoint struct {
@@ -24,10 +22,9 @@ type GeoPoint struct {
 /* ─────────────── Station Pair ─────────────── */
 
 type Station_Pair struct {
-    StationPairID string        `json:"StationPairID"`
-    FstStation   string        `json:"FstStation"`
-    SndStation   string        `json:"SndStation"`
-    RouteBetween Route_Between  `json:"RouteBetween"`
+	FstStation   string        `json:"FstStation"`
+	SndStation   string        `json:"SndStation"`
+	RouteBetween Route_Between `json:"RouteBetween"`
 }
 
 type Route_Between struct {

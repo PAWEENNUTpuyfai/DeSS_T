@@ -67,9 +67,9 @@ func TransformScenario(
 
     var result []models.ScenarioData
 
-    scheduleMap, busInfoMap := indexBusScenario(scenario.Bus_Scenario)
+    scheduleMap, busInfoMap := indexBusScenario(scenario.BusScenario)
 
-    for _, rs := range scenario.Route_Scenario {
+    for _, rs := range scenario.RouteScenario {
         for _, rp := range rs.RoutePath {
 
             routeOrder := buildRouteOrder(rp.Order)
@@ -91,7 +91,7 @@ func TransformScenario(
                 RouteBusInformation: models.RouteBusInformation{
                     BusSpeed:    bi.BusSpeed,
                     MaxDistance: bi.MaxDistance,
-                    MaxBus:      bi.MaxBus,
+                    MaxBus:      bi.MaxBuses,
                     BusCapacity: bi.BusCapacity,
                 },
             })

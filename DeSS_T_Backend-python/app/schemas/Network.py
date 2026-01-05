@@ -23,6 +23,8 @@ class StationDetail(BaseModel):
     StationID: str
     StationName: str
     location: GeoPoint
+    Lat: str
+    Lon: str
 
 
 class StationPair(BaseModel):

@@ -45,7 +45,12 @@ func main() {
 	routes.SetupRoutes(app)
 	routes.SetupComputeRoutes(app)
 	routes.SetupDistributionRoutes(app)
+	routes.SetupSimulationRoutes(app)
+
+	println("🚀 DeSS_T Backend running on http://localhost:8080")
+
 	routes.RegisterNetworkRoutes(app)
+
 
 	app.Listen(":8080")
 }

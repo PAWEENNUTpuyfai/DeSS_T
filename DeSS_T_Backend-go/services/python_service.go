@@ -102,3 +102,28 @@ func CallPythonDistributionFit(data interface{}) (map[string]interface{}, error)
 
 	return result, nil
 }
+
+func CallPythonSimulation(data interface{}) (map[string]interface{}, error) {
+    payload, _ := json.Marshal(data)
+
+    base := getPythonServiceBaseURL()
+    resp, err := http.Post(base+"/api/simulate", "application/json", bytes.NewBuffer(payload))  
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    responseData, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return nil, fmt.Errorf("reading response body: %v", err)
+    }
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+        return nil, fmt.Errorf("python service returned status %d: %s", resp.StatusCode, string(responseData))
+    }
+    var result map[string]interface{}
+    if err := json.Unmarshal(responseData, &result); err != nil {
+        return nil, fmt.Errorf("decoding json response: %v; body: %s", err, string(responseData))
+    }
+    return result, nil
+}
+

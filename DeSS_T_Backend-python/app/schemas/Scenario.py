@@ -39,9 +39,14 @@ class BusScenario(BaseModel):
     BusSchedule: List[BusSchedule]
     BusInformation: List[BusInformation]
 
+#────────────── Time Scenario ───────────────
+class TimeScenario(BaseModel):
+    Time_Range: str
+    Time_Slot: str
 
 # ─────────────── Main Scenario ───────────────
 
 class Scenario(BaseModel):
     RouteScenario: List[RouteScenario]
     BusScenario: List[BusScenario]
+    TimeScenario: TimeScenario

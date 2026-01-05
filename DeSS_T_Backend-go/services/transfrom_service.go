@@ -48,19 +48,21 @@ func indexBusScenario(
 
     for _, bs := range busScenarios {
 
+        // 1) map schedule ด้วย RoutePathID
         for _, sch := range bs.ScheduleData {
             times := strings.Split(sch.ScheduleList, ",")
             scheduleMap[sch.RoutePathID] = times
         }
 
-        if len(bs.BusInformation) > 0 && len(bs.ScheduleData) > 0 {
-            routePathID := bs.ScheduleData[0].RoutePathID
-            busInfoMap[routePathID] = bs.BusInformation[0]
+        // 2) map bus information ด้วย RoutePathID (ไม่ใช้ index)
+        for _, bi := range bs.BusInformation {
+            busInfoMap[bi.RoutePathID] = bi
         }
     }
 
     return scheduleMap, busInfoMap
 }
+
 func TransformScenario(
     scenario models.Scenario,
 ) []models.ScenarioData {

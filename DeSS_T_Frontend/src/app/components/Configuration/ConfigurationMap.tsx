@@ -81,10 +81,10 @@ export default function ConfigurationMap({
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
           station_detail_id: String(stop.id),
           name: stop.tags?.name || `Bus Stop ${stop.id}`,
-          location: JSON.stringify({
+          location: {
             type: "Point",
             coordinates: [stop.lon, stop.lat],
-          }),
+          },
           lat: stop.lat,
           lon: stop.lon,
           station_id_osm: String(stop.id),
@@ -122,10 +122,10 @@ export default function ConfigurationMap({
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
         station_detail_id: String(stop.id),
         name: stop.tags?.name || `Bus Stop ${stop.id}`,
-        location: JSON.stringify({
+        location: {
           type: "Point",
           coordinates: [stop.lon, stop.lat],
-        }),
+        },
         lat: stop.lat,
         lon: stop.lon,
         station_id_osm: String(stop.id),
@@ -159,10 +159,10 @@ export default function ConfigurationMap({
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
           station_detail_id: String(stop.id),
           name: stop.tags?.name || `Bus Stop ${stop.id}`,
-          location: JSON.stringify({
+          location: {
             type: "Point",
             coordinates: [stop.lon, stop.lat],
-          }),
+          },
           lat: stop.lat,
           lon: stop.lon,
           station_id_osm: String(stop.id),
@@ -196,10 +196,10 @@ export default function ConfigurationMap({
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
         station_detail_id: String(stop.id),
         name: stop.tags?.name || `Bus Stop ${stop.id}`,
-        location: JSON.stringify({
+        location: {
           type: "Point",
           coordinates: [stop.lon, stop.lat],
-        }),
+        },
         lat: stop.lat,
         lon: stop.lon,
         station_id_osm: String(stop.id),

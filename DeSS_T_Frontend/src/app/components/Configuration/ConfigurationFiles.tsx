@@ -185,16 +185,19 @@ export default function ConfigurationFiles({
       let network: NetworkModel;
       if (stationDetails && stationDetails.length > 0) {
         try {
+          console.log("Sending stations to backend:", stationDetails);
           network = await buildNetworkModelFromStations(
             stationDetails,
             "guest_network"
           );
+          console.log("Network built successfully:", network);
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err);
-          console.error("Failed to build network:", errorMsg);
+          console.error("Failed to build network - Full error:", err);
+          console.error("Error message:", errorMsg);
           // Surface a single clear error; outer catch will alert
           throw new Error(
-            "Failed to build network. Ensure the backend is running and try again."
+            "Failed to build network. Ensure the backend is running and try again.\n\nDetails: " + errorMsg
           );
         }
       } else {
@@ -211,8 +214,27 @@ export default function ConfigurationFiles({
         ? interRes
         : { DataFitResponse: [] };
 
+      // Populate station details in station_pairs for Scenario to use
+      const enrichedNetworkModel = {
+        ...network,
+        station_pairs: network.station_pairs?.map((pair: any) => {
+          const fstStation = stationDetails.find(
+            (s) => s.station_detail_id === pair.fst_station_id
+          );
+          const sndStation = stationDetails.find(
+            (s) => s.station_detail_id === pair.snd_station_id
+          );
+          return {
+            ...pair,
+            fst_station: fstStation,
+            snd_station: sndStation,
+          };
+        }) || [],
+        station_details: stationDetails, // Also include raw stations list
+      };
+
       const cfg: Configuration = {
-        Network_model: network,
+        Network_model: enrichedNetworkModel,
         Alighting_Distribution: alightingDist,
         Interarrival_Distribution: interarrivalDist,
       };

@@ -28,7 +28,12 @@ export default function Scenario({
   projectName?: string;
 }) {
   const nodes: StationDetail[] =
-    configuration?.Network_model?.station_pairs
+    // Priority 1: Use station_details (new field)
+    (configuration?.Network_model?.station_details as StationDetail[]) ||
+    // Priority 2: Use Station_detail (uppercase S - from backend)
+    (configuration?.Network_model?.Station_detail as StationDetail[]) ||
+    // Priority 3: Extract from station_pairs if available
+    (configuration?.Network_model?.station_pairs
       ?.flatMap((pair: StationPair) =>
         [pair.fst_station, pair.snd_station].filter(
           (s): s is StationDetail => !!s
@@ -41,7 +46,9 @@ export default function Scenario({
             (s: StationDetail) =>
               s.station_detail_id === station.station_detail_id
           )
-      ) ?? [];
+      ) ?? []) ||
+    [];
+
   const edges: StationPair[] =
     configuration?.Network_model?.station_pairs ?? [];
   const [transportMode, setTransportMode] = useState<"Route" | "Bus">("Route");

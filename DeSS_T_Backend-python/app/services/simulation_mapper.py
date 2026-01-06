@@ -113,19 +113,63 @@ def map_bus_routes(scenarios, route_pairs):
     return bus_routes
 
 
+# def build_distribution(name: str, args: str):
+#     params = dict(kv.split("=") for kv in args.split(","))
+#     params = {k: float(v) for k, v in params.items()}
+
+#     name = name.lower()
+
+#     if name == "poisson":
+#         return sim.Poisson(params["lambda"])
+
+#     if name == "exponential":
+#         return sim.Exponential(1 / params["rate"])
+
+#     raise ValueError(f"Unsupported distribution: {name}")
+
 def build_distribution(name: str, args: str):
-    params = dict(kv.split("=") for kv in args.split(","))
+    # แปลง "k=v, k=v" -> dict
+    params = dict(kv.strip().split("=") for kv in args.split(","))
     params = {k: float(v) for k, v in params.items()}
 
-    name = name.lower()
+    name = name.strip().lower()
 
     if name == "poisson":
         return sim.Poisson(params["lambda"])
 
     if name == "exponential":
-        return sim.Exponential(1 / params["rate"])
+        rate = params["rate"]
+        loc = params.get("loc", 0.0)
+
+        dist = sim.Exponential(1.0 / rate)
+        return dist + loc if loc != 0.0 else dist
+
+    if name == "weibull":
+        shape = params["shape"]
+        scale = params["scale"]
+        loc = params.get("loc", 0.0)
+
+        dist = sim.Weibull(shape=shape, scale=scale)
+        return dist + loc if loc != 0.0 else dist
+
+    if name == "gamma":
+        shape = params["shape"]
+        scale = params["scale"]
+        loc = params.get("loc", 0.0)
+
+        dist = sim.Gamma(shape=shape, scale=scale)
+        return dist + loc if loc != 0.0 else dist
+
+    # if name == "lognormal":
+    #     shape = params["shape"]
+    #     scale = params["scale"]
+    #     loc = params.get("loc", 0.0)
+
+    #     dist = sim.Lognormal(shape=shape, scale=scale)
+    #     return dist + loc if loc != 0.0 else dist
 
     raise ValueError(f"Unsupported distribution: {name}")
+
 
 def parse_time_range(tr: str):
     start, end = tr.split("-")

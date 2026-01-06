@@ -13,6 +13,11 @@ type User struct {
 	TokenExpires time.Time `json:"token_expires_at"`
 	LastLogin    time.Time `json:"last_login"`
 	CreatedAt    time.Time `json:"created_at"`
+
+	PublicScenarios      []PublicScenario      `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	UserScenarios        []UserScenario        `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- COVER IMAGE --------------------
@@ -38,6 +43,9 @@ type PublicScenario struct {
 	OriginFrom       string    `json:"origin_from"`
 	CoverImgID       string    `json:"cover_img"`
 	ScenarioDetailID string    `json:"scenario_detail"`
+
+	CoverImage     CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
+	ScenarioDetail ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID"`
 }
 
 // ------------------- USER SCENARIO --------------------
@@ -48,6 +56,9 @@ type UserScenario struct {
 	CreateBy         string    `json:"create_by"`
 	CoverImgID       string    `json:"cover_img"`
 	ScenarioDetailID string    `json:"scenario_detail"`
+
+	CoverImage     CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
+	ScenarioDetail ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID"`
 }
 
 // ------------------- SCENARIO DETAIL --------------------
@@ -55,12 +66,18 @@ type ScenarioDetail struct {
 	ScenarioDetailID string `gorm:"primaryKey" json:"scenario_detail_id"`
 	BusScenarioID    string `json:"bus_scenario"`
 	RouteScenarioID  string `json:"route_scenario"`
+
+	BusScenario   BusScenario   `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
+	RouteScenario RouteScenario `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- BUS SCENARIO --------------------
 type BusScenario struct {
 	BusScenarioID  string `gorm:"primaryKey" json:"bus_scenario_id"`
 	ScheduleDataID string `json:"schedule_data"`
+
+	ScheduleData    *ScheduleData    `gorm:"foreignKey:ScheduleDataID;constraint:OnDelete:CASCADE;"`
+	BusInformations []BusInformation `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- SCHEDULE DATA --------------------
@@ -68,6 +85,10 @@ type ScheduleData struct {
 	ScheduleDataID string `gorm:"primaryKey" json:"schedule_data_id"`
 	ScheduleList   string `json:"schedule_list"`
 	RoutePathID    string `json:"route_path"`
+	BusScenarioID  string `json:"bus_scenario"`
+
+	RoutePath   *RoutePath   `gorm:"constraint:OnDelete:CASCADE"`
+	BusScenario *BusScenario `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 // ------------------- BUS INFORMATION --------------------
@@ -78,11 +99,16 @@ type BusInformation struct {
 	MaxBus           int     `json:"max_bus"`
 	Capacity         int     `json:"capacity"`
 	BusScenarioID    string  `json:"bus_scenario"`
+	RoutePathID      string  `json:"route_path"`
+
+	RoutePath *RoutePath `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 // ------------------- ROUTE SCENARIO --------------------
 type RouteScenario struct {
 	RouteScenarioID string `gorm:"primaryKey" json:"route_scenario_id"`
+
+	RoutePaths []RoutePath `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ROUTE PATH --------------------
@@ -91,6 +117,9 @@ type RoutePath struct {
 	Name            string `json:"name"`
 	Color           string `json:"color"`
 	RouteScenarioID string `json:"route_scenario"`
+	Route           string `json:"route" gorm:"type:geometry(LINESTRING,4326)"`
+
+	Orders []Order `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE"`
 }
 
 // ------------------- ORDER --------------------
@@ -99,6 +128,9 @@ type Order struct {
 	Order         int    `json:"order"`
 	StationPairID string `json:"station_pair"`
 	RoutePathID   string `json:"route_path"`
+
+	RoutePath   *RoutePath   `gorm:"constraint:OnDelete:CASCADE"`
+	StationPair *StationPair `gorm:"constraint:OnDelete:CASCADE"`
 }
 
 // ------------------- USER CONFIGURATION --------------------
@@ -131,6 +163,10 @@ type ConfigurationDetail struct {
 	AlightingDataID       string `json:"alighting_data"`
 	InterArrivalDataID    string `json:"interarrival_data"`
 	NetworkModelID        string `json:"network_model"`
+
+	NetworkModel      NetworkModel       `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
+	AlightingDatas    []AlightingData    `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+	InterArrivalDatas []InterArrivalData `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ALIGHTING DATA --------------------
@@ -140,6 +176,8 @@ type AlightingData struct {
 	Distribution    string `json:"distribution_name"`
 	ArgumentList    string `json:"argument_list"`
 	StationID       string `json:"station_id"`
+
+	StationDetail StationDetail `gorm:"foreignKey:StationID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- INTER ARRIVAL DATA --------------------
@@ -149,11 +187,15 @@ type InterArrivalData struct {
 	Distribution       string `json:"distribution_name"`
 	ArgumentList       string `json:"argument_list"`
 	StationID          string `json:"station_id"`
+
+	StationDetail StationDetail `gorm:"foreignKey:StationID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- NETWORK MODEL --------------------
 type NetworkModel struct {
 	NetworkModelID string `gorm:"primaryKey" json:"network_model_id"`
+
+	StationPairs []StationPair `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- STATION DETAIL --------------------
@@ -163,6 +205,7 @@ type StationDetail struct {
 	Location        string  `json:"location" gorm:"type:geometry(POINT,4326)"`
 	Lat             float64 `json:"lat"`
 	Lon             float64 `json:"lon"`
+	StationIDOSM    string  `json:"station_id_osm"`
 }
 
 // ------------------- STATION PAIR --------------------
@@ -172,6 +215,10 @@ type StationPair struct {
 	SndStationID   string `json:"snd_station"`
 	RouteBetweenID string `json:"route_between"`
 	NetworkModelID string `json:"network_model"`
+
+	FstStation   StationDetail `gorm:"foreignKey:FstStationID;constraint:OnDelete:CASCADE;"`
+	SndStation   StationDetail `gorm:"foreignKey:SndStationID;constraint:OnDelete:CASCADE;"`
+	RouteBetween RouteBetween  `gorm:"foreignKey:RouteBetweenID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ROUTE BETWEEN --------------------

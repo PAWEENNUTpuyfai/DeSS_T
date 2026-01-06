@@ -21,6 +21,7 @@ export interface GeoPoint {
 }
 
 export interface StationPair {
+  StationPairID: string;
   FstStation: string;
   SndStation: string;
   RouteBetween: RouteBetween;

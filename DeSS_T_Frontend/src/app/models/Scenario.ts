@@ -5,21 +5,23 @@ export interface Scenario {
 /* ─────────────── Bus Scenario ─────────────── */
 export interface BusScenario {
   BusScenarioID: string;
-  BusSchedule: BusSchedule[];
+  ScheduleData: ScheduleData[];
   BusInformation: BusInformation[];
 }
 
-export interface BusSchedule {
-  BusScheduleID: string;
+export interface ScheduleData {
+  ScheduleDataID: string;
   RoutePathID: string;
+  ScheduleList: string;
 }
 
 export interface BusInformation {
     BusInformationID: string;
+    RoutePathID : string;
     BusSpeed: number;
     MaxDistance: number;
-    MaxBus: number;
     BusCapacity: number;
+    MaxBuses: number;
 }
 
 

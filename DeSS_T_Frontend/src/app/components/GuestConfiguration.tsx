@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import MapViewer from "./MapViewer";
-import GuestScenario from "./GuestScenario";
-import ConfigurationNav from "./ConfigurationNav";
-import GuestConfigurationFiles from "./GuestConfigurationFiles";
+import GuestScenario from "./Scenario";
+import ConfigurationNav from "./Configuration/ConfigurationNav";
+import GuestConfigurationFiles from "./Configuration/ConfigurationFiles";
 import type { StationDetail } from "../models/Network";
 import type { Configuration } from "../models/Configuration";
 
@@ -69,11 +69,15 @@ export default function GuestConfiguration() {
 
         // Build NetworkGraph with bus stops (StationDetail format)
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-          StationID: String(stop.id),
-          StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
-          location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-          Lat: String(stop.lat),
-          Lon: String(stop.lon),
+          station_detail_id: String(stop.id),
+          name: stop.tags?.name || `Bus Stop ${stop.id}`,
+          location: JSON.stringify({
+            type: "Point",
+            coordinates: [stop.lon, stop.lat],
+          }),
+          lat: stop.lat,
+          lon: stop.lon,
+          station_id_osm: String(stop.id),
         }));
 
         setMapBounds({
@@ -106,11 +110,15 @@ export default function GuestConfiguration() {
       ]);
 
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-        StationID: String(stop.id),
-        StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
-        location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-        Lat: String(stop.lat),
-        Lon: String(stop.lon),
+        station_detail_id: String(stop.id),
+        name: stop.tags?.name || `Bus Stop ${stop.id}`,
+        location: JSON.stringify({
+          type: "Point",
+          coordinates: [stop.lon, stop.lat],
+        }),
+        lat: stop.lat,
+        lon: stop.lon,
+        station_id_osm: String(stop.id),
       }));
 
       setStationDetails(stationDetails);
@@ -139,11 +147,15 @@ export default function GuestConfiguration() {
         const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
 
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-          StationID: String(stop.id),
-          StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
-          location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-          Lat: String(stop.lat),
-          Lon: String(stop.lon),
+          station_detail_id: String(stop.id),
+          name: stop.tags?.name || `Bus Stop ${stop.id}`,
+          location: JSON.stringify({
+            type: "Point",
+            coordinates: [stop.lon, stop.lat],
+          }),
+          lat: stop.lat,
+          lon: stop.lon,
+          station_id_osm: String(stop.id),
         }));
 
         setMapBounds({
@@ -172,11 +184,15 @@ export default function GuestConfiguration() {
       ]);
 
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-        StationID: String(stop.id),
-        StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
-        location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-        Lat: String(stop.lat),
-        Lon: String(stop.lon),
+        station_detail_id: String(stop.id),
+        name: stop.tags?.name || `Bus Stop ${stop.id}`,
+        location: JSON.stringify({
+          type: "Point",
+          coordinates: [stop.lon, stop.lat],
+        }),
+        lat: stop.lat,
+        lon: stop.lon,
+        station_id_osm: String(stop.id),
       }));
 
       setMapBounds({ minLat, maxLat, minLon, maxLon });
@@ -211,7 +227,7 @@ export default function GuestConfiguration() {
           setMapBounds(undefined);
           setStationDetails(null);
         }}
-        onSubmit={(config) => setSubmittedConfig(config)}
+        onSubmit={(config: Configuration) => setSubmittedConfig(config)}
       />
     );
   }
@@ -234,18 +250,6 @@ export default function GuestConfiguration() {
                 minLon={mapBounds?.minLon}
                 maxLon={mapBounds?.maxLon}
                 areaCode={mapMode === "area" ? areaCode : undefined}
-                externalBusStops={
-                  stationDetails
-                    ? stationDetails.map((s) => ({
-                        id: Number(s.StationID),
-                        position: [Number(s.Lat), Number(s.Lon)] as [
-                          number,
-                          number
-                        ],
-                        name: s.StationName,
-                      }))
-                    : undefined
-                }
               />
             </div>
 
@@ -378,20 +382,20 @@ export default function GuestConfiguration() {
                           <tbody>
                             {stationDetails.map((s) => (
                               <tr
-                                key={s.StationID}
+                                key={s.station_detail_id}
                                 className="odd:bg-white even:bg-gray-50"
                               >
                                 <td className="px-3 py-2 border-b align-top">
-                                  {s.StationID}
+                                  {s.station_detail_id}
                                 </td>
                                 <td className="px-3 py-2 border-b align-top">
-                                  {s.StationName || "-"}
+                                  {s.name || "-"}
                                 </td>
                                 <td className="px-3 py-2 border-b align-top">
-                                  {s.Lat}
+                                  {s.lat}
                                 </td>
                                 <td className="px-3 py-2 border-b align-top">
-                                  {s.Lon}
+                                  {s.lon}
                                 </td>
                               </tr>
                             ))}

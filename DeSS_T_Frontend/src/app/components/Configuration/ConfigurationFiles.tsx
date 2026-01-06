@@ -105,13 +105,15 @@ export default function ConfigurationFiles({
 
       const usedNames = new Set<string>();
       stationDetails.forEach((s, idx) => {
-        const raw = s.StationName ?? `Station-${s.StationID ?? idx + 1}`;
+        const raw = s.name ?? `Station-${s.station_detail_id ?? idx + 1}`;
         const cleaned = raw.replace(/[\\\/\*\?\:\[\]]/g, "");
         const base = (cleaned || `Sheet${idx + 1}`).slice(0, 31);
 
         let safe = base;
         if (usedNames.has(safe)) {
-          const idSuffix = s.StationID ? `-${s.StationID}` : undefined;
+          const idSuffix = s.station_detail_id
+            ? `-${s.station_detail_id}`
+            : undefined;
           if (idSuffix) {
             const maxBase = Math.max(0, 31 - idSuffix.length);
             safe = (base.slice(0, maxBase) + idSuffix).slice(0, 31);
@@ -197,9 +199,8 @@ export default function ConfigurationFiles({
         }
       } else {
         network = {
-          Network_model: "guest_network",
-          Station_detail: stationDetails ?? [],
-          StationPair: [],
+          network_model_id: "guest_network",
+          station_pairs: [],
         };
       }
 
@@ -230,7 +231,9 @@ export default function ConfigurationFiles({
       <ConfigurationNav mode={mode} configurationName={configurationName} />
       <LoadingModal
         isOpen={loadingA || loadingI || isSubmitting}
-        message={isSubmitting ? "Applying configuration..." : "Processing files..."}
+        message={
+          isSubmitting ? "Applying configuration..." : "Processing files..."
+        }
       />
       <main>
         <div className="h-[12vh]"></div>

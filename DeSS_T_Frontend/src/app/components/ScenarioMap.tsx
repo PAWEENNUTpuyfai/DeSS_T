@@ -49,18 +49,9 @@ function geoPointToLatLng(g: GeoPoint): [number, number] {
 }
 
 function stationToLatLng(s: StationDetail): [number, number] {
-  // Try Location (with capital L) first
-  if (s.Location && s.Location.coordinates) {
-    const [lon, lat] = s.Location.coordinates;
-    return [lat, lon];
-  }
-  // Try lowercase location as fallback
-  if (s.location && s.location.coordinates) {
-    const [lon, lat] = s.location.coordinates;
-    return [lat, lon];
-  }
-  if (s.Lat && s.Lon) {
-    return [parseFloat(s.Lat), parseFloat(s.Lon)];
+  // Use lat/lon properties directly
+  if (s.lat && s.lon) {
+    return [s.lat, s.lon];
   }
   // Fallback to Bangkok center if no coordinates
   return [13.75, 100.5];
@@ -194,7 +185,7 @@ export default function ScenarioMap({
         {/* Stations */}
         {stations.map((st) => (
           <CircleMarker
-            key={st.StationID}
+            key={st.station_detail_id}
             center={stationToLatLng(st)}
             radius={6}
             color={"#eeb34b"}
@@ -205,14 +196,14 @@ export default function ScenarioMap({
                 // Only allow selection if not in editing mode, or if selecting for the current route
                 if (
                   !isEditingMode ||
-                  route?.stations.includes(st.StationID) === false
+                  route?.stations.includes(st.station_detail_id) === false
                 ) {
-                  onSelectStation(st.StationID);
+                  onSelectStation(st.station_detail_id);
                 }
               },
             }}
           >
-            <Popup>{st.StationName || st.StationID}</Popup>
+            <Popup>{st.name || st.station_detail_id}</Popup>
           </CircleMarker>
         ))}
 
@@ -240,10 +231,10 @@ export default function ScenarioMap({
               if (idx >= route.stations.length - 1) return null;
 
               const currentStation = stations.find(
-                (s) => s.StationID === stationId
+                (s) => s.station_detail_id === stationId
               );
               const nextStation = stations.find(
-                (s) => s.StationID === route.stations[idx + 1]
+                (s) => s.station_detail_id === route.stations[idx + 1]
               );
 
               if (!currentStation || !nextStation) return null;

@@ -9,15 +9,12 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-import type {
-  LatLng,
-  StationDetail,
-  GeoPoint,
-} from "../models/Network";
+import type { LatLng, StationDetail, GeoPoint } from "../models/Network";
 
 L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
@@ -27,7 +24,7 @@ interface MapViewerProps {
   minLon?: number;
   maxLon?: number;
   areaCode?: string;
-  stationDetails?: StationDetail[];  // NEW ✔
+  stationDetails?: StationDetail[]; // NEW ✔
 }
 
 export default function MapViewer({
@@ -39,25 +36,23 @@ export default function MapViewer({
   stationDetails,
 }: MapViewerProps) {
   const [center, setCenter] = useState<LatLng>([13.75, 100.5]);
-  const [bounds, setBounds] =
-    useState<[[number, number], [number, number]] | undefined>();
-  const [areaPolygons, setAreaPolygons] =
-    useState<[number, number][][] | undefined>();
+  const [bounds, setBounds] = useState<
+    [[number, number], [number, number]] | undefined
+  >();
+  const [areaPolygons, setAreaPolygons] = useState<
+    [number, number][][] | undefined
+  >();
 
   // Convert GeoPoint → LatLng (Leaflet format)
   const geoPointToLatLng = (g: GeoPoint): LatLng => {
     const [lon, lat] = g.coordinates; // GeoJSON = [lon, lat]
-    return [lat, lon];               // Leaflet = [lat, lon]
+    return [lat, lon]; // Leaflet = [lat, lon]
   };
 
   // Safe station to LatLng conversion with fallback
   const stationToLatLng = (s: StationDetail): LatLng => {
-    if (s.location && s.location.coordinates) {
-      const [lon, lat] = s.location.coordinates;
-      return [lat, lon];
-    }
-    if (s.Lat && s.Lon) {
-      return [parseFloat(s.Lat), parseFloat(s.Lon)];
+    if (s.lat && s.lon) {
+      return [s.lat, s.lon];
     }
     return [13.75, 100.5];
   };
@@ -115,7 +110,10 @@ export default function MapViewer({
 
         setAreaPolygons(polys);
 
-        let minLat = Infinity, minLon = Infinity, maxLat = -Infinity, maxLon = -Infinity;
+        let minLat = Infinity,
+          minLon = Infinity,
+          maxLat = -Infinity,
+          maxLon = -Infinity;
         for (const poly of polys) {
           for (const [lat, lon] of poly) {
             if (lat < minLat) minLat = lat;
@@ -125,7 +123,10 @@ export default function MapViewer({
           }
         }
 
-        setBounds([[minLat, minLon], [maxLat, maxLon]]);
+        setBounds([
+          [minLat, minLon],
+          [maxLat, maxLon],
+        ]);
         setCenter([(minLat + maxLat) / 2, (minLon + maxLon) / 2]);
       } catch (err) {
         console.error("fetchAreaGeometry failed:", err);
@@ -133,7 +134,11 @@ export default function MapViewer({
     })();
   }, [areaCode]);
 
-  function UpdateMapView({ boundsProp }: { boundsProp?: [[number, number], [number, number]] }) {
+  function UpdateMapView({
+    boundsProp,
+  }: {
+    boundsProp?: [[number, number], [number, number]];
+  }) {
     const map = useMap();
     useEffect(() => {
       if (!boundsProp) return;
@@ -162,14 +167,14 @@ export default function MapViewer({
         {/* Render stations */}
         {stationDetails?.map((st) => (
           <CircleMarker
-            key={st.StationID}
+            key={st.station_detail_id}
             center={stationToLatLng(st)}
             radius={5}
             color="#eeb34b"
             fillColor="#ffffffff"
             fillOpacity={0.9}
           >
-            <Popup>{st.StationName || st.StationID}</Popup>
+            <Popup>{st.name || st.station_detail_id}</Popup>
           </CircleMarker>
         ))}
 

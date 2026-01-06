@@ -28,8 +28,22 @@ export default function Scenario({
   projectName?: string;
 }) {
   const nodes: StationDetail[] =
-    configuration?.Network_model?.Station_detail ?? [];
-  const edges: StationPair[] = configuration?.Network_model?.StationPair ?? [];
+    configuration?.Network_model?.station_pairs
+      ?.flatMap((pair: StationPair) =>
+        [pair.fst_station, pair.snd_station].filter(
+          (s): s is StationDetail => !!s
+        )
+      )
+      .filter(
+        (station: StationDetail, index: number, self: StationDetail[]) =>
+          index ===
+          self.findIndex(
+            (s: StationDetail) =>
+              s.station_detail_id === station.station_detail_id
+          )
+      ) ?? [];
+  const edges: StationPair[] =
+    configuration?.Network_model?.station_pairs ?? [];
   const [transportMode, setTransportMode] = useState<"Route" | "Bus">("Route");
   const colorOptions = useMemo(
     () => [
@@ -225,16 +239,15 @@ export default function Scenario({
     try {
       // Build input points for backend: [lon,lat]
       const pickCoord = (st: StationDetail): [number, number] | null => {
-        if ((st as any).Location?.coordinates)
-          return (st as any).Location.coordinates as [number, number];
-        if ((st as any).location?.coordinates)
-          return (st as any).location.coordinates as [number, number];
+        if (st.lon && st.lat) {
+          return [st.lon, st.lat]; // Return as [lon, lat] for backend
+        }
         return null;
       };
 
       const points = route.stations
         .map((id) => {
-          const st = nodes.find((n) => n.StationID === id);
+          const st = nodes.find((n) => n.station_detail_id === id);
           const coord = st ? pickCoord(st) : null;
           return coord ? { id, coord } : null;
         })
@@ -298,8 +311,8 @@ export default function Scenario({
 
   // Helper: Get station name from ID
   const getStationName = (stationId: string): string => {
-    const station = nodes.find((n) => n.StationID === stationId);
-    return station?.StationName || stationId;
+    const station = nodes.find((n) => n.station_detail_id === stationId);
+    return station?.name || stationId;
   };
 
   // Helper: Get pre-computed route geometry from network model if available
@@ -308,11 +321,11 @@ export default function Scenario({
     toStationId: string
   ): [number, number][] | null => {
     const pair = edges.find(
-      (p) => p.FstStation === fromStationId && p.SndStation === toStationId
+      (p) =>
+        p.fst_station_id === fromStationId && p.snd_station_id === toStationId
     );
-    if (pair?.RouteBetween?.Route?.coordinates) {
-      return pair.RouteBetween.Route.coordinates;
-    }
+    // Note: route is now a string (GeoJSON), would need parsing if used
+    // For now, return null as we may need to parse the GeoJSON string
     return null;
   };
 
@@ -353,33 +366,38 @@ export default function Scenario({
   const handleSimulation = async () => {
     try {
       // Create scenario from current routes
-      const routePairs = configuration?.Network_model?.StationPair ?? [];
+      const routePairs = configuration?.Network_model?.station_pairs ?? [];
 
       // Build route scenarios and bus scenarios
-      const routeScenarios = routes.map((route, routeIdx) => ({
-        RouteScenarioID: `RS${String(routeIdx + 1).padStart(2, "0")}`,
-        RoutePath: [
-          {
-            RoutePathID: route.id,
-            RoutePathName: route.name,
-            RoutePathColor: route.color,
-            Order: route.stations.slice(0, -1).map((station, stationIdx) => {
-              // Find the station pair ID for consecutive stations
-              const nextStation = route.stations[stationIdx + 1];
-              const stationPair = routePairs.find(
-                (sp) =>
-                  sp.FstStation === station && sp.SndStation === nextStation
-              );
-              return {
-                OrderID: `O${routeIdx}-${stationIdx + 1}`,
-                OrderNumber: stationIdx + 1,
-                StationPair:
-                  stationPair?.StationPairID || `${station}-${nextStation}`,
-              };
-            }),
-          },
-        ],
+      const routePaths = routes.map((route, routeIdx) => ({
+        route_path_id: route.id,
+        name: route.name,
+        color: route.color,
+        route_scenario_id: "RS01",
+        route: JSON.stringify({
+          type: "LineString",
+          coordinates: route.segments.flatMap((seg) => seg.coords),
+        }),
+        orders: route.stations.slice(0, -1).map((station, stationIdx) => {
+          const nextStation = route.stations[stationIdx + 1];
+          const stationPair = routePairs.find(
+            (sp: StationPair) =>
+              sp.fst_station_id === station && sp.snd_station_id === nextStation
+          );
+          return {
+            order_id: `O${routeIdx}-${stationIdx + 1}`,
+            order: stationIdx + 1,
+            station_pair_id:
+              stationPair?.station_pair_id || `${station}-${nextStation}`,
+            route_path_id: route.id,
+          };
+        }),
       }));
+
+      const routeScenario = {
+        route_scenario_id: "RS01",
+        route_paths: routePaths,
+      };
 
       // Generate schedule times (e.g., 10:00, 10:15, 10:30)
       const timeSlotMinutes = parseInt(timeSlot.split(" ")[0]);
@@ -392,28 +410,28 @@ export default function Scenario({
         }
       }
 
-      const busScenarios = [
-        {
-          BusScenarioID: "BS01",
-          ScheduleData: routes.map((route, routeIdx) => ({
-            ScheduleDataID: `SCH${String(routeIdx + 1).padStart(2, "0")}`,
-            RoutePathID: route.id,
-            ScheduleList: scheduleTimes.join(","),
-          })),
-          BusInformation: routes.map((route, routeIdx) => ({
-            BusInformationID: `BI${String(routeIdx + 1).padStart(2, "0")}`,
-            RoutePathID: route.id,
-            BusSpeed: route.speed,
-            MaxDistance: route.maxDistance,
-            MaxBuses: route.maxBuses,
-            BusCapacity: route.capacity,
-          })),
-        },
-      ];
+      const busInformations = routes.map((route, routeIdx) => ({
+        bus_information_id: `BI${String(routeIdx + 1).padStart(2, "0")}`,
+        speed: route.speed,
+        max_dis: route.maxDistance,
+        max_bus: route.maxBuses,
+        capacity: route.capacity,
+        bus_scenario_id: "BS01",
+        route_path_id: route.id,
+      }));
 
-      const scenario = {
-        RouteScenario: routeScenarios,
-        BusScenario: busScenarios,
+      const scheduleData = {
+        schedule_data_id: "SCH01",
+        schedule_list: scheduleTimes.join(","),
+        route_path_id: routes[0]?.id || "default_route",
+        bus_scenario_id: "BS01",
+      };
+
+      const busScenario = {
+        bus_scenario_id: "BS01",
+        schedule_data_id: "SCH01",
+        schedule_data: scheduleData,
+        bus_informations: busInformations,
       };
 
       // Format time periods
@@ -422,11 +440,32 @@ export default function Scenario({
       ).padStart(2, "0")}.00`;
       const timeSlotValue = timeSlot.split(" ")[0];
 
+      // Convert legacy Configuration to ConfigurationDetail for the API
+      const configurationDetail = {
+        configuration_detail_id: "temp_config_001",
+        alighting_data_id: "temp_alighting_001",
+        interarrival_data_id: "temp_interarrival_001",
+        network_model_id:
+          configuration.Network_model?.network_model_id || "temp_network_001",
+        network_model: configuration.Network_model,
+        alighting_datas: [], // Can be populated from Alighting_Distribution if needed
+        interarrival_datas: [], // Can be populated from Interarrival_Distribution if needed
+      };
+
+      // Convert scenario to ScenarioDetail for the API
+      const scenarioDetail = {
+        scenario_detail_id: "temp_scenario_001",
+        bus_scenario_id: "BS01",
+        route_scenario_id: "RS01",
+        bus_scenario: busScenario,
+        route_scenario: routeScenario,
+      };
+
       // Build simulation request
       const simulationRequest: ProjectSimulationRequest = {
         project_id: projectName || "PROJECT_001",
-        configuration,
-        scenario,
+        configuration: configurationDetail,
+        scenario: scenarioDetail,
         time_periods: timePeriods,
         time_slot: timeSlotValue,
       };

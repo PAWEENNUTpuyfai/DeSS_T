@@ -1,45 +1,64 @@
-export interface Scenario {
-  RouteScenario: RouteScenario[];
-  BusScenario: BusScenario[];
+// ------------------- SCENARIO DETAIL --------------------
+export interface ScenarioDetail {
+  scenario_detail_id: string;
+  bus_scenario_id: string;
+  route_scenario_id: string;
+  bus_scenario?: BusScenario;
+  route_scenario?: RouteScenario;
 }
-/* ─────────────── Bus Scenario ─────────────── */
+
+// ------------------- BUS SCENARIO --------------------
 export interface BusScenario {
-  BusScenarioID: string;
-  ScheduleData: ScheduleData[];
-  BusInformation: BusInformation[];
+  bus_scenario_id: string;
+  schedule_data_id: string;
+  schedule_data?: ScheduleData;
+  bus_informations?: BusInformation[];
 }
 
+// ------------------- SCHEDULE DATA --------------------
 export interface ScheduleData {
-  ScheduleDataID: string;
-  RoutePathID: string;
-  ScheduleList: string;
+  schedule_data_id: string;
+  schedule_list: string;
+  route_path_id: string;
+  bus_scenario_id: string;
+  route_path?: RoutePath;
+  bus_scenario?: BusScenario;
 }
 
+// ------------------- BUS INFORMATION --------------------
 export interface BusInformation {
-    BusInformationID: string;
-    RoutePathID : string;
-    BusSpeed: number;
-    MaxDistance: number;
-    BusCapacity: number;
-    MaxBuses: number;
+  bus_information_id: string;
+  speed: number;
+  max_dis: number;
+  max_bus: number;
+  capacity: number;
+  bus_scenario_id: string;
+  route_path_id: string;
+  route_path?: RoutePath;
 }
 
-
-/* ─────────────── Route Path ─────────────── */
+// ------------------- ROUTE SCENARIO --------------------
 export interface RouteScenario {
-  RouteScenarioID: string;
-  RoutePath: RoutePath[];
+  route_scenario_id: string;
+  route_paths?: RoutePath[];
 }
 
+// ------------------- ROUTE PATH --------------------
 export interface RoutePath {
-  RoutePathID: string;
-  RoutePathName: string;
-  RoutePathColor: string;
-  Order: OrderPath[];
+  route_path_id: string;
+  name: string;
+  color: string;
+  route_scenario_id: string;
+  route: string; // GeoJSON as string: "type:geometry(LINESTRING,4326)"
+  orders?: Order[];
 }
 
-export interface OrderPath {
-  OrderID: string;
-  OrderNumber: number;
-  StationPair: string;
+// ------------------- ORDER --------------------
+export interface Order {
+  order_id: string;
+  order: number;
+  station_pair_id: string;
+  route_path_id: string;
+  route_path?: RoutePath;
+  station_pair?: any; // Reference to StationPair from Network.ts
 }

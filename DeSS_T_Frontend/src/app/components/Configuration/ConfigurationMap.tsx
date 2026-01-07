@@ -111,6 +111,7 @@ export default function ConfigurationMap({
 
       return;
     }
+    
 
     // manual lat/lon mode
     setMapBounds({ minLat, maxLat, minLon, maxLon });

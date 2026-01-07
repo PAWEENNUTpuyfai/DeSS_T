@@ -9,7 +9,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import type { StationDetail, GeoPoint } from "../models/Network";
+import type { StationDetail } from "../models/Network";
 
 export type RouteSegment = {
   from: string;
@@ -43,27 +43,66 @@ interface ScenarioMapProps {
   isEditingMode?: boolean; // True when editing a route
 }
 
-function geoPointToLatLng(g: GeoPoint): [number, number] {
-  const [lon, lat] = g.coordinates; // GeoJSON [lon, lat]
-  return [lat, lon];
+function stationToLatLng(s: StationDetail): [number, number] {
+  const rec = s as unknown as Record<string, unknown>;
+
+  const toNum = (v: unknown): number | undefined => {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string") {
+      const n = parseFloat(v);
+      if (Number.isFinite(n)) return n;
+    }
+    return undefined;
+  };
+
+  // Prefer explicit lat/lon if present (handle string or number)
+  const latFromFields = toNum(rec.lat);
+  const lonFromFields = toNum(rec.lon);
+  if (latFromFields !== undefined && lonFromFields !== undefined) {
+    return [latFromFields, lonFromFields];
+  }
+
+  // Fallback to GeoJSON location.coordinates [lon, lat]
+  const locationLower = rec.location as unknown;
+  const locationUpper = rec.Location as unknown;
+  const coordinates = (
+    (locationLower as Record<string, unknown> | undefined)?.coordinates ||
+    (locationUpper as Record<string, unknown> | undefined)?.coordinates
+  ) as unknown;
+  if (Array.isArray(coordinates) && coordinates.length >= 2) {
+    const lon = toNum(coordinates[0]);
+    const lat = toNum(coordinates[1]);
+    if (lat !== undefined && lon !== undefined) {
+      return [lat, lon];
+    }
+  }
+
+  // Last resort: Bangkok center to avoid crashing
+  return [13.75, 100.5];
 }
 
-function stationToLatLng(s: StationDetail): [number, number] {
-  // Try Location (with capital L) first
-  if (s.Location && s.Location.coordinates) {
-    const [lon, lat] = s.Location.coordinates;
-    return [lat, lon];
-  }
-  // Try lowercase location as fallback
-  if (s.location && s.location.coordinates) {
-    const [lon, lat] = s.location.coordinates;
-    return [lat, lon];
-  }
-  if (s.Lat && s.Lon) {
-    return [parseFloat(s.Lat), parseFloat(s.Lon)];
-  }
-  // Fallback to Bangkok center if no coordinates
-  return [13.75, 100.5];
+function stationDisplayName(s: StationDetail): string {
+  const rec = s as unknown as Record<string, unknown>;
+  const name =
+    (rec.name as string | undefined) ||
+    (rec.station_name as string | undefined) ||
+    (rec.StationName as string | undefined) ||
+    (rec.name_th as string | undefined);
+  return (
+    name ??
+    "Unnamed station"
+  );
+}
+
+function stationIdFor(s: StationDetail): string {
+  const rec = s as unknown as Record<string, unknown>;
+  const id =
+    (rec.station_detail_id as string | undefined) ||
+    (rec.StationID as string | undefined) ||
+    (rec.station_id_osm as string | undefined);
+  if (id && id.trim().length > 0) return id;
+  const [lat, lon] = stationToLatLng(s);
+  return `${lat.toFixed(6)},${lon.toFixed(6)}`;
 }
 
 function BoundsUpdater({
@@ -192,11 +231,12 @@ export default function ScenarioMap({
         />
 
         {/* Stations */}
-        {stations.map((st) => (
+        {stations.map((st, idx) => (
           <CircleMarker
-            key={st.StationID}
+            key={`station-${stationIdFor(st)}-${idx}`}
             center={stationToLatLng(st)}
             radius={6}
+            weight={2}
             color={"#eeb34b"}
             fillColor="#fff"
             fillOpacity={0.9}
@@ -205,14 +245,14 @@ export default function ScenarioMap({
                 // Only allow selection if not in editing mode, or if selecting for the current route
                 if (
                   !isEditingMode ||
-                  route?.stations.includes(st.StationID) === false
+                  route?.stations.includes(stationIdFor(st)) === false
                 ) {
-                  onSelectStation(st.StationID);
+                  onSelectStation(stationIdFor(st));
                 }
               },
             }}
           >
-            <Popup>{st.StationName || st.StationID}</Popup>
+            <Popup>{stationDisplayName(st)}</Popup>
           </CircleMarker>
         ))}
 
@@ -220,13 +260,12 @@ export default function ScenarioMap({
         {!route?.hidden &&
           route?.segments.map((seg, idx) => (
             <Polyline
-              key={`${seg.from}-${seg.to}-${idx}`}
+              key={`route-${route.id}-${seg.from}-${seg.to}-${idx}`}
               positions={seg.coords.map(([lon, lat]) => [lat, lon])}
               pathOptions={{
                 color: route.color,
                 weight: 4,
                 opacity: 0.85,
-                dashArray: undefined,
                 lineCap: "round",
                 lineJoin: "round",
               }}
@@ -240,10 +279,10 @@ export default function ScenarioMap({
               if (idx >= route.stations.length - 1) return null;
 
               const currentStation = stations.find(
-                (s) => s.StationID === stationId
+                (s) => s.station_detail_id === stationId
               );
               const nextStation = stations.find(
-                (s) => s.StationID === route.stations[idx + 1]
+                (s) => s.station_detail_id === route.stations[idx + 1]
               );
 
               if (!currentStation || !nextStation) return null;
@@ -270,9 +309,9 @@ export default function ScenarioMap({
         )}
 
         {/* All routes (for Bus mode) */}
-        {allRoutes?.map(
-          (r) =>
-            !r.hidden &&
+        {allRoutes
+          ?.filter((r) => !r.hidden)
+          .flatMap((r) =>
             r.segments.map((seg, idx) => (
               <Polyline
                 key={`${r.id}-${seg.from}-${seg.to}-${idx}`}
@@ -281,13 +320,12 @@ export default function ScenarioMap({
                   color: r.color,
                   weight: 4,
                   opacity: 0.85,
-                  dashArray: undefined,
                   lineCap: "round",
                   lineJoin: "round",
                 }}
               />
             ))
-        )}
+          )}
 
         <BoundsUpdater bounds={bounds} />
       </MapContainer>

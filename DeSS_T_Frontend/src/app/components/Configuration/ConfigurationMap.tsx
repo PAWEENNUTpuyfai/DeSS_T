@@ -79,12 +79,19 @@ export default function ConfigurationMap({
 
         // Build NetworkGraph with bus stops (StationDetail format)
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-          StationID: String(stop.id),
-          StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
-          Location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-          location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-          Lat: String(stop.lat),
-          Lon: String(stop.lon),
+          station_detail_id: String(stop.id),
+          name: String(
+            typeof stop.tags?.name === "string"
+              ? stop.tags.name
+              : stop.tags?.name ?? `Bus Stop ${stop.id}`
+          ),
+          location: {
+            type: "Point",
+            coordinates: [stop.lon, stop.lat],
+          },
+          lat: stop.lat,
+          lon: stop.lon,
+          station_id_osm: String(stop.id),
         }));
 
         setMapBounds({
@@ -104,6 +111,7 @@ export default function ConfigurationMap({
 
       return;
     }
+    
 
     // manual lat/lon mode
     setMapBounds({ minLat, maxLat, minLon, maxLon });
@@ -117,12 +125,19 @@ export default function ConfigurationMap({
       ]);
 
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-        StationID: String(stop.id),
-        StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
-        Location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-        location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-        Lat: String(stop.lat),
-        Lon: String(stop.lon),
+        station_detail_id: String(stop.id),
+        name: String(
+          typeof stop.tags?.name === "string"
+            ? stop.tags.name
+            : stop.tags?.name ?? `Bus Stop ${stop.id}`
+        ),
+        location: {
+          type: "Point",
+          coordinates: [stop.lon, stop.lat],
+        },
+        lat: stop.lat,
+        lon: stop.lon,
+        station_id_osm: String(stop.id),
       }));
 
       setStationDetails(stationDetails);
@@ -151,12 +166,19 @@ export default function ConfigurationMap({
         const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
 
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-          StationID: String(stop.id),
-          StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
-          Location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-          location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-          Lat: String(stop.lat),
-          Lon: String(stop.lon),
+          station_detail_id: String(stop.id),
+          name: String(
+            typeof stop.tags?.name === "string"
+              ? stop.tags.name
+              : stop.tags?.name ?? `Bus Stop ${stop.id}`
+          ),
+          location: {
+            type: "Point",
+            coordinates: [stop.lon, stop.lat],
+          },
+          lat: stop.lat,
+          lon: stop.lon,
+          station_id_osm: String(stop.id),
         }));
 
         setMapBounds({
@@ -185,12 +207,19 @@ export default function ConfigurationMap({
       ]);
 
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-        StationID: String(stop.id),
-        StationName: stop.tags?.name || `Bus Stop ${stop.id}`,
-        Location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-        location: { type: "Point", coordinates: [stop.lon, stop.lat] },
-        Lat: String(stop.lat),
-        Lon: String(stop.lon),
+        station_detail_id: String(stop.id),
+        name: String(
+          typeof stop.tags?.name === "string"
+            ? stop.tags.name
+            : stop.tags?.name ?? `Bus Stop ${stop.id}`
+        ),
+        location: {
+          type: "Point",
+          coordinates: [stop.lon, stop.lat],
+        },
+        lat: stop.lat,
+        lon: stop.lon,
+        station_id_osm: String(stop.id),
       }));
 
       setMapBounds({ minLat, maxLat, minLon, maxLon });
@@ -243,7 +272,7 @@ export default function ConfigurationMap({
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
             {/* Left: Map */}
             <div
-              className="flex-1 border rounded rounded-[25px] overflow-hidden my-8 ml-2"
+              className="flex-1 border rounded-[25px] overflow-hidden my-8 ml-2"
               style={{ position: "relative", zIndex: 1 }}
             >
               <MapViewer
@@ -432,20 +461,20 @@ export default function ConfigurationMap({
                           <tbody>
                             {stationDetails.map((s) => (
                               <tr
-                                key={s.StationID}
+                                key={s.station_detail_id}
                                 className="odd:bg-white even:bg-gray-50"
                               >
                                 <td className="px-3 py-2 border-b align-top">
-                                  {s.StationID}
+                                  {s.station_detail_id}
                                 </td>
                                 <td className="px-3 py-2 border-b align-top">
-                                  {s.StationName || "-"}
+                                  {s.name || "-"}
                                 </td>
                                 <td className="px-3 py-2 border-b align-top">
-                                  {s.Lat}
+                                  {s.lat}
                                 </td>
                                 <td className="px-3 py-2 border-b align-top">
-                                  {s.Lon}
+                                  {s.lon}
                                 </td>
                               </tr>
                             ))}

@@ -7,6 +7,7 @@ import (
 )
 
 func SetupSimulationRoutes(app *fiber.App) {
-	simulation := app.Group("/simulation")
+	simulation := app.Group("/api/simulation")
 	simulation.Post("/transform", controllers.TransformSimulationHandler)
+	simulation.Post("/run", controllers.RunSimulationHandler)
 }

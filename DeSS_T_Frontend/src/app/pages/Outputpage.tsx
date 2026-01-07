@@ -1,10 +1,15 @@
 import { useState } from "react";
 import Dashboard from "../components/Dashboard/Dashboard";
 import InteractiveMap from "../components/InteractiveMap";
+import type { SimulationResponse } from "../models/SimulationModel";
 import "../../style/Output.css";
 import OutputNav from "../components/OutputNav";
 
-export default function GuestSetup() {
+export default function GuestSetup({
+  simulationResponse,
+}: {
+  simulationResponse: SimulationResponse;
+}) {
   const [mode, setMode] = useState<"dashboard" | "map">("map");
 
   return (
@@ -55,10 +60,10 @@ export default function GuestSetup() {
         </div>
 
         {mode === "dashboard" ? (
-          <Dashboard />
+          <Dashboard simulationResponse={simulationResponse} />
         ) : (
           <div className="w-full flex justify-center">
-            <InteractiveMap />
+            <InteractiveMap simulationResponse={simulationResponse} />
           </div>
         )}
       </div>

@@ -80,7 +80,11 @@ export default function ConfigurationMap({
         // Build NetworkGraph with bus stops (StationDetail format)
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
           station_detail_id: String(stop.id),
-          name: stop.tags?.name || `Bus Stop ${stop.id}`,
+          name: String(
+            typeof stop.tags?.name === "string"
+              ? stop.tags.name
+              : stop.tags?.name ?? `Bus Stop ${stop.id}`
+          ),
           location: {
             type: "Point",
             coordinates: [stop.lon, stop.lat],
@@ -121,7 +125,11 @@ export default function ConfigurationMap({
 
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
         station_detail_id: String(stop.id),
-        name: stop.tags?.name || `Bus Stop ${stop.id}`,
+        name: String(
+          typeof stop.tags?.name === "string"
+            ? stop.tags.name
+            : stop.tags?.name ?? `Bus Stop ${stop.id}`
+        ),
         location: {
           type: "Point",
           coordinates: [stop.lon, stop.lat],
@@ -158,7 +166,11 @@ export default function ConfigurationMap({
 
         const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
           station_detail_id: String(stop.id),
-          name: stop.tags?.name || `Bus Stop ${stop.id}`,
+          name: String(
+            typeof stop.tags?.name === "string"
+              ? stop.tags.name
+              : stop.tags?.name ?? `Bus Stop ${stop.id}`
+          ),
           location: {
             type: "Point",
             coordinates: [stop.lon, stop.lat],
@@ -195,7 +207,11 @@ export default function ConfigurationMap({
 
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
         station_detail_id: String(stop.id),
-        name: stop.tags?.name || `Bus Stop ${stop.id}`,
+        name: String(
+          typeof stop.tags?.name === "string"
+            ? stop.tags.name
+            : stop.tags?.name ?? `Bus Stop ${stop.id}`
+        ),
         location: {
           type: "Point",
           coordinates: [stop.lon, stop.lat],
@@ -255,7 +271,7 @@ export default function ConfigurationMap({
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
             {/* Left: Map */}
             <div
-              className="flex-1 border rounded rounded-[25px] overflow-hidden my-8 ml-2"
+              className="flex-1 border rounded-[25px] overflow-hidden my-8 ml-2"
               style={{ position: "relative", zIndex: 1 }}
             >
               <MapViewer

@@ -49,7 +49,7 @@ export default function ConfigurationFiles({
 
     try {
       setLoadingA(true);
-      const output = await AlightingFitFromXlsx(alightingFile);
+      const output = await AlightingFitFromXlsx(alightingFile, stationDetails);
       setAlightingResult(output);
       return output;
     } catch (e: unknown) {
@@ -66,7 +66,10 @@ export default function ConfigurationFiles({
 
     try {
       setLoadingI(true);
-      const output = await InterarrivalFitFromXlsx(interarrivalFile);
+      const output = await InterarrivalFitFromXlsx(
+        interarrivalFile,
+        stationDetails
+      );
       setInterarrivalResult(output);
       return output;
     } catch (e: unknown) {
@@ -195,7 +198,8 @@ export default function ConfigurationFiles({
           console.error("Error message:", errorMsg);
           // Surface a single clear error; outer catch will alert
           throw new Error(
-            "Failed to build network. Ensure the backend is running and try again.\n\nDetails: " + errorMsg
+            "Failed to build network. Ensure the backend is running and try again.\n\nDetails: " +
+              errorMsg
           );
         }
       } else {
@@ -214,8 +218,11 @@ export default function ConfigurationFiles({
 
       // Populate station details in station_pairs for Scenario to use
       // Handle both backend response format: StationPair array and station_pairs
-      const networkData = network as NetworkModel & { StationPair?: StationPair[] };
-      const stationPairs = networkData.StationPair || network.station_pairs || [];
+      const networkData = network as NetworkModel & {
+        StationPair?: StationPair[];
+      };
+      const stationPairs =
+        networkData.StationPair || network.station_pairs || [];
       const enrichedNetworkModel = {
         ...network,
         station_pairs: stationPairs.map((pair: StationPair) => {

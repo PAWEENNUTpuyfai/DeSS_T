@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -78,8 +79,11 @@ func DistributionExcelToJSON(path string) (Data, error) {
 
     return output, nil
 }
+func DistributionExcelToJSONReader(
+    r io.Reader,
+    stationNameToID map[string]string,
+) (Data, error) {
 
-func DistributionExcelToJSONReader(r io.Reader) (Data, error) {
     f, err := excelize.OpenReader(r)
     if err != nil {
         return Data{}, err
@@ -91,7 +95,17 @@ func DistributionExcelToJSONReader(r io.Reader) (Data, error) {
 
     for _, sheet := range f.GetSheetList() {
 
-        rows, _ := f.GetRows(sheet)
+        sheetKey := strings.TrimSpace(sheet)
+
+        stationID := sheetKey
+        if id, ok := stationNameToID[sheetKey]; ok {
+            stationID = id
+        }
+
+        rows, err := f.GetRows(sheet)
+        if err != nil {
+            continue
+        }
         if len(rows) < 2 {
             continue
         }
@@ -116,7 +130,9 @@ func DistributionExcelToJSONReader(r io.Reader) (Data, error) {
                 }
 
                 var num float64
-                fmt.Sscanf(val, "%f", &num)
+                if _, err := fmt.Sscanf(val, "%f", &num); err != nil {
+                    continue
+                }
 
                 recs = append(recs, Record{
                     RecordID:     recordID,
@@ -125,8 +141,9 @@ func DistributionExcelToJSONReader(r io.Reader) (Data, error) {
                 recordID++
             }
 
+
             output.Data = append(output.Data, Item{
-                Station:   sheet,
+                Station:   stationID,
                 TimeRange: header,
                 Records:   recs,
             })

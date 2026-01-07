@@ -33,7 +33,7 @@ def fit_best_distribution(values: List[float]) -> Dict:
         "Exponential": stats.expon,
         "Weibull": stats.weibull_min,
         "Gamma": stats.gamma,
-        "Lognormal": stats.lognorm,
+        # "Lognormal": stats.lognorm,
     }
 
     best_name = None
@@ -82,9 +82,9 @@ def params_to_string(dist_name: str, params) -> str:
         shape, loc, scale = params
         return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
 
-    if dist_name == "Lognormal":
-        shape, loc, scale = params
-        return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
+    # if dist_name == "Lognormal":
+    #     shape, loc, scale = params
+    #     return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
 
     return str(params)
 

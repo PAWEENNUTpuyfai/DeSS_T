@@ -6,7 +6,7 @@ import {
 import ConfigurationNav from "./ConfigurationNav";
 import MapViewer from "../MapViewer";
 import LoadingModal from "../LoadingModal";
-import type { StationDetail } from "../../models/Network";
+import type { StationDetail, StationPair } from "../../models/Network";
 import type { Configuration } from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
@@ -106,7 +106,7 @@ export default function ConfigurationFiles({
       const usedNames = new Set<string>();
       stationDetails.forEach((s, idx) => {
         const raw = s.name ?? `Station-${s.station_detail_id ?? idx + 1}`;
-        const cleaned = raw.replace(/[\\\/\*\?\:\[\]]/g, "");
+        const cleaned = raw.replace(/[\\/*?:[\]]/g, "");
         const base = (cleaned || `Sheet${idx + 1}`).slice(0, 31);
 
         let safe = base;
@@ -167,8 +167,8 @@ export default function ConfigurationFiles({
         "Please attach both Alighting and Interarrival files before submitting"
       );
 
-    let alightRes: any = alightingResult;
-    let interRes: any = interarrivalResult;
+    let alightRes: unknown = alightingResult;
+    let interRes: unknown = interarrivalResult;
 
     try {
       setIsSubmitting(true);
@@ -185,12 +185,10 @@ export default function ConfigurationFiles({
       let network: NetworkModel;
       if (stationDetails && stationDetails.length > 0) {
         try {
-          console.log("Sending stations to backend:", stationDetails);
           network = await buildNetworkModelFromStations(
             stationDetails,
             "guest_network"
           );
-          console.log("Network built successfully:", network);
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err);
           console.error("Failed to build network - Full error:", err);
@@ -215,9 +213,12 @@ export default function ConfigurationFiles({
         : { DataFitResponse: [] };
 
       // Populate station details in station_pairs for Scenario to use
+      // Handle both backend response format: StationPair array and station_pairs
+      const networkData = network as NetworkModel & { StationPair?: StationPair[] };
+      const stationPairs = networkData.StationPair || network.station_pairs || [];
       const enrichedNetworkModel = {
         ...network,
-        station_pairs: network.station_pairs?.map((pair: any) => {
+        station_pairs: stationPairs.map((pair: StationPair) => {
           const fstStation = stationDetails.find(
             (s) => s.station_detail_id === pair.fst_station_id
           );
@@ -229,7 +230,7 @@ export default function ConfigurationFiles({
             fst_station: fstStation,
             snd_station: sndStation,
           };
-        }) || [],
+        }),
         station_details: stationDetails, // Also include raw stations list
       };
 
@@ -263,7 +264,7 @@ export default function ConfigurationFiles({
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
             {/* Left: Map */}
             <div
-              className="flex-1 border rounded rounded-[25px] overflow-hidden my-8 ml-2"
+              className="flex-1 border rounded-[25px] overflow-hidden my-8 ml-2"
               style={{ position: "relative", zIndex: 1 }}
             >
               <MapViewer

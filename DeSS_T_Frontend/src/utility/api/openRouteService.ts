@@ -13,8 +13,62 @@ export async function buildNetworkModelFromStations(
   networkName = "guest_network"
 ): Promise<NetworkModel> {
   if (!stations || stations.length === 0) {
-    return { Network_model: networkName, Station_detail: [], StationPair: [] };
+    return { Network_model: networkName, Station_detail: [], station_pairs: [] };
   }
+
+  // Map frontend StationDetail → backend Station_Detail shape
+  const toNum = (v: unknown): number | undefined => {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string") {
+      const n = parseFloat(v);
+      if (Number.isFinite(n)) return n;
+    }
+    return undefined;
+  };
+
+  type StationPayload = {
+    StationID: string;
+    StationName: string;
+    Location: { type: "Point"; coordinates: [number, number] };
+  };
+
+  const stationsPayload: StationPayload[] = stations
+    .map((s, idx): StationPayload | null => {
+      const lat = toNum(s.lat ?? s.latitude);
+      const lon = toNum(s.lon ?? s.longitude);
+      const coordSource =
+        (s.location as { coordinates?: unknown })?.coordinates ??
+        (s.Location as { coordinates?: unknown })?.coordinates;
+      const lonFromLoc = Array.isArray(coordSource) ? toNum(coordSource[0]) : undefined;
+      const latFromLoc = Array.isArray(coordSource) ? toNum(coordSource[1]) : undefined;
+
+      const finalLat = lat ?? latFromLoc;
+      const finalLon = lon ?? lonFromLoc;
+      if (finalLat === undefined || finalLon === undefined) return null;
+
+      const rawId =
+        s.station_detail_id ||
+        s.StationID ||
+        s.station_id_osm;
+
+      const stationId = rawId || `${finalLat.toFixed(6)},${finalLon.toFixed(6)}` || `station-${idx}`;
+      const stationName =
+        s.name ||
+        s.station_name ||
+        s.StationName ||
+        rawId ||
+        `Station ${idx + 1}`;
+
+      return {
+        StationID: String(stationId),
+        StationName: String(stationName),
+        Location: {
+          type: "Point",
+          coordinates: [finalLon, finalLat],
+        },
+      };
+    })
+    .filter((s): s is StationPayload => s !== null);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 45000);
@@ -24,13 +78,13 @@ export async function buildNetworkModelFromStations(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        stations,
+        stations: stationsPayload,
         network_name: networkName,
       }),
       signal: controller.signal,
     });
   } catch (err) {
-    if ((err as any)?.name === "AbortError") {
+    if (err && typeof err === "object" && "name" in err && (err as { name?: string }).name === "AbortError") {
       throw new Error("Network build request timed out. Please try again.");
     }
     throw err;

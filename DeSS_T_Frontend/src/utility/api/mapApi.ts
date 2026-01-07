@@ -7,11 +7,13 @@ export type OverpassBounds = {
   maxlon: number;
 };
 
+export type OverpassTags = Record<string, string | number | boolean | undefined>;
+
 export type OverpassNode = {
   id: number;
   lat: number;
   lon: number;
-  tags?: Record<string, any>;
+  tags?: OverpassTags;
 };
 
 export async function fetchAreaBounds(areaCode: string): Promise<OverpassBounds> {
@@ -26,7 +28,7 @@ export async function fetchAreaBounds(areaCode: string): Promise<OverpassBounds>
     throw new Error(`Backend error: ${error}`);
   }
 
-  return await res.json();
+  return (await res.json()) as OverpassBounds;
 }
 
 export async function fetchBusStops(bounds: [[number, number], [number, number]]): Promise<OverpassNode[]> {
@@ -47,7 +49,7 @@ export async function fetchBusStops(bounds: [[number, number], [number, number]]
     throw new Error(`Backend error: ${error}`);
   }
 
-  return await res.json();
+  return (await res.json()) as OverpassNode[];
 }
 
 export async function fetchBusStopsInArea(areaCode: string): Promise<OverpassNode[]> {
@@ -62,9 +64,5 @@ export async function fetchBusStopsInArea(areaCode: string): Promise<OverpassNod
     throw new Error(`Backend error: ${error}`);
   }
 
-  return await res.json();
-}
-
-export async function fetchAreaGeometry(areaCode: string): Promise<[number, number][][]> {
-  return [];
+  return (await res.json()) as OverpassNode[];
 }

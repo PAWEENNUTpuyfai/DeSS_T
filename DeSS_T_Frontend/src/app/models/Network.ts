@@ -1,17 +1,28 @@
 // ------------------- NETWORK MODEL --------------------
 export interface NetworkModel {
-  network_model_id: string;
+  network_model_id?: string;
+  Network_model?: string; // backend uses this key
   station_pairs?: StationPair[];
+  Station_detail?: StationDetail[]; // backend payload
+  station_details?: StationDetail[]; // alternate casing
 }
 
 // ------------------- STATION DETAIL --------------------
+// Keep fields optional to accommodate backend payload and frontend-enriched data.
 export interface StationDetail {
-  station_detail_id: string;
-  name: string;
-  location: string; // GeoJSON as string: "type:geometry(POINT,4326)"
-  lat: number;
-  lon: number;
-  station_id_osm: string;
+  station_detail_id?: string;
+  StationID?: string;
+  name?: string;
+  StationName?: string;
+  station_name?: string;
+  name_th?: string;
+  location?: GeoPoint | { type?: string; coordinates?: [number, number] };
+  Location?: GeoPoint | { type?: string; coordinates?: [number, number] };
+  lat?: number | string;
+  lon?: number | string;
+  latitude?: number | string;
+  longitude?: number | string;
+  station_id_osm?: string;
 }
 
 // ------------------- STATION PAIR --------------------

@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Configuration } from "../models/Configuration";
-import type { StationDetail, StationPair } from "../models/Network";
+import type { StationDetail, StationPair, NetworkModel } from "../models/Network";
 import type { SimulationResponse } from "../models/SimulationModel";
 import ScenarioMap from "./ScenarioMap";
 import type { RouteSegment } from "./ScenarioMap";
 import { computeRouteSegments } from "../../utility/api/routeBatch";
-import { saveRoutes } from "../../utility/api/routeSave";
 import { SketchPicker, type ColorResult } from "react-color";
 import CustomDropdown from "./CustomDropdown";
 import Outputpage from "../pages/Outputpage";
@@ -18,7 +17,6 @@ export default function Scenario({
   configuration,
   configurationName,
   onBack,
-  mode = "guest",
   projectName,
 }: {
   configuration: Configuration;
@@ -27,30 +25,124 @@ export default function Scenario({
   mode?: "guest" | "user";
   projectName?: string;
 }) {
-  const nodes: StationDetail[] =
-    // Priority 1: Use station_details (new field)
-    (configuration?.Network_model?.station_details as StationDetail[]) ||
-    // Priority 2: Use Station_detail (uppercase S - from backend)
-    (configuration?.Network_model?.Station_detail as StationDetail[]) ||
-    // Priority 3: Extract from station_pairs if available
-    (configuration?.Network_model?.station_pairs
-      ?.flatMap((pair: StationPair) =>
-        [pair.fst_station, pair.snd_station].filter(
-          (s): s is StationDetail => !!s
-        )
-      )
-      .filter(
-        (station: StationDetail, index: number, self: StationDetail[]) =>
+  const nodes: StationDetail[] = useMemo(
+    () => {
+      const networkModel = configuration?.Network_model as
+        | (NetworkModel & { Station_detail?: unknown[]; station_details?: unknown[] })
+        | undefined;
+      if (!networkModel) return [];
+
+      const toNum = (v: unknown): number | undefined => {
+        if (typeof v === "number" && Number.isFinite(v)) return v;
+        if (typeof v === "string") {
+          const n = parseFloat(v);
+          if (Number.isFinite(n)) return n;
+        }
+        return undefined;
+      };
+
+      const normalizeStation = (
+        raw: unknown,
+        idx: number
+      ): StationDetail | null => {
+        if (!raw || typeof raw !== "object") return null;
+        const rec = raw as Record<string, unknown>;
+
+        const locationLower = rec.location as unknown;
+        const locationUpper = rec.Location as unknown;
+        const coords = (
+          (locationLower as Record<string, unknown> | undefined)?.coordinates ||
+          (locationUpper as Record<string, unknown> | undefined)?.coordinates
+        ) as unknown;
+
+        const latFromCoords = Array.isArray(coords) ? toNum(coords[1]) : undefined;
+        const lonFromCoords = Array.isArray(coords) ? toNum(coords[0]) : undefined;
+
+        const lat =
+          toNum(rec.lat) ??
+          toNum(rec.latitude) ??
+          latFromCoords;
+        const lon =
+          toNum(rec.lon) ??
+          toNum(rec.longitude) ??
+          lonFromCoords;
+
+        if (lat === undefined || lon === undefined) return null;
+
+        const rawStationId =
+          (rec.station_detail_id as string | undefined) ||
+          (rec.StationID as string | undefined) ||
+          (rec.station_id_osm as string | undefined);
+
+        const stationId =
+          rawStationId ||
+          `${lat.toFixed(6)},${lon.toFixed(6)}` ||
+          `station-${idx}`;
+
+        const name =
+          (rec.name as string | undefined) ||
+          (rec.StationName as string | undefined) ||
+          (rec.station_name as string | undefined) ||
+          (rec.name_th as string | undefined) ||
+          rawStationId ||
+          `Station ${idx + 1}`;
+
+        const normalized = {
+          ...rec,
+          station_detail_id: stationId,
+          station_id_osm:
+            (rec.station_id_osm as string | undefined) || stationId,
+          name,
+          lat,
+          lon,
+          location: {
+            type: "Point",
+            coordinates: [lon, lat],
+          },
+        } as unknown as StationDetail;
+
+        return normalized;
+      };
+
+      const nm = networkModel as {
+        Station_detail?: unknown[];
+        station_details?: unknown[];
+        station_pairs?: StationPair[];
+      };
+
+      const candidateLists: unknown[][] = [];
+
+      const fromPairs =
+        nm.station_pairs?.flatMap((pair: StationPair | undefined) => {
+          if (!pair) return [] as (StationDetail | undefined)[];
+          return [pair.fst_station, pair.snd_station].filter(Boolean);
+        }) ?? [];
+      if (fromPairs.length > 0) candidateLists.push(fromPairs);
+
+      const directStations =
+        nm.Station_detail || nm.station_details || [];
+      if (Array.isArray(directStations)) {
+        candidateLists.push(directStations as unknown[]);
+      }
+
+      const normalized = candidateLists
+        .flat()
+        .map((raw, idx) => normalizeStation(raw, idx))
+        .filter((s): s is StationDetail => !!s);
+
+      // Deduplicate by station_detail_id
+      const unique = normalized.filter(
+        (station, index, self) =>
           index ===
           self.findIndex(
-            (s: StationDetail) =>
-              s.station_detail_id === station.station_detail_id
+            (s) => s.station_detail_id === station.station_detail_id
           )
-      ) ?? []) ||
-    [];
+      );
 
-  const edges: StationPair[] =
-    configuration?.Network_model?.station_pairs ?? [];
+      return unique;
+    },
+    [configuration?.Network_model]
+  );
   const [transportMode, setTransportMode] = useState<"Route" | "Bus">("Route");
   const colorOptions = useMemo(
     () => [
@@ -145,18 +237,6 @@ export default function Scenario({
     );
   };
 
-  const cycleColor = (routeId: string) => {
-    setRoutes((prev) =>
-      prev.map((r) => {
-        if (r.id !== routeId) return r;
-        const currentIdx = colorOptions.indexOf(r.color);
-        const nextIdx =
-          currentIdx >= 0 ? (currentIdx + 1) % colorOptions.length : 0;
-        return { ...r, color: colorOptions[nextIdx] };
-      })
-    );
-  };
-
   const updateName = (routeId: string, name: string) => {
     setRoutes((prev) =>
       prev.map((r) => (r.id === routeId ? { ...r, name } : r))
@@ -246,8 +326,19 @@ export default function Scenario({
     try {
       // Build input points for backend: [lon,lat]
       const pickCoord = (st: StationDetail): [number, number] | null => {
-        if (st.lon && st.lat) {
-          return [st.lon, st.lat]; // Return as [lon, lat] for backend
+        const toNumLocal = (v: unknown): number | undefined => {
+          if (typeof v === "number" && Number.isFinite(v)) return v;
+          if (typeof v === "string") {
+            const n = parseFloat(v);
+            if (Number.isFinite(n)) return n;
+          }
+          return undefined;
+        };
+
+        const lon = toNumLocal(st.lon);
+        const lat = toNumLocal(st.lat);
+        if (lon !== undefined && lat !== undefined) {
+          return [lon, lat]; // [lon, lat] for backend
         }
         return null;
       };
@@ -319,22 +410,22 @@ export default function Scenario({
   // Helper: Get station name from ID
   const getStationName = (stationId: string): string => {
     const station = nodes.find((n) => n.station_detail_id === stationId);
-    return station?.name || stationId;
+    if (!station) return "Unnamed station";
+
+    const rec = station as unknown as Record<string, unknown>;
+    return (
+      (rec.name as string | undefined) ||
+      (rec.station_name as string | undefined) ||
+      (rec.StationName as string | undefined) ||
+      (rec.name_th as string | undefined) ||
+      (rec.StationID as string | undefined) ||
+      (rec.station_id_osm as string | undefined) ||
+      "Unnamed station"
+    );
   };
 
   // Helper: Get pre-computed route geometry from network model if available
-  const getRouteGeometryFromModel = (
-    fromStationId: string,
-    toStationId: string
-  ): [number, number][] | null => {
-    const pair = edges.find(
-      (p) =>
-        p.fst_station_id === fromStationId && p.snd_station_id === toStationId
-    );
-    // Note: route is now a string (GeoJSON), would need parsing if used
-    // For now, return null as we may need to parse the GeoJSON string
-    return null;
-  };
+  // Note: route geometry is now computed on demand via API, not from model
 
   const handleSelectStationOnMap = (stationId: string) => {
     if (!selectedRouteId) return;
@@ -479,7 +570,6 @@ export default function Scenario({
 
       // Call the simulation API
       const response = await runSimulation(simulationRequest);
-      console.log("Simulation result:", response);
       setSimulationResponse(response);
     } catch (error) {
       console.error("Simulation failed:", error);
@@ -570,7 +660,7 @@ export default function Scenario({
                   <div className="mt-4 p-4 w-full h-[85vh] flex flex-col">
                     {/* Scrollable Routes List */}
                     <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                      {routes.map((r, idx) => {
+                      {routes.map((r) => {
                         const isLocked = r.locked;
                         const isHidden = r.hidden;
                         const isBeingEdited = selectedRouteId === r.id;
@@ -652,7 +742,7 @@ export default function Scenario({
                                 <span
                                   role="button"
                                   tabIndex={0}
-                                  className={`h-7 w-7 border border-[#1b1b1b] border-2 rounded  flex-shrink-0 ${
+                                  className={`h-7 w-7 border-2 border-[#1b1b1b] rounded  flex-shrink-0 ${
                                     isDisabled
                                       ? "cursor-not-allowed opacity-50"
                                       : "cursor-pointer hover:opacity-80"
@@ -688,7 +778,7 @@ export default function Scenario({
                                   </div>
                                 )}
                                 <input
-                                  className="flex-1 border border-[#1b1b1b] border-2 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-[80px] bg-white text-gray-900"
+                                  className="flex-1 border-2 border-[#1b1b1b] rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-[80px] bg-white text-gray-900"
                                   placeholder="Route name"
                                   value={r.name}
                                   onChange={(e) =>
@@ -771,7 +861,7 @@ export default function Scenario({
                                           <path
                                             d="M5 2L21 18"
                                             stroke="#CBCBCB"
-                                            stroke-width="2"
+                                            strokeWidth="2"
                                           />
                                         </svg>
                                       ) : (
@@ -785,12 +875,12 @@ export default function Scenario({
                                           <path
                                             d="M12 8.69238C13.694 8.69238 14.9997 10.003 15 11.5381C15 13.0734 13.6942 14.3848 12 14.3848C10.3058 14.3848 9 13.0734 9 11.5381C9.00026 10.003 10.306 8.69238 12 8.69238Z"
                                             stroke="#1B1B1B"
-                                            stroke-width="2"
+                                            strokeWidth="2"
                                           />
                                           <path
                                             d="M20.1306 10.4471C20.5451 10.9265 20.7523 11.1662 20.7523 11.5385C20.7523 11.9108 20.5451 12.1506 20.1306 12.63C18.6848 14.3024 15.5875 17.3077 12 17.3077C8.4125 17.3077 5.31525 14.3024 3.86938 12.63C3.45493 12.1506 3.2477 11.9108 3.2477 11.5385C3.2477 11.1662 3.45493 10.9265 3.86938 10.4471C5.31525 8.77461 8.4125 5.76929 12 5.76929C15.5875 5.76929 18.6848 8.77461 20.1306 10.4471Z"
                                             stroke="#1B1B1B"
-                                            stroke-width="2"
+                                            strokeWidth="2"
                                           />
                                         </svg>
                                       )}
@@ -992,9 +1082,9 @@ export default function Scenario({
                         type="file"
                         accept=".xlsx"
                         className="hidden"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0] ?? null;
+                        onChange={() => {
                           // You can set bus schedule file here
+                          // const f = e.target.files?.[0] ?? null;
                           // setBusScheduleFile(f);
                         }}
                       />
@@ -1149,7 +1239,7 @@ export default function Scenario({
                     </div>
                   </div>
                 </div>
-                <div className="map">
+                <div className="map w-full flex-1 min-h-[400px]">
                   <ScenarioMap
                     stations={nodes}
                     route={

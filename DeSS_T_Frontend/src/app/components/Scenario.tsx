@@ -9,6 +9,7 @@ import type { SimulationResponse } from "../models/SimulationModel";
 import ScenarioMap from "./ScenarioMap";
 import type { RouteSegment } from "./ScenarioMap";
 import { computeRouteSegments } from "../../utility/api/routeBatch";
+import { saveRoutes } from "../../utility/api/routeSave";
 import { SketchPicker, type ColorResult } from "react-color";
 import CustomDropdown from "./CustomDropdown";
 import Outputpage from "../pages/Outputpage";
@@ -38,12 +39,12 @@ export default function Scenario({
     console.log("Project Name:", projectName);
     console.log("Network Model:", configuration?.Network_model);
     console.log(
-      "Alighting Distribution:",
-      configuration?.Alighting_Distribution
+      "Alighting Data:",
+      configuration?.Alighting_Data
     );
     console.log(
-      "Interarrival Distribution:",
-      configuration?.Interarrival_Distribution
+      "InterArrival Data:",
+      configuration?.InterArrival_Data
     );
     console.log("================================");
   }, [configuration, configurationName, projectName]);
@@ -129,6 +130,7 @@ export default function Scenario({
     const nm = networkModel as {
       Station_detail?: unknown[];
       station_details?: unknown[];
+      StationPair?: StationPair[];
       station_pairs?: StationPair[];
     };
 
@@ -136,24 +138,25 @@ export default function Scenario({
     // (most reliable source - direct from backend response)
     const directStations = nm.Station_detail || nm.station_details || [];
     if (!Array.isArray(directStations) || directStations.length === 0) {
-      // Fallback: if no direct stations, try to extract from station_pairs
+      // Fallback: if no direct stations, try to extract from StationPair
+      const stationPairs = nm.StationPair || [];
       const fromPairs =
-        nm.station_pairs?.flatMap((pair: any) => {
+        stationPairs?.flatMap((pair: StationPair) => {
           if (!pair) return [];
           const result = [];
-          if (pair.fst_station) result.push(pair.fst_station);
-          if (pair.snd_station) result.push(pair.snd_station);
+          if (pair.FstStation) result.push(pair.FstStation);
+          if (pair.SndStation) result.push(pair.SndStation);
           return result;
         }) ?? [];
 
       const normalized = fromPairs
-        .map((raw, idx) => normalizeStation(raw, idx))
+        .map((raw: unknown, idx: number) => normalizeStation(raw, idx))
         .filter((s): s is StationDetail => !!s);
 
       const unique = normalized.filter(
-        (station, index, self) =>
+        (station: StationDetail, index: number, self: StationDetail[]) =>
           index ===
-          self.findIndex((s) => s.station_detail_id === station.station_detail_id)
+          self.findIndex((s: StationDetail) => s.station_detail_id === station.station_detail_id)
       );
 
       return unique;
@@ -161,14 +164,14 @@ export default function Scenario({
 
     // Use direct stations (primary path)
     const normalized = (directStations as unknown[])
-      .map((raw, idx) => normalizeStation(raw, idx))
+      .map((raw: unknown, idx: number) => normalizeStation(raw, idx))
       .filter((s): s is StationDetail => !!s);
 
     // Deduplicate by station_detail_id
     const unique = normalized.filter(
-      (station, index, self) =>
+      (station: StationDetail, index: number, self: StationDetail[]) =>
         index ===
-        self.findIndex((s) => s.station_detail_id === station.station_detail_id)
+        self.findIndex((s: StationDetail) => s.station_detail_id === station.station_detail_id)
     );
 
     return unique;
@@ -493,8 +496,11 @@ export default function Scenario({
 
   const handleSimulation = async () => {
     try {
+      // First, save routes to RoutePath
+      await saveRoutes(routes);
+
       // Create scenario from current routes
-      const routePairs = configuration?.Network_model?.station_pairs ?? [];
+      const routePairs = configuration?.Network_model?.StationPair ?? [];
 
       // Build route scenarios and bus scenarios
       const routePaths = routes.map((route, routeIdx) => ({
@@ -510,13 +516,13 @@ export default function Scenario({
           const nextStation = route.stations[stationIdx + 1];
           const stationPair = routePairs.find(
             (sp: StationPair) =>
-              sp.fst_station_id === station && sp.snd_station_id === nextStation
+              sp.FstStation === station && sp.SndStation === nextStation
           );
           return {
             order_id: `O${routeIdx}-${stationIdx + 1}`,
             order: stationIdx + 1,
             station_pair_id:
-              stationPair?.station_pair_id || `${station}-${nextStation}`,
+              stationPair?.StationPairID || `${station}-${nextStation}`,
             route_path_id: route.id,
           };
         }),

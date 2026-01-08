@@ -207,46 +207,36 @@ export default function ConfigurationFiles({
       } else {
         network = {
           network_model_id: "guest_network",
-          station_pairs: [],
+          StationPair: [],
         };
       }
 
-      const alightingDist = isDataFitResponse(alightRes)
-        ? alightRes
-        : { DataFitResponse: [] };
-      const interarrivalDist = isDataFitResponse(interRes)
-        ? interRes
-        : { DataFitResponse: [] };
-
-      // Populate station details in station_pairs for Scenario to use
-      // Handle both backend response format: StationPair array and station_pairs
+      // For Configuration, only save the station data and station pairs
+      // Routes will be created in the Scenario phase
       const networkData = network as NetworkModel & {
         StationPair?: StationPair[];
       };
-      const stationPairs =
-        networkData.StationPair || network.station_pairs || [];
-      const enrichedNetworkModel = {
+      
+      // Stations from ConfigurationMap are already in StationDetail format
+      // Just pass them directly to NetworkModel
+      const normalizedStations = stationDetails.map((station, idx) => ({
+        ...station,
+        station_detail_id: station.station_detail_id || String(idx),
+        lat: station.lat ?? 0,
+        lon: station.lon ?? 0,
+      }));
+      
+      // Build NetworkModel with only stations and station pairs (no routes)
+      const configNetworkModel: NetworkModel = {
         ...network,
-        station_pairs: stationPairs.map((pair: StationPair) => {
-          const fstStation = stationDetails.find(
-            (s) => s.station_detail_id === pair.fst_station_id
-          );
-          const sndStation = stationDetails.find(
-            (s) => s.station_detail_id === pair.snd_station_id
-          );
-          return {
-            ...pair,
-            fst_station: fstStation,
-            snd_station: sndStation,
-          };
-        }),
-        station_details: stationDetails, // Also include raw stations list
+        StationPair: networkData.StationPair || [],
+        Station_detail: normalizedStations, // Properly formatted stations with IDs
       };
 
       const cfg: Configuration = {
-        Network_model: enrichedNetworkModel,
-        Alighting_Distribution: alightingDist,
-        Interarrival_Distribution: interarrivalDist,
+        Network_model: configNetworkModel,
+        Alighting_Data: [],
+        InterArrival_Data: [],
       };
 
       onSubmit(cfg);

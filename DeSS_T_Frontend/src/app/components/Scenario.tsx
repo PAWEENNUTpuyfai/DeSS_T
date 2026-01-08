@@ -403,6 +403,9 @@ export default function Scenario({
       const stationPairs = (networkModel as any)?.StationPair || [];
       const orders: Order[] = [];
 
+      // Debug: Show actual station sequence
+      console.log('📍 Station Sequence (route.stations):', route.stations.map((sid, idx) => `${idx + 1}. ${getStationName(sid)}`));
+
       for (let i = 0; i < route.stations.length - 1; i++) {
         const currentStationId = route.stations[i];
         const nextStationId = route.stations[i + 1];
@@ -417,7 +420,7 @@ export default function Scenario({
         if (matchingPair) {
           const order: Order = {
             order_id: `${routeId}-order-${i + 1}`,
-            order: i + 1, // Sequential order number
+            order: i + 1,
             station_pair_id: matchingPair.StationPairID,
             route_path_id: routeId,
             station_pair: matchingPair,
@@ -426,7 +429,7 @@ export default function Scenario({
         }
       }
 
-      // Console log created orders
+      // Console log created orders with station names
       console.log('🎯 Created Orders for Route:', route.name);
       console.log('   Route ID:', routeId);
       console.log('   Total Orders:', orders.length);
@@ -434,8 +437,8 @@ export default function Scenario({
         order: o.order,
         order_id: o.order_id,
         station_pair_id: o.station_pair_id,
-        from: o.station_pair?.FstStation,
-        to: o.station_pair?.SndStation,
+        from: getStationName(o.station_pair?.FstStation || ''),
+        to: getStationName(o.station_pair?.SndStation || ''),
       })));
 
       // Update route with segments and orders

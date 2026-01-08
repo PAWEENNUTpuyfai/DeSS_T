@@ -418,12 +418,24 @@ export default function Scenario({
         );
 
         if (matchingPair) {
+          // Ensure from = currentStation, to = nextStation (correct direction)
+          const fromStation = matchingPair.FstStation === currentStationId 
+            ? matchingPair.FstStation 
+            : matchingPair.SndStation;
+          const toStation = matchingPair.FstStation === currentStationId 
+            ? matchingPair.SndStation 
+            : matchingPair.FstStation;
+
           const order: Order = {
             order_id: `${routeId}-order-${i + 1}`,
             order: i + 1,
             station_pair_id: matchingPair.StationPairID,
             route_path_id: routeId,
-            station_pair: matchingPair,
+            station_pair: {
+              ...matchingPair,
+              FstStation: fromStation,
+              SndStation: toStation,
+            },
           };
           orders.push(order);
         }

@@ -9,6 +9,7 @@ import (
 func RegisterNetworkRoutes(app *fiber.App) {
 	// Keep network endpoints consistent with other /api routes (e.g., distribution)
 	app.Post("/api/network/build", controllers.BuildNetworkModel)
+	app.Post("/api/network/save-configuration", controllers.SaveConfiguration)
 	app.Post("/api/network/route", controllers.GetRouteGeometry)
 	app.Post("/api/network/route-paths", controllers.ComputeRouteSegments)
 	app.Post("/api/network/save-routes", controllers.SaveRoutes)

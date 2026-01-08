@@ -12,7 +12,7 @@ import type { NetworkModel } from "../../models/Network";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
 import { isDataFitResponse } from "../../models/DistriButionFitModel";
 import HelpButton from "../HelpButton";
-
+import { API_BASE_URL } from "../../../utility/config";
 interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
@@ -232,6 +232,29 @@ export default function ConfigurationFiles({
         StationPair: networkData.StationPair || [],
         Station_detail: normalizedStations, // Properly formatted stations with IDs
       };
+
+      // Save configuration to backend with StationPairs and RouteBetween data
+      try {
+        const saveRes = await fetch(`${API_BASE_URL}/network/save-configuration`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            network_model_id: configNetworkModel.network_model_id || "guest_network",
+            name: configNetworkModel.Network_model || "guest_configuration",
+            stations: normalizedStations,
+            station_pairs: configNetworkModel.StationPair || [],
+          }),
+        });
+
+        if (!saveRes.ok) {
+          const errText = await saveRes.text().catch(() => "");
+          console.error("Failed to save configuration to backend:", errText);
+          // Continue anyway - we have the data locally
+        }
+      } catch (err) {
+        console.error("Configuration save request error:", err);
+        // Continue anyway - we have the data locally
+      }
 
       const cfg: Configuration = {
         Network_model: configNetworkModel,

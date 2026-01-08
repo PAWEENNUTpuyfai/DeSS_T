@@ -21,11 +21,11 @@ export interface StationDetail {
 // ------------------- STATION PAIR --------------------
 export interface StationPair {
   StationPairID: string; // Go json:"StationPairID"
-  FstStation: string; // Go json:"FstStation"
-  SndStation: string; // Go json:"SndStation"
+  FstStation: string; // Go json:"FstStation" (station ID, maps to FstStationID in DB)
+  SndStation: string; // Go json:"SndStation" (station ID, maps to SndStationID in DB)
   route_between_id: string; // Go json:"route_between_id"
-  network_model_id: string; // Go json:"network_model_id"
-  RouteBetween?: RouteBetween; // Go json:"RouteBetween"
+  network_model_id?: string; // Go json:"network_model_id"
+  RouteBetween?: RouteBetween; // Go json:"RouteBetween" (includes Distance and TravelTime)
 }
 
 // ------------------- ROUTE BETWEEN --------------------

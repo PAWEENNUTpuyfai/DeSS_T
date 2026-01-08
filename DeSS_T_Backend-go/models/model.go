@@ -212,13 +212,11 @@ type PublicConfiguration struct {
 // ------------------- CONFIGURATION DETAIL --------------------
 type ConfigurationDetail struct {
 	ConfigurationDetailID string `gorm:"primaryKey" json:"configuration_detail_id"`
-	AlightingDataID       string `json:"alighting_data"`
-	InterArrivalDataID    string `json:"interarrival_data"`
 	NetworkModelID        string `json:"network_model"`
-
+	
 	NetworkModel      NetworkModel       `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
-	AlightingDatas    []AlightingData    `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
-	InterArrivalDatas []InterArrivalData `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+	AlightingData      []AlightingData    `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+    InterArrivalData   []InterArrivalData `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ALIGHTING DATA --------------------
@@ -231,6 +229,7 @@ type AlightingData struct {
 	StationID             string `json:"station_id"`
 
 	StationDetail StationDetail `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- INTER ARRIVAL DATA --------------------
@@ -243,6 +242,7 @@ type InterArrivalData struct {
 	StationID             string `json:"station_id"`
 
 	StationDetail StationDetail `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- NETWORK MODEL --------------------

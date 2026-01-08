@@ -5,6 +5,7 @@ import type {
   StationPair,
   NetworkModel,
 } from "../models/Network";
+import type { Order } from "../models/Scenario";
 import type { SimulationResponse } from "../models/SimulationModel";
 import ScenarioMap from "./ScenarioMap";
 import type { RouteSegment } from "./ScenarioMap";
@@ -198,6 +199,7 @@ export default function Scenario({
     color: string;
     stations: string[];
     segments: RouteSegment[];
+    orders: Order[]; // Order objects connecting StationPairs in sequence
     hidden: boolean;
     locked: boolean;
     maxDistance: number;
@@ -212,6 +214,7 @@ export default function Scenario({
     color: colorOptions[idx % colorOptions.length],
     stations: [], // stations will be selected from map later
     segments: [],
+    orders: [], // Orders will be created when route is confirmed
     hidden: false,
     locked: false,
     maxDistance: 70,
@@ -332,7 +335,7 @@ export default function Scenario({
       // Clear stations to start from scratch
       setRoutes((prev) =>
         prev.map((r) =>
-          r.id === routeId ? { ...r, stations: [], segments: [] } : r
+          r.id === routeId ? { ...r, stations: [], segments: [], orders: [] } : r
         )
       );
       setSelectedRouteId(routeId);
@@ -395,10 +398,50 @@ export default function Scenario({
         coords: s.coords,
       }));
 
-      // Update route with all segments
+      // Create Orders from consecutive StationPairs
+      const networkModel = configuration?.Network_model as NetworkModel | undefined;
+      const stationPairs = (networkModel as any)?.StationPair || [];
+      const orders: Order[] = [];
+
+      for (let i = 0; i < route.stations.length - 1; i++) {
+        const currentStationId = route.stations[i];
+        const nextStationId = route.stations[i + 1];
+
+        // Find matching StationPair
+        const matchingPair = stationPairs.find(
+          (pair: StationPair) =>
+            (pair.FstStation === currentStationId && pair.SndStation === nextStationId) ||
+            (pair.FstStation === nextStationId && pair.SndStation === currentStationId)
+        );
+
+        if (matchingPair) {
+          const order: Order = {
+            order_id: `${routeId}-order-${i + 1}`,
+            order: i + 1, // Sequential order number
+            station_pair_id: matchingPair.StationPairID,
+            route_path_id: routeId,
+            station_pair: matchingPair,
+          };
+          orders.push(order);
+        }
+      }
+
+      // Console log created orders
+      console.log('🎯 Created Orders for Route:', route.name);
+      console.log('   Route ID:', routeId);
+      console.log('   Total Orders:', orders.length);
+      console.log('   Order Details:', orders.map(o => ({
+        order: o.order,
+        order_id: o.order_id,
+        station_pair_id: o.station_pair_id,
+        from: o.station_pair?.FstStation,
+        to: o.station_pair?.SndStation,
+      })));
+
+      // Update route with segments and orders
       setRoutes((prev) =>
         prev.map((r) =>
-          r.id === routeId ? { ...r, segments: newSegments } : r
+          r.id === routeId ? { ...r, segments: newSegments, orders: orders } : r
         )
       );
 
@@ -435,7 +478,7 @@ export default function Scenario({
   const resetRoutePath = (routeId: string) => {
     setRoutes((prev) =>
       prev.map((r) =>
-        r.id === routeId ? { ...r, stations: [], segments: [] } : r
+        r.id === routeId ? { ...r, stations: [], segments: [], orders: [] } : r
       )
     );
   };

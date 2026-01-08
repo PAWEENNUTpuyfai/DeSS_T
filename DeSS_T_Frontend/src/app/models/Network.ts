@@ -32,7 +32,6 @@ export interface StationPair {
 export interface RouteBetween {
   RouteBetweenID: string; // Go json:"RouteBetweenID"
   TravelTime: number; // Go json:"TravelTime"
-  Route: GeoLineString; // Go json:"Route"
   Distance: number; // Go json:"Distance"
 }
 

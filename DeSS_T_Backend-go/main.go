@@ -1,7 +1,7 @@
 package main
 
 import (
-	"DeSS_T_Backend-go/config"
+	// "DeSS_T_Backend-go/config"
 	"DeSS_T_Backend-go/routes"
 	"fmt"
 	"log"
@@ -36,7 +36,7 @@ func main() {
 	}))
 
 	// Connect to Postgres (runs AutoMigrate)
-	config.ConnectDatabase()
+	// config.ConnectDatabase()
 	// Uncomment if Mongo is required and MONGO_URI is set
 	// config.ConnectMongo()
 

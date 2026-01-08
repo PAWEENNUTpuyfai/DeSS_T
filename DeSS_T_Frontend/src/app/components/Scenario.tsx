@@ -524,27 +524,13 @@ export default function Scenario({
             station_pair_id:
               stationPair?.StationPairID || `${station}-${nextStation}`,
             route_path_id: route.id,
+            distance: stationPair?.RouteBetween?.Distance ?? 0,
+            travel_time: stationPair?.RouteBetween?.TravelTime ?? 0,
           };
         }),
       }));
 
-      const routeScenario = {
-        route_scenario_id: "RS01",
-        route_paths: routePaths,
-      };
-
-      // Generate schedule times (e.g., 10:00, 10:15, 10:30)
-      const timeSlotMinutes = parseInt(timeSlot.split(" ")[0]);
-      const scheduleTimes: string[] = [];
-      for (let h = simStartHour; h < simEndHour; h++) {
-        for (let m = 0; m < 60; m += timeSlotMinutes) {
-          scheduleTimes.push(
-            `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
-          );
-        }
-      }
-
-      const busInformations = routes.map((route, routeIdx) => ({
+      const busInformation = routes.map((route, routeIdx) => ({
         bus_information_id: `BI${String(routeIdx + 1).padStart(2, "0")}`,
         speed: route.speed,
         max_dis: route.maxDistance,

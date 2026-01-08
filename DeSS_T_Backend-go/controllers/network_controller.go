@@ -83,19 +83,6 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 	pairs := []models.StationPair{}
 
 	n := len(req.Stations)
-	// Decide whether to call ORS for per-pair route geometry.
-	// Default: ORS for accurate road routing (can be overridden by ROUTE_GEOMETRY_MODE=straight)
-	routeMode := strings.ToLower(os.Getenv("ROUTE_GEOMETRY_MODE")) // "ors" | "straight"
-	if routeMode == "" {
-		routeMode = "ors" // Changed default to "ors" for road-accurate routing
-	}
-	maxPairs := 500 // directed pairs cap when using ORS
-	if v := os.Getenv("ROUTE_GEOMETRY_MAX_PAIRS"); v != "" {
-		if p, perr := strconv.Atoi(v); perr == nil && p > 0 {
-			maxPairs = p
-		}
-	}
-	useORSRoute := (routeMode == "ors") && (orsKey != "") && (n*(n-1) <= maxPairs)
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
@@ -103,35 +90,8 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 				continue
 			}
 
-			start := req.Stations[i].Location.Coordinates
-			end := req.Stations[j].Location.Coordinates
-
-			// Route geometry; optionally call ORS, else use straight line
-			var coords [][2]float64
-			if useORSRoute {
-				// Soft timeout guard for each route fetch
-				type routeRes struct {
-					c   [][2]float64
-					err error
-				}
-				ch := make(chan routeRes, 1)
-				go func() {
-					r, e := services.OrsRoute(start, end, orsKey)
-					ch <- routeRes{c: r, err: e}
-				}()
-				select {
-				case rr := <-ch:
-					if rr.err != nil || len(rr.c) == 0 {
-						coords = [][2]float64{start, end}
-					} else {
-						coords = rr.c
-					}
-				case <-time.After(2 * time.Second):
-					coords = [][2]float64{start, end}
-				}
-			} else {
-				coords = [][2]float64{start, end}
-			}
+			// RouteBetween stores distance and travel time only
+			// Route geometry will be computed per-scenario in RoutePath
 			pair := models.StationPair{
 				StationPairID: fmt.Sprintf("%s-%s", req.Stations[i].StationDetailID, req.Stations[j].StationDetailID),
 				FstStationID:  req.Stations[i].StationDetailID,
@@ -140,10 +100,6 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 					RouteBetweenID: fmt.Sprintf("%s-%s-route", req.Stations[i].StationDetailID, req.Stations[j].StationDetailID),
 					TravelTime:     matrix.Durations[i][j],
 					Distance:       matrix.Distances[i][j],
-					Route: models.GeoLineString{
-						Type:        "LineString",
-						Coordinates: coords,
-					},
 				},
 			}
 

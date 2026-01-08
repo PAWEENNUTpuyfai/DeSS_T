@@ -42,12 +42,14 @@ export default function ConfigurationMap({
     null
   );
   const [loadingStops, setLoadingStops] = useState(false);
+  const [stationOrder, setStationOrder] = useState<string[]>([]); // Array of station_detail_ids in order
 
   const resetConfirmation = () => {
     if (mapConfirmed) {
       setMapConfirmed(false);
       setMapBounds(undefined);
       setStationDetails(null);
+      setStationOrder([]);
     }
   };
 
@@ -60,6 +62,7 @@ export default function ConfigurationMap({
   useEffect(() => {
     setStationDetails(null);
     setLoadingStops(false);
+    setStationOrder([]);
   }, [mapMode]);
 
   const handleConfirmMap = async () => {
@@ -103,6 +106,9 @@ export default function ConfigurationMap({
           maxLon: bb.maxlon,
         });
         setStationDetails(stationDetails);
+        const areaOrder = stationDetails.map(s => s.station_detail_id || '');
+        setStationOrder(areaOrder);
+        console.log('📍 Area Mode - Stations Loaded:', areaOrder);
         setMapConfirmed(true);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -142,7 +148,10 @@ export default function ConfigurationMap({
         station_id_osm: String(stop.id),
       }));
 
-      setStationDetails(stationDetails);
+      setStationDetails(stationDetails);      
+      const newOrder = stationDetails.map(s => s.station_detail_id || '');
+      setStationOrder(newOrder);
+      console.log('📍 Manual Mode - Stations Loaded:', newOrder);
       setMapConfirmed(true);
     } catch (err: unknown) {
       console.error("Failed to fetch bus stops for manual bounds:", err);
@@ -190,7 +199,9 @@ export default function ConfigurationMap({
           maxLon: bb.maxlon,
         });
         setStationDetails(stationDetails);
-        // alert(`พบสถานีทั้งหมด ${stationDetails.length} แห่ง`);
+        const newOrder = stationDetails.map(s => s.station_detail_id || '');
+        setStationOrder(newOrder);
+        console.log('🔍 Check Map (Area) - Stations:', newOrder);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         alert(msg ?? "โหลด area code ไม่สำเร็จ");
@@ -226,7 +237,9 @@ export default function ConfigurationMap({
 
       setMapBounds({ minLat, maxLat, minLon, maxLon });
       setStationDetails(stationDetails);
-      // alert(`พบสถานีทั้งหมด ${stationDetails.length} แห่ง`);
+      const newOrder = stationDetails.map(s => s.station_detail_id || '');
+      setStationOrder(newOrder);
+      console.log('🔍 Check Map (Manual) - Stations:', newOrder);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       alert(msg ?? "ไม่สามารถโหลดสถานีได้");
@@ -248,9 +261,17 @@ export default function ConfigurationMap({
 
   // Render file upload page if map confirmed
   if (mapConfirmed && mapBounds && stationDetails) {
+    // Reorder stations based on stationOrder before passing to ConfigurationFiles
+    const orderedStations = stationOrder
+      .map(id => stationDetails.find(s => s.station_detail_id === id))
+      .filter((s): s is StationDetail => s !== undefined);
+
+    console.log('✅ Passing to ConfigurationFiles - Final Order:', stationOrder);
+    console.log('   Ordered Stations:', orderedStations.map(s => ({ id: s.station_detail_id, name: s.name })));
+
     return (
       <ConfigurationFiles
-        stationDetails={stationDetails}
+        stationDetails={orderedStations}
         mapBounds={mapBounds}
         mode={mode}
         configurationName={configurationName}
@@ -258,6 +279,7 @@ export default function ConfigurationMap({
           setMapConfirmed(false);
           setMapBounds(undefined);
           setStationDetails(null);
+          setStationOrder([]);
         }}
         onSubmit={(config) => setSubmittedConfig(config)}
       />
@@ -442,10 +464,16 @@ export default function ConfigurationMap({
                   stationDetails &&
                   stationDetails.length > 0 && (
                     <div className="">
+                      <div className="mb-2 px-3 py-2 bg-blue-50 rounded text-sm">
+                        <strong>Tip:</strong> Drag rows to reorder stations for route planning
+                      </div>
                       <div className="border rounded overflow-hidden max-h-64 overflow-y-auto">
                         <table className="min-w-full text-sm">
                           <thead className="bg-gray-100">
                             <tr>
+                              <th className="text-left px-3 py-2 border-b">
+                                Order
+                              </th>
                               <th className="text-left px-3 py-2 border-b">
                                 ID
                               </th>
@@ -461,25 +489,52 @@ export default function ConfigurationMap({
                             </tr>
                           </thead>
                           <tbody>
-                            {stationDetails.map((s) => (
-                              <tr
-                                key={s.station_detail_id}
-                                className="odd:bg-white even:bg-gray-50"
-                              >
-                                <td className="px-3 py-2 border-b align-top">
-                                  {s.station_detail_id}
-                                </td>
-                                <td className="px-3 py-2 border-b align-top">
-                                  {s.name || "-"}
-                                </td>
-                                <td className="px-3 py-2 border-b align-top">
-                                  {s.lat}
-                                </td>
-                                <td className="px-3 py-2 border-b align-top">
-                                  {s.lon}
-                                </td>
-                              </tr>
-                            ))}
+                            {stationOrder.map((stationId, idx) => {
+                              const s = stationDetails.find(st => st.station_detail_id === stationId);
+                              if (!s) return null;
+                              return (
+                                <tr
+                                  key={stationId}
+                                  className="odd:bg-white even:bg-gray-50 cursor-move hover:bg-gray-100"
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.effectAllowed = "move";
+                                    e.dataTransfer.setData("text/plain", String(idx));
+                                  }}
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    const fromIdx = parseInt(e.dataTransfer.getData("text/plain"));
+                                    const toIdx = idx;
+                                    if (fromIdx === toIdx) return;
+                                    const newOrder = [...stationOrder];
+                                    const [moved] = newOrder.splice(fromIdx, 1);
+                                    newOrder.splice(toIdx, 0, moved);
+                                    setStationOrder(newOrder);
+                                    console.log('🔄 Order Changed - From:', fromIdx, 'To:', toIdx, 'New Order:', newOrder);
+                                  }}
+                                >
+                                  <td className="px-3 py-2 border-b align-top font-semibold">
+                                    {idx + 1}
+                                  </td>
+                                  <td className="px-3 py-2 border-b align-top">
+                                    {s.station_detail_id}
+                                  </td>
+                                  <td className="px-3 py-2 border-b align-top">
+                                    {s.name || "-"}
+                                  </td>
+                                  <td className="px-3 py-2 border-b align-top">
+                                    {s.lat}
+                                  </td>
+                                  <td className="px-3 py-2 border-b align-top">
+                                    {s.lon}
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>

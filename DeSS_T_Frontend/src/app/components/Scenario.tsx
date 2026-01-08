@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Configuration } from "../models/Configuration";
-import type { StationDetail, StationPair, NetworkModel } from "../models/Network";
+import type {
+  StationDetail,
+  StationPair,
+  NetworkModel,
+} from "../models/Network";
 import type { SimulationResponse } from "../models/SimulationModel";
 import ScenarioMap from "./ScenarioMap";
 import type { RouteSegment } from "./ScenarioMap";
@@ -18,131 +22,144 @@ export default function Scenario({
   configurationName,
   onBack,
   projectName,
+  projectid,
 }: {
   configuration: Configuration;
   configurationName?: string;
   onBack?: () => void;
   mode?: "guest" | "user";
   projectName?: string;
+  projectid?: string;
 }) {
-  const nodes: StationDetail[] = useMemo(
-    () => {
-      const networkModel = configuration?.Network_model as
-        | (NetworkModel & { Station_detail?: unknown[]; station_details?: unknown[] })
-        | undefined;
-      if (!networkModel) return [];
+  useEffect(() => {
+    console.log("=== Scenario Component Loaded ===");
+    console.log("Configuration:", configuration);
+    console.log("Configuration Name:", configurationName);
+    console.log("Project Name:", projectName);
+    console.log("Network Model:", configuration?.Network_model);
+    console.log(
+      "Alighting Distribution:",
+      configuration?.Alighting_Distribution
+    );
+    console.log(
+      "Interarrival Distribution:",
+      configuration?.Interarrival_Distribution
+    );
+    console.log("================================");
+  }, [configuration, configurationName, projectName]);
 
-      const toNum = (v: unknown): number | undefined => {
-        if (typeof v === "number" && Number.isFinite(v)) return v;
-        if (typeof v === "string") {
-          const n = parseFloat(v);
-          if (Number.isFinite(n)) return n;
-        }
-        return undefined;
-      };
+  const nodes: StationDetail[] = useMemo(() => {
+    const networkModel = configuration?.Network_model as
+      | (NetworkModel & {
+          Station_detail?: unknown[];
+          station_details?: unknown[];
+        })
+      | undefined;
+    if (!networkModel) return [];
 
-      const normalizeStation = (
-        raw: unknown,
-        idx: number
-      ): StationDetail | null => {
-        if (!raw || typeof raw !== "object") return null;
-        const rec = raw as Record<string, unknown>;
-
-        const locationLower = rec.location as unknown;
-        const locationUpper = rec.Location as unknown;
-        const coords = (
-          (locationLower as Record<string, unknown> | undefined)?.coordinates ||
-          (locationUpper as Record<string, unknown> | undefined)?.coordinates
-        ) as unknown;
-
-        const latFromCoords = Array.isArray(coords) ? toNum(coords[1]) : undefined;
-        const lonFromCoords = Array.isArray(coords) ? toNum(coords[0]) : undefined;
-
-        const lat =
-          toNum(rec.lat) ??
-          toNum(rec.latitude) ??
-          latFromCoords;
-        const lon =
-          toNum(rec.lon) ??
-          toNum(rec.longitude) ??
-          lonFromCoords;
-
-        if (lat === undefined || lon === undefined) return null;
-
-        const rawStationId =
-          (rec.station_detail_id as string | undefined) ||
-          (rec.StationID as string | undefined) ||
-          (rec.station_id_osm as string | undefined);
-
-        const stationId =
-          rawStationId ||
-          `${lat.toFixed(6)},${lon.toFixed(6)}` ||
-          `station-${idx}`;
-
-        const name =
-          (rec.name as string | undefined) ||
-          (rec.StationName as string | undefined) ||
-          (rec.station_name as string | undefined) ||
-          (rec.name_th as string | undefined) ||
-          rawStationId ||
-          `Station ${idx + 1}`;
-
-        const normalized = {
-          ...rec,
-          station_detail_id: stationId,
-          station_id_osm:
-            (rec.station_id_osm as string | undefined) || stationId,
-          name,
-          lat,
-          lon,
-          location: {
-            type: "Point",
-            coordinates: [lon, lat],
-          },
-        } as unknown as StationDetail;
-
-        return normalized;
-      };
-
-      const nm = networkModel as {
-        Station_detail?: unknown[];
-        station_details?: unknown[];
-        station_pairs?: StationPair[];
-      };
-
-      const candidateLists: unknown[][] = [];
-
-      const fromPairs =
-        nm.station_pairs?.flatMap((pair: StationPair | undefined) => {
-          if (!pair) return [] as (StationDetail | undefined)[];
-          return [pair.fst_station, pair.snd_station].filter(Boolean);
-        }) ?? [];
-      if (fromPairs.length > 0) candidateLists.push(fromPairs);
-
-      const directStations =
-        nm.Station_detail || nm.station_details || [];
-      if (Array.isArray(directStations)) {
-        candidateLists.push(directStations as unknown[]);
+    const toNum = (v: unknown): number | undefined => {
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+      if (typeof v === "string") {
+        const n = parseFloat(v);
+        if (Number.isFinite(n)) return n;
       }
+      return undefined;
+    };
 
-      const normalized = candidateLists
-        .flat()
-        .map((raw, idx) => normalizeStation(raw, idx))
-        .filter((s): s is StationDetail => !!s);
+    const normalizeStation = (
+      raw: unknown,
+      idx: number
+    ): StationDetail | null => {
+      if (!raw || typeof raw !== "object") return null;
+      const rec = raw as Record<string, unknown>;
 
-      // Deduplicate by station_detail_id
-      const unique = normalized.filter(
-        (station, index, self) =>
-          index ===
-          self.findIndex(
-            (s) => s.station_detail_id === station.station_detail_id
-          )
-      );
+      const locationLower = rec.location as unknown;
+      const locationUpper = rec.Location as unknown;
+      const coords = ((locationLower as Record<string, unknown> | undefined)
+        ?.coordinates ||
+        (locationUpper as Record<string, unknown> | undefined)
+          ?.coordinates) as unknown;
 
-      return unique;
-    },
-    [configuration?.Network_model]
-  );
+      const latFromCoords = Array.isArray(coords)
+        ? toNum(coords[1])
+        : undefined;
+      const lonFromCoords = Array.isArray(coords)
+        ? toNum(coords[0])
+        : undefined;
+
+      const lat = toNum(rec.lat) ?? toNum(rec.latitude) ?? latFromCoords;
+      const lon = toNum(rec.lon) ?? toNum(rec.longitude) ?? lonFromCoords;
+
+      if (lat === undefined || lon === undefined) return null;
+
+      const rawStationId =
+        (rec.station_detail_id as string | undefined) ||
+        (rec.StationID as string | undefined) ||
+        (rec.station_id_osm as string | undefined);
+
+      const stationId =
+        rawStationId ||
+        `${lat.toFixed(6)},${lon.toFixed(6)}` ||
+        `station-${idx}`;
+
+      const name =
+        (rec.name as string | undefined) ||
+        (rec.StationName as string | undefined) ||
+        (rec.station_name as string | undefined) ||
+        (rec.name_th as string | undefined) ||
+        rawStationId ||
+        `Station ${idx + 1}`;
+
+      const normalized = {
+        ...rec,
+        station_detail_id: stationId,
+        station_id_osm: (rec.station_id_osm as string | undefined) || stationId,
+        name,
+        lat,
+        lon,
+        location: {
+          type: "Point",
+          coordinates: [lon, lat],
+        },
+      } as unknown as StationDetail;
+
+      return normalized;
+    };
+
+    const nm = networkModel as {
+      Station_detail?: unknown[];
+      station_details?: unknown[];
+      station_pairs?: StationPair[];
+    };
+
+    const candidateLists: unknown[][] = [];
+
+    const fromPairs =
+      nm.station_pairs?.flatMap((pair: StationPair | undefined) => {
+        if (!pair) return [] as (StationDetail | undefined)[];
+        return [pair.fst_station, pair.snd_station].filter(Boolean);
+      }) ?? [];
+    if (fromPairs.length > 0) candidateLists.push(fromPairs);
+
+    const directStations = nm.Station_detail || nm.station_details || [];
+    if (Array.isArray(directStations)) {
+      candidateLists.push(directStations as unknown[]);
+    }
+
+    const normalized = candidateLists
+      .flat()
+      .map((raw, idx) => normalizeStation(raw, idx))
+      .filter((s): s is StationDetail => !!s);
+
+    // Deduplicate by station_detail_id
+    const unique = normalized.filter(
+      (station, index, self) =>
+        index ===
+        self.findIndex((s) => s.station_detail_id === station.station_detail_id)
+    );
+
+    return unique;
+  }, [configuration?.Network_model]);
   const [transportMode, setTransportMode] = useState<"Route" | "Bus">("Route");
   const colorOptions = useMemo(
     () => [

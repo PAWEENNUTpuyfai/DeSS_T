@@ -11,11 +11,13 @@ import type { Configuration } from "../../models/Configuration";
 interface ConfigurationMapProps {
   mode?: "guest" | "user";
   configurationName?: string;
+  configurationid?: string;
 }
 
 export default function ConfigurationMap({
   mode = "guest",
   configurationName,
+  configurationid
 }: ConfigurationMapProps = {}) {
   // File upload state - cleared when going back
   const [submittedConfig, setSubmittedConfig] = useState<Configuration | null>(

@@ -20,6 +20,7 @@ interface GuestConfigurationFilesProps {
   onSubmit: (config: Configuration) => void;
   mode?: "guest" | "user";
   configurationName?: string;
+  configurationid?: string;
 }
 
 export default function ConfigurationFiles({
@@ -29,6 +30,7 @@ export default function ConfigurationFiles({
   onSubmit,
   mode = "guest",
   configurationName,
+  configurationid,
 }: GuestConfigurationFilesProps) {
   const [alightingFile, setAlightingFile] = useState<File | null>(null);
   const [alightingResult, setAlightingResult] = useState<unknown>(null);

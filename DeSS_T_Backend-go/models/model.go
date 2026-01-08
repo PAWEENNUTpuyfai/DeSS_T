@@ -225,6 +225,5 @@ type StationPair struct {
 type RouteBetween struct {
 	RouteBetweenID string  `gorm:"primaryKey" json:"route_between_id"`
 	TravelTime     float32 `json:"travel_time"`
-	Route          string  `json:"route" gorm:"type:geometry(LINESTRING,4326)"`
 	Distance       float32 `json:"distance"`
 }

@@ -13,8 +13,8 @@ import (
 )
 
 type BuildNetworkRequest struct {
-	Stations    []models.Station_Detail `json:"stations"`
-	NetworkName string                  `json:"network_name"`
+	Stations    []models.StationDetail `json:"stations"`
+	NetworkName string                 `json:"network_name"`
 }
 
 func BuildNetworkModel(c *fiber.Ctx) error {
@@ -80,7 +80,7 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 	}
 
 	// 2. Create pair list
-	pairs := []models.Station_Pair{}
+	pairs := []models.StationPair{}
 
 	n := len(req.Stations)
 	// Decide whether to call ORS for per-pair route geometry.
@@ -132,17 +132,14 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 			} else {
 				coords = [][2]float64{start, end}
 			}
-
-			pair := models.Station_Pair{
-				FstStation: req.Stations[i].StationID,
-				SndStation: req.Stations[j].StationID,
-				RouteBetween: models.Route_Between{
-					RouteBetweenID: fmt.Sprintf("%s-%s",
-						req.Stations[i].StationID,
-						req.Stations[j].StationID,
-					),
-					TravelTime: matrix.Durations[i][j],
-					Distance:   matrix.Distances[i][j],
+			pair := models.StationPair{
+				StationPairID: fmt.Sprintf("%s-%s", req.Stations[i].StationDetailID, req.Stations[j].StationDetailID),
+				FstStationID:  req.Stations[i].StationDetailID,
+				SndStationID:  req.Stations[j].StationDetailID,
+				RouteBetween: models.RouteBetween{
+					RouteBetweenID: fmt.Sprintf("%s-%s-route", req.Stations[i].StationDetailID, req.Stations[j].StationDetailID),
+					TravelTime:     matrix.Durations[i][j],
+					Distance:       matrix.Distances[i][j],
 					Route: models.GeoLineString{
 						Type:        "LineString",
 						Coordinates: coords,
@@ -155,10 +152,10 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 	}
 
 	// Final response
-	result := models.Network_Model{
-		NetworkModel:  req.NetworkName,
-		StationDetail: req.Stations,
-		StationPair:   pairs,
+	result := models.NetworkModel{
+		Name:           req.NetworkName,
+		StationDetails: req.Stations,
+		StationPairs:   pairs,
 	}
 
 	return c.JSON(result)

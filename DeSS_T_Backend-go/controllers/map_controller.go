@@ -73,3 +73,22 @@ func GetBusStopsInArea(c *fiber.Ctx) error {
 
 	return c.JSON(stops)
 }
+
+// GetAreaGeometry fetches area polygon geometry from Overpass API
+func GetAreaGeometry(c *fiber.Ctx) error {
+	var req AreaBoundsRequest
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid JSON: "+err.Error())
+	}
+
+	if req.AreaCode == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "area_code is required")
+	}
+
+	geometry, err := services.FetchAreaGeometry(req.AreaCode)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(geometry)
+}

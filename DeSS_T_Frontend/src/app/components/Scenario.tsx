@@ -132,22 +132,35 @@ export default function Scenario({
       station_pairs?: StationPair[];
     };
 
-    const candidateLists: unknown[][] = [];
-
-    const fromPairs =
-      nm.station_pairs?.flatMap((pair: StationPair | undefined) => {
-        if (!pair) return [] as (StationDetail | undefined)[];
-        return [pair.fst_station, pair.snd_station].filter(Boolean);
-      }) ?? [];
-    if (fromPairs.length > 0) candidateLists.push(fromPairs);
-
+    // Extract stations directly from Station_detail or station_details arrays
+    // (most reliable source - direct from backend response)
     const directStations = nm.Station_detail || nm.station_details || [];
-    if (Array.isArray(directStations)) {
-      candidateLists.push(directStations as unknown[]);
+    if (!Array.isArray(directStations) || directStations.length === 0) {
+      // Fallback: if no direct stations, try to extract from station_pairs
+      const fromPairs =
+        nm.station_pairs?.flatMap((pair: any) => {
+          if (!pair) return [];
+          const result = [];
+          if (pair.fst_station) result.push(pair.fst_station);
+          if (pair.snd_station) result.push(pair.snd_station);
+          return result;
+        }) ?? [];
+
+      const normalized = fromPairs
+        .map((raw, idx) => normalizeStation(raw, idx))
+        .filter((s): s is StationDetail => !!s);
+
+      const unique = normalized.filter(
+        (station, index, self) =>
+          index ===
+          self.findIndex((s) => s.station_detail_id === station.station_detail_id)
+      );
+
+      return unique;
     }
 
-    const normalized = candidateLists
-      .flat()
+    // Use direct stations (primary path)
+    const normalized = (directStations as unknown[])
       .map((raw, idx) => normalizeStation(raw, idx))
       .filter((s): s is StationDetail => !!s);
 

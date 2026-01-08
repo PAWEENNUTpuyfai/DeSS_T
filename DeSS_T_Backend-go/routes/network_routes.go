@@ -15,4 +15,5 @@ func RegisterNetworkRoutes(app *fiber.App) {
 	app.Post("/api/network/area-bounds", controllers.GetAreaBounds)
 	app.Post("/api/network/bus-stops", controllers.GetBusStops)
 	app.Post("/api/network/bus-stops-area", controllers.GetBusStopsInArea)
+	app.Post("/api/network/area-geometry", controllers.GetAreaGeometry)
 }

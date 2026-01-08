@@ -66,3 +66,18 @@ export async function fetchBusStopsInArea(areaCode: string): Promise<OverpassNod
 
   return (await res.json()) as OverpassNode[];
 }
+
+export async function fetchAreaGeometry(areaCode: string): Promise<Array<Array<[number, number]>>> {
+  const res = await fetch(`${API_BASE_URL}/network/area-geometry`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ area_code: areaCode }),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Backend error: ${error}`);
+  }
+
+  return (await res.json()) as Array<Array<[number, number]>>;
+}

@@ -25,7 +25,7 @@ type ORSMatrixResponse struct {
 	Durations [][]float64 `json:"durations"`
 }
 
-func OrsMatrix(stations []models.Station_Detail, key string) (*ORSMatrixResponse, error) {
+func OrsMatrix(stations []models.StationDetail, key string) (*ORSMatrixResponse, error) {
 
 	locations := [][]float64{}
 	for _, s := range stations {
@@ -159,7 +159,7 @@ func haversineDistance(a [2]float64, b [2]float64) float64 {
 // LocalMatrix computes distances and durations using straight-line distance
 // and a constant speed (e.g., 30 km/h ≈ 8.333 m/s). Returns same shape as ORS
 // matrix to allow seamless fallback.
-func LocalMatrix(stations []models.Station_Detail, metersPerSecond float64) (*ORSMatrixResponse, error) {
+func LocalMatrix(stations []models.StationDetail, metersPerSecond float64) (*ORSMatrixResponse, error) {
 	n := len(stations)
 	distances := make([][]float64, n)
 	durations := make([][]float64, n)

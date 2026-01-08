@@ -413,8 +413,7 @@ export default function Scenario({
         // Find matching StationPair
         const matchingPair = stationPairs.find(
           (pair: StationPair) =>
-            (pair.FstStation === currentStationId && pair.SndStation === nextStationId) ||
-            (pair.FstStation === nextStationId && pair.SndStation === currentStationId)
+            (pair.FstStation === currentStationId && pair.SndStation === nextStationId) 
         );
 
         if (matchingPair) {

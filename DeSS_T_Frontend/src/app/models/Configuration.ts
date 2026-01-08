@@ -34,6 +34,6 @@ export interface InterArrivalData {
 // Legacy interface for backward compatibility
 export interface Configuration {
   Network_model: NetworkModel;
-  Alighting_Distribution: any;
-  Interarrival_Distribution: any;
+  Alighting_Data: AlightingData[];
+  InterArrival_Data: InterArrivalData[];
 }

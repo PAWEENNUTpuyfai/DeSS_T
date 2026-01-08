@@ -35,26 +35,6 @@ export interface RouteBetween {
   Distance: number; // Go json:"Distance"
 }
 
-// ------------------- ROUTE PATH --------------------
-export interface RoutePath {
-  route_path_id: string;
-  name: string;
-  color: string;
-  route_scenario_id: string;
-  route: string; // GeoJSON as string
-  orders?: Order[];
-}
-
-// ------------------- ORDER --------------------
-export interface Order {
-  order_id: string;
-  order: number; // Sequential order number
-  station_pair_id: string;
-  route_path_id: string;
-  route_path?: RoutePath;
-  station_pair?: StationPair;
-}
-
 // ------------------- Helper Types --------------------
 export type LatLng = [number, number];
 

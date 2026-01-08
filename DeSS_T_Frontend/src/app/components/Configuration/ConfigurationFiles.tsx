@@ -7,7 +7,11 @@ import ConfigurationNav from "./ConfigurationNav";
 import MapViewer from "../MapViewer";
 import LoadingModal from "../LoadingModal";
 import type { StationDetail, StationPair } from "../../models/Network";
-import type { Configuration } from "../../models/Configuration";
+import type {
+  Configuration,
+  AlightingData,
+  InterArrivalData,
+} from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
 import { isDataFitResponse } from "../../models/DistriButionFitModel";
@@ -32,6 +36,56 @@ export default function ConfigurationFiles({
   configurationName,
   configurationid,
 }: GuestConfigurationFilesProps) {
+  const makeId = (): string => {
+    try {
+      // @ts-ignore
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        // @ts-ignore
+        return crypto.randomUUID();
+      }
+    } catch {}
+    return Math.random().toString(36).slice(2);
+  };
+
+  const findStationDetail = (
+    key: string,
+    list: StationDetail[]
+  ): StationDetail | undefined => {
+    return (
+      list.find((sd) => sd.station_detail_id === key) ||
+      list.find((sd) => (sd.name ?? "") === key)
+    );
+  };
+
+  const toAlightingData = (
+    res: unknown,
+    stations: StationDetail[]
+  ): AlightingData[] => {
+    if (!isDataFitResponse(res)) return [];
+    return res.DataFitResponse.map((item) => ({
+      alighting_data_id: makeId(),
+      time_period: item.Time_Range,
+      distribution: item.Distribution,
+      argument_list: item.ArgumentList,
+      station_id: item.Station,
+      station_detail: findStationDetail(item.Station, stations),
+    }));
+  };
+
+  const toInterArrivalData = (
+    res: unknown,
+    stations: StationDetail[]
+  ): InterArrivalData[] => {
+    if (!isDataFitResponse(res)) return [];
+    return res.DataFitResponse.map((item) => ({
+      inter_arrival_data_id: makeId(),
+      time_period: item.Time_Range,
+      distribution: item.Distribution,
+      argument_list: item.ArgumentList,
+      station_id: item.Station,
+      station_detail: findStationDetail(item.Station, stations),
+    }));
+  };
   const [alightingFile, setAlightingFile] = useState<File | null>(null);
   const [alightingResult, setAlightingResult] = useState<unknown>(null);
   const [loadingA, setLoadingA] = useState(false);
@@ -216,7 +270,7 @@ export default function ConfigurationFiles({
       const networkData = network as NetworkModel & {
         StationPair?: StationPair[];
       };
-      
+
       // Stations from ConfigurationMap are already in StationDetail format
       // Just pass them directly to NetworkModel
       const normalizedStations = stationDetails.map((station, idx) => ({
@@ -225,7 +279,7 @@ export default function ConfigurationFiles({
         lat: station.lat ?? 0,
         lon: station.lon ?? 0,
       }));
-      
+
       // Build NetworkModel with only stations and station pairs (no routes)
       const configNetworkModel: NetworkModel = {
         ...network,
@@ -235,16 +289,20 @@ export default function ConfigurationFiles({
 
       // Save configuration to backend with StationPairs and RouteBetween data
       try {
-        const saveRes = await fetch(`${API_BASE_URL}/network/save-configuration`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            network_model_id: configNetworkModel.network_model_id || "guest_network",
-            name: configNetworkModel.Network_model || "guest_configuration",
-            stations: normalizedStations,
-            station_pairs: configNetworkModel.StationPair || [],
-          }),
-        });
+        const saveRes = await fetch(
+          `${API_BASE_URL}/network/save-configuration`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              network_model_id:
+                configNetworkModel.network_model_id || "guest_network",
+              name: configNetworkModel.Network_model || "guest_configuration",
+              stations: normalizedStations,
+              station_pairs: configNetworkModel.StationPair || [],
+            }),
+          }
+        );
 
         if (!saveRes.ok) {
           const errText = await saveRes.text().catch(() => "");
@@ -258,8 +316,8 @@ export default function ConfigurationFiles({
 
       const cfg: Configuration = {
         Network_model: configNetworkModel,
-        Alighting_Data: [],
-        InterArrival_Data: [],
+        Alighting_Data: toAlightingData(alightRes, normalizedStations),
+        InterArrival_Data: toInterArrivalData(interRes, normalizedStations),
       };
 
       onSubmit(cfg);

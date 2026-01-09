@@ -8,9 +8,9 @@ import MapViewer from "../MapViewer";
 import LoadingModal from "../LoadingModal";
 import type { StationDetail, StationPair } from "../../models/Network";
 import type {
-  Configuration,
   AlightingData,
   InterArrivalData,
+  ConfigurationDetail,
 } from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
@@ -21,10 +21,10 @@ interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
   onBack: () => void;
-  onSubmit: (config: Configuration) => void;
+  onSubmit: (config: ConfigurationDetail) => void;
   mode?: "guest" | "user";
   configurationName?: string;
-  configurationid?: string;
+  configuration?: ConfigurationDetail;
 }
 
 export default function ConfigurationFiles({
@@ -34,7 +34,7 @@ export default function ConfigurationFiles({
   onSubmit,
   mode = "guest",
   configurationName,
-  configurationid,
+  configuration,
 }: GuestConfigurationFilesProps) {
   const makeId = (): string => {
     try {
@@ -314,10 +314,16 @@ export default function ConfigurationFiles({
         // Continue anyway - we have the data locally
       }
 
-      const cfg: Configuration = {
-        Network_model: configNetworkModel,
-        Alighting_Data: toAlightingData(alightRes, normalizedStations),
-        InterArrival_Data: toInterArrivalData(interRes, normalizedStations),
+      const cfg: ConfigurationDetail = {
+        configuration_detail_id: configuration
+          ? configuration.configuration_detail_id
+          : "guest-configuration-"+Date.now(),
+        alighting_data_id: "alighting-data-" + Date.now(),
+        interarrival_data_id: "interarrival-data-" + Date.now(),
+        network_model_id: configNetworkModel.network_model_id || "guest_network",
+        network_model: configNetworkModel,
+        alighting_datas: toAlightingData(alightRes, normalizedStations),
+        interarrival_datas: toInterArrivalData(interRes, normalizedStations),
       };
 
       onSubmit(cfg);

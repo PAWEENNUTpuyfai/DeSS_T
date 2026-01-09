@@ -122,9 +122,8 @@ type ScenarioDetail struct {
 // ------------------- BUS SCENARIO --------------------
 type BusScenario struct {
 	BusScenarioID  string `gorm:"primaryKey" json:"bus_scenario_id"`
-	ScheduleDataID string `json:"schedule_data"`
 
-	ScheduleData    *ScheduleData    `gorm:"foreignKey:ScheduleDataID;constraint:OnDelete:CASCADE;"`
+	ScheduleData    []ScheduleData   `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
 	BusInformations []BusInformation `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
 }
 
@@ -136,7 +135,7 @@ type ScheduleData struct {
 	BusScenarioID  string `json:"bus_scenario"`
 
 	RoutePath   *RoutePath   `gorm:"constraint:OnDelete:CASCADE"`
-	BusScenario *BusScenario `gorm:"constraint:OnDelete:CASCADE"`
+	BusScenario *BusScenario `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- BUS INFORMATION --------------------

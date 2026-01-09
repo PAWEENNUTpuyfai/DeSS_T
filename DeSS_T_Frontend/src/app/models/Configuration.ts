@@ -30,10 +30,3 @@ export interface InterArrivalData {
   station_id: string;
   station_detail?: StationDetail;
 }
-
-// Legacy interface for backward compatibility
-export interface Configuration {
-  Network_model: NetworkModel;
-  Alighting_Data: AlightingData[];
-  InterArrival_Data: InterArrivalData[];
-}

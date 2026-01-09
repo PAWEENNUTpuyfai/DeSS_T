@@ -6,21 +6,21 @@ import ConfigurationFiles from "./ConfigurationFiles";
 import LoadingModal from "../LoadingModal";
 import type { StationDetail } from "../../models/Network";
 import HelpButton from "../HelpButton";
-import type { Configuration } from "../../models/Configuration";
+import type { ConfigurationDetail } from "../../models/Configuration";
 
 interface ConfigurationMapProps {
   mode?: "guest" | "user";
   configurationName?: string;
-  configurationid?: string;
+  configuration?: ConfigurationDetail;
 }
 
 export default function ConfigurationMap({
   mode = "guest",
   configurationName,
-  configurationid
+  configuration
 }: ConfigurationMapProps = {}) {
   // File upload state - cleared when going back
-  const [submittedConfig, setSubmittedConfig] = useState<Configuration | null>(
+  const [submittedConfig, setSubmittedConfig] = useState<ConfigurationDetail | null>(
     null
   );
 

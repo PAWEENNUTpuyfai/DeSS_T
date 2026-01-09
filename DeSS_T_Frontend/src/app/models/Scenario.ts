@@ -12,8 +12,7 @@ export interface ScenarioDetail {
 // ------------------- BUS SCENARIO --------------------
 export interface BusScenario {
   bus_scenario_id: string;
-  schedule_data_id: string;
-  schedule_data?: ScheduleData;
+  schedule_data?: ScheduleData[];
   bus_informations?: BusInformation[];
 }
 

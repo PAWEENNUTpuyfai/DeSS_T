@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { Configuration } from "../models/Configuration";
+import type { ConfigurationDetail } from "../models/Configuration";
 import type {
   StationDetail,
   StationPair,
   NetworkModel,
 } from "../models/Network";
-import type { Order } from "../models/Scenario";
 import type { SimulationResponse } from "../models/SimulationModel";
 import ScenarioMap from "./ScenarioMap";
 import type { RouteSegment } from "./ScenarioMap";
@@ -18,40 +17,45 @@ import "../../style/Scenario.css";
 import HelpButton from "./HelpButton";
 import type { ProjectSimulationRequest } from "../models/ProjectModel";
 import { runSimulation } from "../../utility/api/simulation";
+import type {
+  ScenarioDetail,
+  BusScenario,
+  ScheduleData,
+  BusInformation,
+  RouteScenario,
+  RoutePath,
+  Order,
+} from "../models/Scenario";
+import { getScheduleData } from "../../utility/api/simulation";
+import type { PaserSchedule } from "../models/ScheduleModel";
 
 export default function Scenario({
   configuration,
   configurationName,
   onBack,
+  project,
   projectName,
-  projectid,
 }: {
-  configuration: Configuration;
+  configuration: ConfigurationDetail;
   configurationName?: string;
   onBack?: () => void;
   mode?: "guest" | "user";
+  project?: ProjectSimulationRequest;
   projectName?: string;
-  projectid?: string;
 }) {
   useEffect(() => {
     console.log("=== Scenario Component Loaded ===");
     console.log("Configuration:", configuration);
     console.log("Configuration Name:", configurationName);
     console.log("Project Name:", projectName);
-    console.log("Network Model:", configuration?.Network_model);
-    console.log(
-      "Alighting Data:",
-      configuration?.Alighting_Data
-    );
-    console.log(
-      "InterArrival Data:",
-      configuration?.InterArrival_Data
-    );
+    console.log("Network Model:", configuration?.network_model);
+    console.log("Alighting Data:", configuration?.alighting_datas);
+    console.log("InterArrival Data:", configuration?.interarrival_datas);
     console.log("================================");
   }, [configuration, configurationName, projectName]);
 
   const nodes: StationDetail[] = useMemo(() => {
-    const networkModel = configuration?.Network_model as
+    const networkModel = configuration?.network_model as
       | (NetworkModel & {
           Station_detail?: unknown[];
           station_details?: unknown[];
@@ -157,7 +161,10 @@ export default function Scenario({
       const unique = normalized.filter(
         (station: StationDetail, index: number, self: StationDetail[]) =>
           index ===
-          self.findIndex((s: StationDetail) => s.station_detail_id === station.station_detail_id)
+          self.findIndex(
+            (s: StationDetail) =>
+              s.station_detail_id === station.station_detail_id
+          )
       );
 
       return unique;
@@ -172,11 +179,14 @@ export default function Scenario({
     const unique = normalized.filter(
       (station: StationDetail, index: number, self: StationDetail[]) =>
         index ===
-        self.findIndex((s: StationDetail) => s.station_detail_id === station.station_detail_id)
+        self.findIndex(
+          (s: StationDetail) =>
+            s.station_detail_id === station.station_detail_id
+        )
     );
 
     return unique;
-  }, [configuration?.Network_model]);
+  }, [configuration?.network_model]);
   const [transportMode, setTransportMode] = useState<"Route" | "Bus">("Route");
   const colorOptions = useMemo(
     () => [
@@ -241,6 +251,10 @@ export default function Scenario({
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
+  const [projectid, setProjectId] = useState<string | null>(
+    project?.project_id || null
+  );
+  const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
 
   const timeSlotOptions = [
     "5 Minutes",
@@ -335,7 +349,9 @@ export default function Scenario({
       // Clear stations to start from scratch
       setRoutes((prev) =>
         prev.map((r) =>
-          r.id === routeId ? { ...r, stations: [], segments: [], orders: [] } : r
+          r.id === routeId
+            ? { ...r, stations: [], segments: [], orders: [] }
+            : r
         )
       );
       setSelectedRouteId(routeId);
@@ -399,12 +415,17 @@ export default function Scenario({
       }));
 
       // Create Orders from consecutive StationPairs
-      const networkModel = configuration?.Network_model as NetworkModel | undefined;
+      const networkModel = configuration?.network_model as
+        | NetworkModel
+        | undefined;
       const stationPairs = (networkModel as any)?.StationPair || [];
       const orders: Order[] = [];
 
       // Debug: Show actual station sequence
-      console.log('📍 Station Sequence (route.stations):', route.stations.map((sid, idx) => `${idx + 1}. ${getStationName(sid)}`));
+      console.log(
+        "📍 Station Sequence (route.stations):",
+        route.stations.map((sid, idx) => `${idx + 1}. ${getStationName(sid)}`)
+      );
 
       for (let i = 0; i < route.stations.length - 1; i++) {
         const currentStationId = route.stations[i];
@@ -413,17 +434,20 @@ export default function Scenario({
         // Find matching StationPair
         const matchingPair = stationPairs.find(
           (pair: StationPair) =>
-            (pair.FstStation === currentStationId && pair.SndStation === nextStationId) 
+            pair.FstStation === currentStationId &&
+            pair.SndStation === nextStationId
         );
 
         if (matchingPair) {
           // Ensure from = currentStation, to = nextStation (correct direction)
-          const fromStation = matchingPair.FstStation === currentStationId 
-            ? matchingPair.FstStation 
-            : matchingPair.SndStation;
-          const toStation = matchingPair.FstStation === currentStationId 
-            ? matchingPair.SndStation 
-            : matchingPair.FstStation;
+          const fromStation =
+            matchingPair.FstStation === currentStationId
+              ? matchingPair.FstStation
+              : matchingPair.SndStation;
+          const toStation =
+            matchingPair.FstStation === currentStationId
+              ? matchingPair.SndStation
+              : matchingPair.FstStation;
 
           const order: Order = {
             order_id: `${routeId}-order-${i + 1}`,
@@ -441,16 +465,19 @@ export default function Scenario({
       }
 
       // Console log created orders with station names
-      console.log('🎯 Created Orders for Route:', route.name);
-      console.log('   Route ID:', routeId);
-      console.log('   Total Orders:', orders.length);
-      console.log('   Order Details:', orders.map(o => ({
-        order: o.order,
-        order_id: o.order_id,
-        station_pair_id: o.station_pair_id,
-        from: getStationName(o.station_pair?.FstStation || ''),
-        to: getStationName(o.station_pair?.SndStation || ''),
-      })));
+      console.log("🎯 Created Orders for Route:", route.name);
+      console.log("   Route ID:", routeId);
+      console.log("   Total Orders:", orders.length);
+      console.log(
+        "   Order Details:",
+        orders.map((o) => ({
+          order: o.order,
+          order_id: o.order_id,
+          station_pair_id: o.station_pair_id,
+          from: getStationName(o.station_pair?.FstStation || ""),
+          to: getStationName(o.station_pair?.SndStation || ""),
+        }))
+      );
 
       // Update route with segments and orders
       setRoutes((prev) =>
@@ -553,11 +580,111 @@ export default function Scenario({
 
   const handleSimulation = async () => {
     try {
-     // Prepare simulation request
+      if (projectid === null) {
+        setProjectId(`guest-project-${Date.now()}`);
+      }
+
+      const currentProjectId = projectid || `guest-project-${Date.now()}`;
+
+      // Check if bus schedule file exists
+      if (!busScheduleFile) {
+        alert("Please upload a bus schedule file before running simulation");
+        return;
+      }
+
+      const scheduleData: PaserSchedule = await getScheduleData(
+        currentProjectId,
+        busScheduleFile
+      );
+      console.log("Schedule Data received:", scheduleData);
+
+      const scheduleDatas: ScheduleData[] = scheduleData.ScheduleData.map(
+        (sd) => ({
+          schedule_data_id: sd.ScheduleDataID,
+          schedule_list: sd.ScheduleList,
+          route_path_id: sd.RoutePathID,
+          bus_scenario_id: "bus-scenario-" + currentProjectId, // to be filled by backend
+        })
+      );
+
+      const busInformations: BusInformation[] = routes.map((r) => ({
+        bus_information_id: `${r.id}-businfo`,
+        speed: r.speed,
+        max_dis: r.maxDistance,
+        max_bus: r.maxBuses,
+        capacity: r.capacity,
+        bus_scenario_id: "bus-scenario-" + currentProjectId,
+        route_path_id: r.name + "-" + currentProjectId,
+      }));
+
+      const busScenario: BusScenario = {
+        bus_scenario_id: "bus-scenario-" + currentProjectId,
+        schedule_data: scheduleDatas,
+        bus_informations: busInformations,
+      };
+
+      const routePaths: RoutePath[] = routes.map((r) => ({
+        route_path_id: r.name + "-" + currentProjectId,
+        name: r.name,
+        color: r.color,
+        route_scenario_id: "route-scenario-" + currentProjectId, // to be filled by backend
+        route: "", // to be filled by backend
+        orders: r.orders,
+      }));
+
+      const routeScenario: RouteScenario = {
+        route_scenario_id: "route-scenario-" + currentProjectId,
+        route_paths: routePaths,
+      };
+
+      const scenarioDetail: ScenarioDetail = {
+        scenario_detail_id: "scenario-detail-" + currentProjectId,
+        bus_scenario_id: busScenario.bus_scenario_id,
+        route_scenario_id: routeScenario.route_scenario_id,
+        bus_scenario: busScenario,
+        route_scenario: routeScenario,
+      };
+
+      const simulationRequest: ProjectSimulationRequest = {
+        project_id: currentProjectId,
+        configuration: configuration,
+        scenario: scenarioDetail,
+        time_periods: simStartHour + ".00-" + simEndHour + ".00",
+        time_slot: timeSlot.split(" ")[0],
+      };
+
+      const response = await runSimulation(simulationRequest);
+      setSimulationResponse(response);
+
     } catch (error) {
       console.error("Simulation failed:", error);
-      // TODO: Show error message to user
+      alert(
+        "Simulation failed: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     }
+  };
+
+  const handleFileUpload = (file: File | null) => {
+    if (!file) {
+      setBusScheduleFile(null);
+      return;
+    }
+
+    // Validate file type
+    if (!file.name.endsWith(".xlsx")) {
+      alert("Please upload a .xlsx file");
+      return;
+    }
+
+    // Validate file size (e.g., max 10MB)
+    const maxSizeInBytes = 10 * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      alert("File size exceeds 10MB limit");
+      return;
+    }
+
+    setBusScheduleFile(file);
   };
 
   return (
@@ -993,7 +1120,7 @@ export default function Scenario({
                                           xmlns="http://www.w3.org/2000/svg"
                                         >
                                           <path
-                                            d="M5.33822 0.292942L0.265572 5.44326C0.181421 5.52785 0.114629 5.6285 0.0690483 5.73938C0.0234675 5.85027 0 5.9692 0 6.08933C0 6.20945 0.0234675 6.32839 0.0690483 6.43927C0.114629 6.55016 0.181421 6.6508 0.265572 6.73539C0.433788 6.90487 0.661341 7 0.898531 7C1.13572 7 1.36327 6.90487 1.53149 6.73539L6.02056 2.23114L10.4647 6.73539C10.633 6.90487 10.8605 7 11.0977 7C11.3349 7 11.5624 6.90487 11.7307 6.73539C11.8155 6.65112 11.883 6.55062 11.9292 6.43972C11.9754 6.32882 11.9995 6.20972 12 6.08933C11.9995 5.96894 11.9754 5.84984 11.9292 5.73894C11.883 5.62804 11.8155 5.52754 11.7307 5.44326L6.65801 0.292942C6.57393 0.200578 6.4719 0.126864 6.35832 0.0764459C6.24475 0.0260279 6.1221 -4.73456e-07 5.99811 -4.74973e-07C5.87412 -4.7649e-07 5.75148 0.0260279 5.63791 0.0764459C5.52433 0.126864 5.42229 0.200578 5.33822 0.292942Z"
+                                            d="M5.33822 0.292942L0.265572 5.44326C0.181421 5.52785 0.114629 5.6285 0.0690483 5.73938C0.0234675 5.85027 0 5.9692 0 6.08933C0 6.20945 0.0234675 6.32839 0.0690483 6.43927C0.114629 6.55016 0.181421 6.6508 0.265572 6.73539C0.433788 6.90487 0.661341 7 0.898531 7C1.13572 7 1.36327 6.90487 1.53149 6.73539L6.02056 2.23114L10.4647 6.73539C10.633 6.90487 10.8605 7 11.0977 7C11.3349 7 11.5624 6.90487 11.7307 6.73539C11.8155 6.65112 11.883 6.55062 11.9292 6.43972C11.9754 6.32882 11.9995 6.20972 12 6.08933C11.9995 5.96894 11.9754 5.84984 11.9292 5.73894C11.883 5.62804 11.8155 5.52754 11.7307 5.44326L6.65801 0.292942C6.57393  0.200578 6.4719 0.126864 6.35832 0.0764459C6.24475 0.0260279 6.1221 -4.73456e-07 5.99811 -4.74973e-07C5.87412 -4.7649e-07 5.75148 0.0260279 5.63791 0.0764459C5.52433 0.126864 5.42229 0.200578 5.33822 0.292942Z"
                                             className="fill-gray-400 group-hover:fill-gray-600"
                                           />
                                         </svg>
@@ -1065,14 +1192,16 @@ export default function Scenario({
                         type="file"
                         accept=".xlsx"
                         className="hidden"
-                        onChange={() => {
-                          // You can set bus schedule file here
-                          // const f = e.target.files?.[0] ?? null;
-                          // setBusScheduleFile(f);
-                        }}
+                        onChange={(e) =>
+                          handleFileUpload(e.target.files?.[0] || null)
+                        }
                       />
                       <div
-                        className="p-6 border-2 border-dashed border-[#81069e] rounded-[20px] bg-white cursor-pointer flex flex-col items-center justify-center min-h-[120px] hover:bg-gray-50"
+                        className={`p-6 border-2 border-dashed rounded-[20px] bg-white cursor-pointer flex flex-col items-center justify-center min-h-[120px] hover:bg-gray-50 ${
+                          busScheduleFile
+                            ? "border-green-500 bg-green-50"
+                            : "border-[#81069e]"
+                        }`}
                         onClick={() =>
                           (
                             document.getElementById(
@@ -1084,18 +1213,28 @@ export default function Scenario({
                         onDrop={(e) => {
                           e.preventDefault();
                           const f = e.dataTransfer?.files?.[0];
-                          if (f) {
-                            // Handle file drop
-                            // setBusScheduleFile(f);
-                          }
+                          handleFileUpload(f || null);
                         }}
                       >
-                        <p className="text-gray-600 mb-2">
-                          Drag and drop file here (.xlsx)
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          or click to select file
-                        </p>
+                        {busScheduleFile ? (
+                          <>
+                            <p className="text-green-600 font-semibold mb-2">
+                              ✓ File uploaded
+                            </p>
+                            <p className="text-green-600 text-sm">
+                              {busScheduleFile.name}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-gray-600 mb-2">
+                              Drag and drop file here (.xlsx)
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                              or click to select file
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
 

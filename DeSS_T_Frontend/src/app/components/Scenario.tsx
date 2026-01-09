@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { Configuration } from "../models/Configuration";
-import type { StationDetail, StationPair, NetworkModel } from "../models/Network";
+import type { ConfigurationDetail } from "../models/Configuration";
+import type {
+  StationDetail,
+  StationPair,
+  NetworkModel,
+} from "../models/Network";
 import type { SimulationResponse } from "../models/SimulationModel";
 import ScenarioMap from "./ScenarioMap";
 import type { RouteSegment } from "./ScenarioMap";
 import { computeRouteSegments } from "../../utility/api/routeBatch";
+import { saveRoutes } from "../../utility/api/routeSave";
 import { SketchPicker, type ColorResult } from "react-color";
 import CustomDropdown from "./CustomDropdown";
 import Outputpage from "../pages/Outputpage";
@@ -12,137 +17,176 @@ import "../../style/Scenario.css";
 import HelpButton from "./HelpButton";
 import type { ProjectSimulationRequest } from "../models/ProjectModel";
 import { runSimulation } from "../../utility/api/simulation";
+import type {
+  ScenarioDetail,
+  BusScenario,
+  ScheduleData,
+  BusInformation,
+  RouteScenario,
+  RoutePath,
+  Order,
+} from "../models/Scenario";
+import { getScheduleData } from "../../utility/api/simulation";
+import type { PaserSchedule } from "../models/ScheduleModel";
 
 export default function Scenario({
   configuration,
   configurationName,
   onBack,
+  project,
   projectName,
 }: {
-  configuration: Configuration;
+  configuration: ConfigurationDetail;
   configurationName?: string;
   onBack?: () => void;
   mode?: "guest" | "user";
+  project?: ProjectSimulationRequest;
   projectName?: string;
 }) {
-  const nodes: StationDetail[] = useMemo(
-    () => {
-      const networkModel = configuration?.Network_model as
-        | (NetworkModel & { Station_detail?: unknown[]; station_details?: unknown[] })
-        | undefined;
-      if (!networkModel) return [];
+  useEffect(() => {
+    console.log("=== Scenario Component Loaded ===");
+    console.log("Configuration:", configuration);
+    console.log("Configuration Name:", configurationName);
+    console.log("Project Name:", projectName);
+    console.log("Network Model:", configuration?.network_model);
+    console.log("Alighting Data:", configuration?.alighting_datas);
+    console.log("InterArrival Data:", configuration?.interarrival_datas);
+    console.log("================================");
+  }, [configuration, configurationName, projectName]);
 
-      const toNum = (v: unknown): number | undefined => {
-        if (typeof v === "number" && Number.isFinite(v)) return v;
-        if (typeof v === "string") {
-          const n = parseFloat(v);
-          if (Number.isFinite(n)) return n;
-        }
-        return undefined;
-      };
+  const nodes: StationDetail[] = useMemo(() => {
+    const networkModel = configuration?.network_model as
+      | (NetworkModel & {
+          Station_detail?: unknown[];
+          station_details?: unknown[];
+        })
+      | undefined;
+    if (!networkModel) return [];
 
-      const normalizeStation = (
-        raw: unknown,
-        idx: number
-      ): StationDetail | null => {
-        if (!raw || typeof raw !== "object") return null;
-        const rec = raw as Record<string, unknown>;
-
-        const locationLower = rec.location as unknown;
-        const locationUpper = rec.Location as unknown;
-        const coords = (
-          (locationLower as Record<string, unknown> | undefined)?.coordinates ||
-          (locationUpper as Record<string, unknown> | undefined)?.coordinates
-        ) as unknown;
-
-        const latFromCoords = Array.isArray(coords) ? toNum(coords[1]) : undefined;
-        const lonFromCoords = Array.isArray(coords) ? toNum(coords[0]) : undefined;
-
-        const lat =
-          toNum(rec.lat) ??
-          toNum(rec.latitude) ??
-          latFromCoords;
-        const lon =
-          toNum(rec.lon) ??
-          toNum(rec.longitude) ??
-          lonFromCoords;
-
-        if (lat === undefined || lon === undefined) return null;
-
-        const rawStationId =
-          (rec.station_detail_id as string | undefined) ||
-          (rec.StationID as string | undefined) ||
-          (rec.station_id_osm as string | undefined);
-
-        const stationId =
-          rawStationId ||
-          `${lat.toFixed(6)},${lon.toFixed(6)}` ||
-          `station-${idx}`;
-
-        const name =
-          (rec.name as string | undefined) ||
-          (rec.StationName as string | undefined) ||
-          (rec.station_name as string | undefined) ||
-          (rec.name_th as string | undefined) ||
-          rawStationId ||
-          `Station ${idx + 1}`;
-
-        const normalized = {
-          ...rec,
-          station_detail_id: stationId,
-          station_id_osm:
-            (rec.station_id_osm as string | undefined) || stationId,
-          name,
-          lat,
-          lon,
-          location: {
-            type: "Point",
-            coordinates: [lon, lat],
-          },
-        } as unknown as StationDetail;
-
-        return normalized;
-      };
-
-      const nm = networkModel as {
-        Station_detail?: unknown[];
-        station_details?: unknown[];
-        station_pairs?: StationPair[];
-      };
-
-      const candidateLists: unknown[][] = [];
-
-      const fromPairs =
-        nm.station_pairs?.flatMap((pair: StationPair | undefined) => {
-          if (!pair) return [] as (StationDetail | undefined)[];
-          return [pair.fst_station, pair.snd_station].filter(Boolean);
-        }) ?? [];
-      if (fromPairs.length > 0) candidateLists.push(fromPairs);
-
-      const directStations =
-        nm.Station_detail || nm.station_details || [];
-      if (Array.isArray(directStations)) {
-        candidateLists.push(directStations as unknown[]);
+    const toNum = (v: unknown): number | undefined => {
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+      if (typeof v === "string") {
+        const n = parseFloat(v);
+        if (Number.isFinite(n)) return n;
       }
+      return undefined;
+    };
 
-      const normalized = candidateLists
-        .flat()
-        .map((raw, idx) => normalizeStation(raw, idx))
+    const normalizeStation = (
+      raw: unknown,
+      idx: number
+    ): StationDetail | null => {
+      if (!raw || typeof raw !== "object") return null;
+      const rec = raw as Record<string, unknown>;
+
+      const locationLower = rec.location as unknown;
+      const locationUpper = rec.Location as unknown;
+      const coords = ((locationLower as Record<string, unknown> | undefined)
+        ?.coordinates ||
+        (locationUpper as Record<string, unknown> | undefined)
+          ?.coordinates) as unknown;
+
+      const latFromCoords = Array.isArray(coords)
+        ? toNum(coords[1])
+        : undefined;
+      const lonFromCoords = Array.isArray(coords)
+        ? toNum(coords[0])
+        : undefined;
+
+      const lat = toNum(rec.lat) ?? toNum(rec.latitude) ?? latFromCoords;
+      const lon = toNum(rec.lon) ?? toNum(rec.longitude) ?? lonFromCoords;
+
+      if (lat === undefined || lon === undefined) return null;
+
+      const rawStationId =
+        (rec.station_detail_id as string | undefined) ||
+        (rec.StationID as string | undefined) ||
+        (rec.station_id_osm as string | undefined);
+
+      const stationId =
+        rawStationId ||
+        `${lat.toFixed(6)},${lon.toFixed(6)}` ||
+        `station-${idx}`;
+
+      const name =
+        (rec.name as string | undefined) ||
+        (rec.StationName as string | undefined) ||
+        (rec.station_name as string | undefined) ||
+        (rec.name_th as string | undefined) ||
+        rawStationId ||
+        `Station ${idx + 1}`;
+
+      const normalized = {
+        ...rec,
+        station_detail_id: stationId,
+        station_id_osm: (rec.station_id_osm as string | undefined) || stationId,
+        name,
+        lat,
+        lon,
+        location: {
+          type: "Point",
+          coordinates: [lon, lat],
+        },
+      } as unknown as StationDetail;
+
+      return normalized;
+    };
+
+    const nm = networkModel as {
+      Station_detail?: unknown[];
+      station_details?: unknown[];
+      StationPair?: StationPair[];
+      station_pairs?: StationPair[];
+    };
+
+    // Extract stations directly from Station_detail or station_details arrays
+    // (most reliable source - direct from backend response)
+    const directStations = nm.Station_detail || nm.station_details || [];
+    if (!Array.isArray(directStations) || directStations.length === 0) {
+      // Fallback: if no direct stations, try to extract from StationPair
+      const stationPairs = nm.StationPair || [];
+      const fromPairs =
+        stationPairs?.flatMap((pair: StationPair) => {
+          if (!pair) return [];
+          const result = [];
+          if (pair.FstStation) result.push(pair.FstStation);
+          if (pair.SndStation) result.push(pair.SndStation);
+          return result;
+        }) ?? [];
+
+      const normalized = fromPairs
+        .map((raw: unknown, idx: number) => normalizeStation(raw, idx))
         .filter((s): s is StationDetail => !!s);
 
-      // Deduplicate by station_detail_id
       const unique = normalized.filter(
-        (station, index, self) =>
+        (station: StationDetail, index: number, self: StationDetail[]) =>
           index ===
           self.findIndex(
-            (s) => s.station_detail_id === station.station_detail_id
+            (s: StationDetail) =>
+              s.station_detail_id === station.station_detail_id
           )
       );
 
       return unique;
-    },
-    [configuration?.Network_model]
-  );
+    }
+
+    // Use direct stations (primary path)
+    const normalized = (directStations as unknown[])
+      .map((raw: unknown, idx: number) => normalizeStation(raw, idx))
+      .filter((s): s is StationDetail => !!s);
+
+    // Deduplicate by station_detail_id
+    const unique = normalized.filter(
+      (station: StationDetail, index: number, self: StationDetail[]) =>
+        index ===
+        self.findIndex(
+          (s: StationDetail) =>
+            s.station_detail_id === station.station_detail_id
+        )
+    );
+
+    return unique;
+  }, [configuration?.network_model]);
   const [transportMode, setTransportMode] = useState<"Route" | "Bus">("Route");
   const colorOptions = useMemo(
     () => [
@@ -165,6 +209,7 @@ export default function Scenario({
     color: string;
     stations: string[];
     segments: RouteSegment[];
+    orders: Order[]; // Order objects connecting StationPairs in sequence
     hidden: boolean;
     locked: boolean;
     maxDistance: number;
@@ -179,6 +224,7 @@ export default function Scenario({
     color: colorOptions[idx % colorOptions.length],
     stations: [], // stations will be selected from map later
     segments: [],
+    orders: [], // Orders will be created when route is confirmed
     hidden: false,
     locked: false,
     maxDistance: 70,
@@ -205,6 +251,10 @@ export default function Scenario({
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
+  const [projectid, setProjectId] = useState<string | null>(
+    project?.project_id || null
+  );
+  const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
 
   const timeSlotOptions = [
     "5 Minutes",
@@ -299,7 +349,9 @@ export default function Scenario({
       // Clear stations to start from scratch
       setRoutes((prev) =>
         prev.map((r) =>
-          r.id === routeId ? { ...r, stations: [], segments: [] } : r
+          r.id === routeId
+            ? { ...r, stations: [], segments: [], orders: [] }
+            : r
         )
       );
       setSelectedRouteId(routeId);
@@ -362,10 +414,75 @@ export default function Scenario({
         coords: s.coords,
       }));
 
-      // Update route with all segments
+      // Create Orders from consecutive StationPairs
+      const networkModel = configuration?.network_model as
+        | NetworkModel
+        | undefined;
+      const stationPairs = (networkModel as any)?.StationPair || [];
+      const orders: Order[] = [];
+
+      // Debug: Show actual station sequence
+      console.log(
+        "📍 Station Sequence (route.stations):",
+        route.stations.map((sid, idx) => `${idx + 1}. ${getStationName(sid)}`)
+      );
+
+      for (let i = 0; i < route.stations.length - 1; i++) {
+        const currentStationId = route.stations[i];
+        const nextStationId = route.stations[i + 1];
+
+        // Find matching StationPair
+        const matchingPair = stationPairs.find(
+          (pair: StationPair) =>
+            pair.FstStation === currentStationId &&
+            pair.SndStation === nextStationId
+        );
+
+        if (matchingPair) {
+          // Ensure from = currentStation, to = nextStation (correct direction)
+          const fromStation =
+            matchingPair.FstStation === currentStationId
+              ? matchingPair.FstStation
+              : matchingPair.SndStation;
+          const toStation =
+            matchingPair.FstStation === currentStationId
+              ? matchingPair.SndStation
+              : matchingPair.FstStation;
+
+          const order: Order = {
+            order_id: `${routeId}-order-${i + 1}`,
+            order: i + 1,
+            station_pair_id: matchingPair.StationPairID,
+            route_path_id: routeId,
+            station_pair: {
+              ...matchingPair,
+              FstStation: fromStation,
+              SndStation: toStation,
+            },
+          };
+          orders.push(order);
+        }
+      }
+
+      // Console log created orders with station names
+      console.log("🎯 Created Orders for Route:", route.name);
+      console.log("   Route ID:", routeId);
+      console.log("   Total Orders:", orders.length);
+      console.log(
+        "   Order Details:",
+        orders.map((o) => ({
+          order: o.order,
+          order_id: o.order_id,
+          station_pair_id: o.station_pair_id,
+          from: getStationName(o.station_pair?.FstStation || ""),
+          to: getStationName(o.station_pair?.SndStation || ""),
+        }))
+      );
+
+      // Update route with segments and orders
       setRoutes((prev) =>
         prev.map((r) =>
-          r.id === routeId ? { ...r, segments: newSegments } : r
+          r.id === routeId ? { ...r, segments: newSegments, orders: orders } : r
         )
       );
 
@@ -402,7 +519,7 @@ export default function Scenario({
   const resetRoutePath = (routeId: string) => {
     setRoutes((prev) =>
       prev.map((r) =>
-        r.id === routeId ? { ...r, stations: [], segments: [] } : r
+        r.id === routeId ? { ...r, stations: [], segments: [], orders: [] } : r
       )
     );
   };
@@ -463,118 +580,111 @@ export default function Scenario({
 
   const handleSimulation = async () => {
     try {
-      // Create scenario from current routes
-      const routePairs = configuration?.Network_model?.station_pairs ?? [];
-
-      // Build route scenarios and bus scenarios
-      const routePaths = routes.map((route, routeIdx) => ({
-        route_path_id: route.id,
-        name: route.name,
-        color: route.color,
-        route_scenario_id: "RS01",
-        route: JSON.stringify({
-          type: "LineString",
-          coordinates: route.segments.flatMap((seg) => seg.coords),
-        }),
-        orders: route.stations.slice(0, -1).map((station, stationIdx) => {
-          const nextStation = route.stations[stationIdx + 1];
-          const stationPair = routePairs.find(
-            (sp: StationPair) =>
-              sp.fst_station_id === station && sp.snd_station_id === nextStation
-          );
-          return {
-            order_id: `O${routeIdx}-${stationIdx + 1}`,
-            order: stationIdx + 1,
-            station_pair_id:
-              stationPair?.station_pair_id || `${station}-${nextStation}`,
-            route_path_id: route.id,
-          };
-        }),
-      }));
-
-      const routeScenario = {
-        route_scenario_id: "RS01",
-        route_paths: routePaths,
-      };
-
-      // Generate schedule times (e.g., 10:00, 10:15, 10:30)
-      const timeSlotMinutes = parseInt(timeSlot.split(" ")[0]);
-      const scheduleTimes: string[] = [];
-      for (let h = simStartHour; h < simEndHour; h++) {
-        for (let m = 0; m < 60; m += timeSlotMinutes) {
-          scheduleTimes.push(
-            `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
-          );
-        }
+      if (projectid === null) {
+        setProjectId(`guest-project-${Date.now()}`);
       }
 
-      const busInformations = routes.map((route, routeIdx) => ({
-        bus_information_id: `BI${String(routeIdx + 1).padStart(2, "0")}`,
-        speed: route.speed,
-        max_dis: route.maxDistance,
-        max_bus: route.maxBuses,
-        capacity: route.capacity,
-        bus_scenario_id: "BS01",
-        route_path_id: route.id,
+      const currentProjectId = projectid || `guest-project-${Date.now()}`;
+
+      // Check if bus schedule file exists
+      if (!busScheduleFile) {
+        alert("Please upload a bus schedule file before running simulation");
+        return;
+      }
+
+      const scheduleData: PaserSchedule = await getScheduleData(
+        currentProjectId,
+        busScheduleFile
+      );
+      console.log("Schedule Data received:", scheduleData);
+
+      const scheduleDatas: ScheduleData[] = scheduleData.ScheduleData.map(
+        (sd) => ({
+          schedule_data_id: sd.ScheduleDataID,
+          schedule_list: sd.ScheduleList,
+          route_path_id: sd.RoutePathID,
+          bus_scenario_id: "bus-scenario-" + currentProjectId, // to be filled by backend
+        })
+      );
+
+      const busInformations: BusInformation[] = routes.map((r) => ({
+        bus_information_id: `${r.id}-businfo`,
+        speed: r.speed,
+        max_dis: r.maxDistance,
+        max_bus: r.maxBuses,
+        capacity: r.capacity,
+        bus_scenario_id: "bus-scenario-" + currentProjectId,
+        route_path_id: r.name + "-" + currentProjectId,
       }));
 
-      const scheduleData = {
-        schedule_data_id: "SCH01",
-        schedule_list: scheduleTimes.join(","),
-        route_path_id: routes[0]?.id || "default_route",
-        bus_scenario_id: "BS01",
-      };
-
-      const busScenario = {
-        bus_scenario_id: "BS01",
-        schedule_data_id: "SCH01",
-        schedule_data: scheduleData,
+      const busScenario: BusScenario = {
+        bus_scenario_id: "bus-scenario-" + currentProjectId,
+        schedule_data: scheduleDatas,
         bus_informations: busInformations,
       };
 
-      // Format time periods
-      const timePeriods = `${String(simStartHour).padStart(2, "0")}.00-${String(
-        simEndHour
-      ).padStart(2, "0")}.00`;
-      const timeSlotValue = timeSlot.split(" ")[0];
+      const routePaths: RoutePath[] = routes.map((r) => ({
+        route_path_id: r.name + "-" + currentProjectId,
+        name: r.name,
+        color: r.color,
+        route_scenario_id: "route-scenario-" + currentProjectId, // to be filled by backend
+        route: "", // to be filled by backend
+        orders: r.orders,
+      }));
 
-      // Convert legacy Configuration to ConfigurationDetail for the API
-      const configurationDetail = {
-        configuration_detail_id: "temp_config_001",
-        alighting_data_id: "temp_alighting_001",
-        interarrival_data_id: "temp_interarrival_001",
-        network_model_id:
-          configuration.Network_model?.network_model_id || "temp_network_001",
-        network_model: configuration.Network_model,
-        alighting_datas: [], // Can be populated from Alighting_Distribution if needed
-        interarrival_datas: [], // Can be populated from Interarrival_Distribution if needed
+      const routeScenario: RouteScenario = {
+        route_scenario_id: "route-scenario-" + currentProjectId,
+        route_paths: routePaths,
       };
 
-      // Convert scenario to ScenarioDetail for the API
-      const scenarioDetail = {
-        scenario_detail_id: "temp_scenario_001",
-        bus_scenario_id: "BS01",
-        route_scenario_id: "RS01",
+      const scenarioDetail: ScenarioDetail = {
+        scenario_detail_id: "scenario-detail-" + currentProjectId,
+        bus_scenario_id: busScenario.bus_scenario_id,
+        route_scenario_id: routeScenario.route_scenario_id,
         bus_scenario: busScenario,
         route_scenario: routeScenario,
       };
 
-      // Build simulation request
       const simulationRequest: ProjectSimulationRequest = {
-        project_id: projectName || "PROJECT_001",
-        configuration: configurationDetail,
+        project_id: currentProjectId,
+        configuration: configuration,
         scenario: scenarioDetail,
-        time_periods: timePeriods,
-        time_slot: timeSlotValue,
+        time_periods: simStartHour + ".00-" + simEndHour + ".00",
+        time_slot: timeSlot.split(" ")[0],
       };
 
-      // Call the simulation API
       const response = await runSimulation(simulationRequest);
       setSimulationResponse(response);
+
     } catch (error) {
       console.error("Simulation failed:", error);
-      // TODO: Show error message to user
+      alert(
+        "Simulation failed: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     }
+  };
+
+  const handleFileUpload = (file: File | null) => {
+    if (!file) {
+      setBusScheduleFile(null);
+      return;
+    }
+
+    // Validate file type
+    if (!file.name.endsWith(".xlsx")) {
+      alert("Please upload a .xlsx file");
+      return;
+    }
+
+    // Validate file size (e.g., max 10MB)
+    const maxSizeInBytes = 10 * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      alert("File size exceeds 10MB limit");
+      return;
+    }
+
+    setBusScheduleFile(file);
   };
 
   return (
@@ -1010,7 +1120,7 @@ export default function Scenario({
                                           xmlns="http://www.w3.org/2000/svg"
                                         >
                                           <path
-                                            d="M5.33822 0.292942L0.265572 5.44326C0.181421 5.52785 0.114629 5.6285 0.0690483 5.73938C0.0234675 5.85027 0 5.9692 0 6.08933C0 6.20945 0.0234675 6.32839 0.0690483 6.43927C0.114629 6.55016 0.181421 6.6508 0.265572 6.73539C0.433788 6.90487 0.661341 7 0.898531 7C1.13572 7 1.36327 6.90487 1.53149 6.73539L6.02056 2.23114L10.4647 6.73539C10.633 6.90487 10.8605 7 11.0977 7C11.3349 7 11.5624 6.90487 11.7307 6.73539C11.8155 6.65112 11.883 6.55062 11.9292 6.43972C11.9754 6.32882 11.9995 6.20972 12 6.08933C11.9995 5.96894 11.9754 5.84984 11.9292 5.73894C11.883 5.62804 11.8155 5.52754 11.7307 5.44326L6.65801 0.292942C6.57393 0.200578 6.4719 0.126864 6.35832 0.0764459C6.24475 0.0260279 6.1221 -4.73456e-07 5.99811 -4.74973e-07C5.87412 -4.7649e-07 5.75148 0.0260279 5.63791 0.0764459C5.52433 0.126864 5.42229 0.200578 5.33822 0.292942Z"
+                                            d="M5.33822 0.292942L0.265572 5.44326C0.181421 5.52785 0.114629 5.6285 0.0690483 5.73938C0.0234675 5.85027 0 5.9692 0 6.08933C0 6.20945 0.0234675 6.32839 0.0690483 6.43927C0.114629 6.55016 0.181421 6.6508 0.265572 6.73539C0.433788 6.90487 0.661341 7 0.898531 7C1.13572 7 1.36327 6.90487 1.53149 6.73539L6.02056 2.23114L10.4647 6.73539C10.633 6.90487 10.8605 7 11.0977 7C11.3349 7 11.5624 6.90487 11.7307 6.73539C11.8155 6.65112 11.883 6.55062 11.9292 6.43972C11.9754 6.32882 11.9995 6.20972 12 6.08933C11.9995 5.96894 11.9754 5.84984 11.9292 5.73894C11.883 5.62804 11.8155 5.52754 11.7307 5.44326L6.65801 0.292942C6.57393  0.200578 6.4719 0.126864 6.35832 0.0764459C6.24475 0.0260279 6.1221 -4.73456e-07 5.99811 -4.74973e-07C5.87412 -4.7649e-07 5.75148 0.0260279 5.63791 0.0764459C5.52433 0.126864 5.42229 0.200578 5.33822 0.292942Z"
                                             className="fill-gray-400 group-hover:fill-gray-600"
                                           />
                                         </svg>
@@ -1082,14 +1192,16 @@ export default function Scenario({
                         type="file"
                         accept=".xlsx"
                         className="hidden"
-                        onChange={() => {
-                          // You can set bus schedule file here
-                          // const f = e.target.files?.[0] ?? null;
-                          // setBusScheduleFile(f);
-                        }}
+                        onChange={(e) =>
+                          handleFileUpload(e.target.files?.[0] || null)
+                        }
                       />
                       <div
-                        className="p-6 border-2 border-dashed border-[#81069e] rounded-[20px] bg-white cursor-pointer flex flex-col items-center justify-center min-h-[120px] hover:bg-gray-50"
+                        className={`p-6 border-2 border-dashed rounded-[20px] bg-white cursor-pointer flex flex-col items-center justify-center min-h-[120px] hover:bg-gray-50 ${
+                          busScheduleFile
+                            ? "border-green-500 bg-green-50"
+                            : "border-[#81069e]"
+                        }`}
                         onClick={() =>
                           (
                             document.getElementById(
@@ -1101,18 +1213,28 @@ export default function Scenario({
                         onDrop={(e) => {
                           e.preventDefault();
                           const f = e.dataTransfer?.files?.[0];
-                          if (f) {
-                            // Handle file drop
-                            // setBusScheduleFile(f);
-                          }
+                          handleFileUpload(f || null);
                         }}
                       >
-                        <p className="text-gray-600 mb-2">
-                          Drag and drop file here (.xlsx)
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          or click to select file
-                        </p>
+                        {busScheduleFile ? (
+                          <>
+                            <p className="text-green-600 font-semibold mb-2">
+                              ✓ File uploaded
+                            </p>
+                            <p className="text-green-600 text-sm">
+                              {busScheduleFile.name}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-gray-600 mb-2">
+                              Drag and drop file here (.xlsx)
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                              or click to select file
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
 

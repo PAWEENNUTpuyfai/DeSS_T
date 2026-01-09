@@ -136,3 +136,68 @@ func FetchBusStopsInArea(areaCode string) ([]OverpassNode, error) {
 	}
 	return []OverpassNode{}, nil
 }
+
+type OverpassWay struct {
+	ID    int64             `json:"id"`
+	Nodes []int64           `json:"nodes"`
+	Tags  map[string]string `json:"tags,omitempty"`
+}
+
+type OverpassGeometryResponse struct {
+	Elements []struct {
+		Type     string            `json:"type"`
+		ID       int64             `json:"id"`
+		Lat      float64           `json:"lat,omitempty"`
+		Lon      float64           `json:"lon,omitempty"`
+		Nodes    []int64           `json:"nodes,omitempty"`
+		Members  []json.RawMessage `json:"members,omitempty"`
+		Tags     map[string]string `json:"tags,omitempty"`
+		Geometry []struct {
+			Lat float64 `json:"lat"`
+			Lon float64 `json:"lon"`
+		} `json:"geometry,omitempty"`
+	} `json:"elements"`
+}
+
+// FetchAreaGeometry queries Overpass API to get area polygon geometry
+func FetchAreaGeometry(areaCode string) ([][][2]float64, error) {
+	query := fmt.Sprintf(`
+		[out:json][timeout:60];
+		area(%s)->.searchArea;
+		(
+			rel(area.searchArea)["boundary"="administrative"];
+			way(area.searchArea)["boundary"="administrative"];
+		);
+		out geom;
+	`, areaCode)
+
+	for attempt := 0; attempt < 3; attempt++ {
+		client := &http.Client{Timeout: 70 * time.Second}
+		resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
+		if err == nil {
+			data, readErr := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			if readErr == nil && resp.StatusCode == 200 {
+				var result OverpassGeometryResponse
+				if err := json.Unmarshal(data, &result); err == nil {
+					var polygons [][][2]float64
+					for _, el := range result.Elements {
+						if len(el.Geometry) > 0 {
+							var poly [][2]float64
+							for _, coord := range el.Geometry {
+								poly = append(poly, [2]float64{coord.Lat, coord.Lon})
+							}
+							polygons = append(polygons, poly)
+						}
+					}
+					if len(polygons) > 0 {
+						return polygons, nil
+					}
+				}
+			}
+		}
+		time.Sleep(time.Duration(400*(attempt+1)) * time.Millisecond)
+	}
+	// Return empty array if no geometry found
+	return [][][2]float64{}, nil
+}

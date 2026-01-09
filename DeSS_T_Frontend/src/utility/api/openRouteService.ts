@@ -27,9 +27,12 @@ export async function buildNetworkModelFromStations(
   };
 
   type StationPayload = {
-    StationID: string;
-    StationName: string;
+    station_detail_id: string; // Must include ID for backend to map properly
+    StationID?: string;
+    StationName?: string;
     Location: { type: "Point"; coordinates: [number, number] };
+    lat?: number;
+    lon?: number;
   };
 
   const stationsPayload: StationPayload[] = stations
@@ -60,12 +63,15 @@ export async function buildNetworkModelFromStations(
         `Station ${idx + 1}`;
 
       return {
+        station_detail_id: String(stationId), // Include this for backend mapping
         StationID: String(stationId),
         StationName: String(stationName),
         Location: {
           type: "Point",
           coordinates: [finalLon, finalLat],
         },
+        lat: finalLat,
+        lon: finalLon,
       };
     })
     .filter((s): s is StationPayload => s !== null);

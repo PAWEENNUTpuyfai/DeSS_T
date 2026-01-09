@@ -1,3 +1,5 @@
+import type { StationPair } from "./Network";
+
 // ------------------- SCENARIO DETAIL --------------------
 export interface ScenarioDetail {
   scenario_detail_id: string;
@@ -10,8 +12,7 @@ export interface ScenarioDetail {
 // ------------------- BUS SCENARIO --------------------
 export interface BusScenario {
   bus_scenario_id: string;
-  schedule_data_id: string;
-  schedule_data?: ScheduleData;
+  schedule_data?: ScheduleData[];
   bus_informations?: BusInformation[];
 }
 
@@ -56,9 +57,9 @@ export interface RoutePath {
 // ------------------- ORDER --------------------
 export interface Order {
   order_id: string;
-  order: number;
+  order: number; // Sequential order number
   station_pair_id: string;
   route_path_id: string;
   route_path?: RoutePath;
-  station_pair?: any; // Reference to StationPair from Network.ts
+  station_pair?: StationPair;
 }

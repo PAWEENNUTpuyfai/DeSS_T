@@ -34,7 +34,10 @@ func main() {
 		AllowMethods: "GET,POST,OPTIONS",
 		AllowHeaders: "Content-Type",
 	}))
+
+	// Connect to Postgres (runs AutoMigrate)
 	// config.ConnectDatabase()
+	// Uncomment if Mongo is required and MONGO_URI is set
 	// config.ConnectMongo()
 
 	// seed.SeedData() // insert initial data
@@ -50,7 +53,6 @@ func main() {
 	println("🚀 DeSS_T Backend running on http://localhost:8080")
 
 	routes.RegisterNetworkRoutes(app)
-
 
 	app.Listen(":8080")
 }

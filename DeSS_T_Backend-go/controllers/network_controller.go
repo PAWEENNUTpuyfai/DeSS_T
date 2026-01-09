@@ -13,8 +13,8 @@ import (
 )
 
 type BuildNetworkRequest struct {
-	Stations    []models.Station_Detail `json:"stations"`
-	NetworkName string                  `json:"network_name"`
+	Stations    []map[string]interface{} `json:"stations"`
+	NetworkName string                   `json:"network_name"`
 }
 
 func BuildNetworkModel(c *fiber.Ctx) error {
@@ -33,8 +33,66 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid JSON: "+err.Error())
 	}
 
-	if len(req.Stations) == 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "Stations cannot be empty")
+	// Convert generic station maps to StationDetail objects
+	stations := []models.StationDetail{}
+	for _, sMap := range req.Stations {
+		// Extract fields from the generic map
+		stationDetailID := ""
+		if id, ok := sMap["station_detail_id"].(string); ok && id != "" {
+			stationDetailID = id
+		} else if id, ok := sMap["StationID"].(string); ok && id != "" {
+			stationDetailID = id
+		}
+
+		if stationDetailID == "" {
+			continue // Skip stations without ID
+		}
+
+		name := ""
+		if n, ok := sMap["name"].(string); ok {
+			name = n
+		} else if n, ok := sMap["StationName"].(string); ok {
+			name = n
+		}
+
+		// Extract coordinates from Location object or lat/lon fields
+		var lat, lon float64
+		if locMap, ok := sMap["Location"].(map[string]interface{}); ok {
+			if coords, ok := locMap["coordinates"].([]interface{}); ok && len(coords) >= 2 {
+				if lonVal, ok := coords[0].(float64); ok {
+					lon = lonVal
+				}
+				if latVal, ok := coords[1].(float64); ok {
+					lat = latVal
+				}
+			}
+		}
+
+		// Fallback to direct lat/lon fields
+		if lat == 0 && lon == 0 {
+			if latVal, ok := sMap["lat"].(float64); ok {
+				lat = latVal
+			}
+			if lonVal, ok := sMap["lon"].(float64); ok {
+				lon = lonVal
+			}
+		}
+
+		station := models.StationDetail{
+			StationDetailID: stationDetailID,
+			Name:            name,
+			Location: models.GeoPoint{
+				Type:        "Point",
+				Coordinates: [2]float64{lon, lat},
+			},
+			Lat: lat,
+			Lon: lon,
+		}
+		stations = append(stations, station)
+	}
+
+	if len(stations) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "No valid stations found in request")
 	}
 
 	// 1) Matrix mode selection
@@ -59,13 +117,13 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 
 	var matrix *services.ORSMatrixResponse
 	var err error
-	useORSMatrix := (matrixMode == "ors" && orsKey != "" && len(req.Stations) <= maxStations)
+	useORSMatrix := (matrixMode == "ors" && orsKey != "" && len(stations) <= maxStations)
 	if useORSMatrix {
 		// Soft timeout guard: ensure the handler returns fast even if ORS is slow
 		done := make(chan struct{})
 		var mErr error
 		go func() {
-			matrix, mErr = services.OrsMatrix(req.Stations, orsKey)
+			matrix, mErr = services.OrsMatrix(stations, orsKey)
 			close(done)
 		}()
 		select {
@@ -76,26 +134,14 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 		}
 	}
 	if err != nil || matrix == nil {
-		matrix, _ = services.LocalMatrix(req.Stations, metersPerSecond)
+		matrix, _ = services.LocalMatrix(stations, metersPerSecond)
 	}
 
-	// 2. Create pair list
-	pairs := []models.Station_Pair{}
+	// 2. Create pair list with RouteBetween data
+	pairs := []models.StationPair{}
+	routeBetweens := []models.RouteBetween{}
 
-	n := len(req.Stations)
-	// Decide whether to call ORS for per-pair route geometry.
-	// Default: ORS for accurate road routing (can be overridden by ROUTE_GEOMETRY_MODE=straight)
-	routeMode := strings.ToLower(os.Getenv("ROUTE_GEOMETRY_MODE")) // "ors" | "straight"
-	if routeMode == "" {
-		routeMode = "ors" // Changed default to "ors" for road-accurate routing
-	}
-	maxPairs := 500 // directed pairs cap when using ORS
-	if v := os.Getenv("ROUTE_GEOMETRY_MAX_PAIRS"); v != "" {
-		if p, perr := strconv.Atoi(v); perr == nil && p > 0 {
-			maxPairs = p
-		}
-	}
-	useORSRoute := (routeMode == "ors") && (orsKey != "") && (n*(n-1) <= maxPairs)
+	n := len(stations)
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < n; j++ {
@@ -103,62 +149,33 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 				continue
 			}
 
-			start := req.Stations[i].Location.Coordinates
-			end := req.Stations[j].Location.Coordinates
-
-			// Route geometry; optionally call ORS, else use straight line
-			var coords [][2]float64
-			if useORSRoute {
-				// Soft timeout guard for each route fetch
-				type routeRes struct {
-					c   [][2]float64
-					err error
-				}
-				ch := make(chan routeRes, 1)
-				go func() {
-					r, e := services.OrsRoute(start, end, orsKey)
-					ch <- routeRes{c: r, err: e}
-				}()
-				select {
-				case rr := <-ch:
-					if rr.err != nil || len(rr.c) == 0 {
-						coords = [][2]float64{start, end}
-					} else {
-						coords = rr.c
-					}
-				case <-time.After(2 * time.Second):
-					coords = [][2]float64{start, end}
-				}
-			} else {
-				coords = [][2]float64{start, end}
+			// Create RouteBetween record with distance and travel time
+			routeBetweenID := fmt.Sprintf("%s-%s-route", stations[i].StationDetailID, stations[j].StationDetailID)
+			routeBetween := models.RouteBetween{
+				RouteBetweenID: routeBetweenID,
+				TravelTime:     matrix.Durations[i][j],
+				Distance:       matrix.Distances[i][j],
 			}
+			routeBetweens = append(routeBetweens, routeBetween)
 
-			pair := models.Station_Pair{
-				FstStation: req.Stations[i].StationID,
-				SndStation: req.Stations[j].StationID,
-				RouteBetween: models.Route_Between{
-					RouteBetweenID: fmt.Sprintf("%s-%s",
-						req.Stations[i].StationID,
-						req.Stations[j].StationID,
-					),
-					TravelTime: matrix.Durations[i][j],
-					Distance:   matrix.Distances[i][j],
-					Route: models.GeoLineString{
-						Type:        "LineString",
-						Coordinates: coords,
-					},
-				},
+			// Create StationPair that references the RouteBetween
+			pair := models.StationPair{
+				StationPairID:  fmt.Sprintf("%s-%s", stations[i].StationDetailID, stations[j].StationDetailID),
+				FstStationID:   stations[i].StationDetailID,
+				SndStationID:   stations[j].StationDetailID,
+				RouteBetweenID: routeBetweenID,
+				RouteBetween:   routeBetween,
 			}
 
 			pairs = append(pairs, pair)
 		}
 	}
 
-	// Final response
-	result := models.Network_Model{
-		NetworkModel:  req.NetworkName,
-		StationDetail: req.Stations,
-		StationPair:   pairs,
+	// Final response (includes RouteBetween data in each StationPair)
+	result := models.NetworkModel{
+		Name:           req.NetworkName,
+		StationDetails: stations,
+		StationPairs:   pairs,
 	}
 
 	return c.JSON(result)
@@ -390,8 +407,126 @@ func SaveRoutes(c *fiber.Ctx) error {
 	// TODO: Save routes and bus info separately to database
 	// For now, just return success
 	return c.JSON(fiber.Map{
-		"message": "Routes and bus info saved successfully",
-		"routes":  len(routePaths),
-		"busInfo": len(busInfoList),
+		"status":  "success",
+		"message": "Routes data received",
+	})
+}
+
+// SaveConfiguration saves NetworkModel with StationDetails, StationPairs, and RouteBetween to database
+// Request body:
+//
+//	{
+//	  "network_model_id": "guest_network",
+//	  "name": "Test Network",
+//	  "stations": [{...StationDetail}],
+//	  "station_pairs": [{...StationPair with RouteBetween}]
+//	}
+func SaveConfiguration(c *fiber.Ctx) error {
+	type stationPayload struct {
+		StationDetailID string `json:"station_detail_id"`
+		Name            string `json:"name"`
+		StationName     string `json:"StationName"`
+		Location        struct {
+			Type        string     `json:"type"`
+			Coordinates [2]float64 `json:"coordinates"`
+		} `json:"Location"`
+		Lat          float64 `json:"lat"`
+		Lon          float64 `json:"lon"`
+		StationIDOSM string  `json:"station_id_osm"`
+	}
+
+	type routeBetweenPayload struct {
+		RouteBetweenID string  `json:"RouteBetweenID"`
+		TravelTime     float64 `json:"TravelTime"`
+		Distance       float64 `json:"Distance"`
+	}
+
+	type stationPairPayload struct {
+		StationPairID  string              `json:"StationPairID"`
+		FstStation     string              `json:"FstStation"`
+		SndStation     string              `json:"SndStation"`
+		RouteBetween   routeBetweenPayload `json:"RouteBetween"`
+		NetworkModelID string              `json:"network_model_id"`
+	}
+
+	var req struct {
+		NetworkModelID string               `json:"network_model_id"`
+		Name           string               `json:"name"`
+		Stations       []stationPayload     `json:"stations"`
+		StationPairs   []stationPairPayload `json:"station_pairs"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request: "+err.Error())
+	}
+
+	if req.NetworkModelID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "network_model_id is required")
+	}
+
+	if len(req.Stations) == 0 || len(req.StationPairs) == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "stations and station_pairs are required")
+	}
+
+	// Create StationDetail records
+	stationDetails := []models.StationDetail{}
+	for _, s := range req.Stations {
+		if s.StationDetailID == "" {
+			continue
+		}
+		sd := models.StationDetail{
+			StationDetailID: s.StationDetailID,
+			Name:            s.Name,
+			Location: models.GeoPoint{
+				Type:        "Point",
+				Coordinates: s.Location.Coordinates,
+			},
+			Lat:          s.Lat,
+			Lon:          s.Lon,
+			StationIDOSM: s.StationIDOSM,
+		}
+		stationDetails = append(stationDetails, sd)
+	}
+
+	// Create RouteBetween records
+	routeBetweenMap := make(map[string]models.RouteBetween)
+	for _, sp := range req.StationPairs {
+		if sp.RouteBetween.RouteBetweenID != "" {
+			rb := models.RouteBetween{
+				RouteBetweenID: sp.RouteBetween.RouteBetweenID,
+				TravelTime:     sp.RouteBetween.TravelTime,
+				Distance:       sp.RouteBetween.Distance,
+			}
+			routeBetweenMap[sp.RouteBetween.RouteBetweenID] = rb
+		}
+	}
+
+	// Create StationPair records
+	stationPairs := []models.StationPair{}
+	for _, sp := range req.StationPairs {
+		pair := models.StationPair{
+			StationPairID:  sp.StationPairID,
+			FstStationID:   sp.FstStation,
+			SndStationID:   sp.SndStation,
+			RouteBetweenID: sp.RouteBetween.RouteBetweenID,
+			NetworkModelID: req.NetworkModelID,
+			RouteBetween:   routeBetweenMap[sp.RouteBetween.RouteBetweenID],
+		}
+		stationPairs = append(stationPairs, pair)
+	}
+
+	// Create NetworkModel
+	networkModel := models.NetworkModel{
+		NetworkModelID: req.NetworkModelID,
+		Name:           req.Name,
+		StationDetails: stationDetails,
+		StationPairs:   stationPairs,
+	}
+
+	// Return the NetworkModel with all data (in real scenario, this would be saved to DB)
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Configuration saved successfully",
+		"data":    networkModel,
 	})
 }

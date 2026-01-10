@@ -14,7 +14,7 @@ import type {
 } from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
-import { isDataFitResponse } from "../../models/DistriButionFitModel";
+import { isDataFitResponse } from "../../models/DistributionFitModel";
 import HelpButton from "../HelpButton";
 import { API_BASE_URL } from "../../../utility/config";
 interface GuestConfigurationFilesProps {
@@ -317,10 +317,11 @@ export default function ConfigurationFiles({
       const cfg: ConfigurationDetail = {
         configuration_detail_id: configuration
           ? configuration.configuration_detail_id
-          : "guest-configuration-"+Date.now(),
+          : "guest-configuration-" + Date.now(),
         alighting_data_id: "alighting-data-" + Date.now(),
         interarrival_data_id: "interarrival-data-" + Date.now(),
-        network_model_id: configNetworkModel.network_model_id || "guest_network",
+        network_model_id:
+          configNetworkModel.network_model_id || "guest_network",
         network_model: configNetworkModel,
         alighting_datas: toAlightingData(alightRes, normalizedStations),
         interarrival_datas: toInterArrivalData(interRes, normalizedStations),

@@ -22,7 +22,7 @@ type Paserschedule struct {
 
 
 
-func ScheduleExcelToJsonReader(r io.Reader, projectID string) (Paserschedule, error) {
+func ScheduleExcelToJsonReader(r io.Reader, scenarioID string) (Paserschedule, error) {
 	f, err := excelize.OpenReader(r)
     if err != nil {
         return Paserschedule{}, err
@@ -67,7 +67,7 @@ func ScheduleExcelToJsonReader(r io.Reader, projectID string) (Paserschedule, er
 
 		result.PaserscheduleData = append(result.PaserscheduleData, PaserscheduleData{
 			ScheduleDataID: strconv.Itoa(scheduleDataID),
-			RoutePathID:    fmt.Sprintf("%s-%s", routePathName, projectID),
+			RoutePathID:    fmt.Sprintf("%s-%s", routePathName, scenarioID),
 			ScheduleList:   strings.Join(times, ","),
 		})
 		scheduleDataID++

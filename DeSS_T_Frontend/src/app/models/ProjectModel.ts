@@ -23,7 +23,6 @@ export type {
 
 // ------------------- PROJECT SIMULATION REQUEST --------------------
 export interface ProjectSimulationRequest {
-  project_id: string;
   configuration: ConfigurationDetail;
   scenario: ScenarioDetail;
   time_periods: string;

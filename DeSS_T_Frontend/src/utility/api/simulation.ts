@@ -21,14 +21,14 @@ export async function runSimulation(
 }
 
 export async function getScheduleData(
-  projectID: string,
+  scenarioID: string,
   file: File
 ): Promise<PaserSchedule> {
   const formData = new FormData();
   formData.append("file", file);
 
   const response = await fetch(
-    `${API_BASE_URL}/guest/schedule/upload/${projectID}`,
+    `${API_BASE_URL}/guest/schedule/upload/${scenarioID}`,
     {
       method: "POST",
       body: formData,

@@ -251,9 +251,6 @@ export default function Scenario({
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
-  const [projectid, setProjectId] = useState<string | null>(
-    project?.project_id || null
-  );
   const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
 
   const timeSlotOptions = [
@@ -580,11 +577,7 @@ export default function Scenario({
 
   const handleSimulation = async () => {
     try {
-      if (projectid === null) {
-        setProjectId(`guest-project-${Date.now()}`);
-      }
-
-      const currentProjectId = projectid || `guest-project-${Date.now()}`;
+      const currentScenarioId = `scenario-detail-${Date.now()}`;
 
       // Check if bus schedule file exists
       if (!busScheduleFile) {
@@ -593,7 +586,7 @@ export default function Scenario({
       }
 
       const scheduleData: PaserSchedule = await getScheduleData(
-        currentProjectId,
+        currentScenarioId,
         busScheduleFile
       );
       console.log("Schedule Data received:", scheduleData);
@@ -603,7 +596,7 @@ export default function Scenario({
           schedule_data_id: sd.ScheduleDataID,
           schedule_list: sd.ScheduleList,
           route_path_id: sd.RoutePathID,
-          bus_scenario_id: "bus-scenario-" + currentProjectId, // to be filled by backend
+          bus_scenario_id: "bus-" + currentScenarioId, // to be filled by backend
         })
       );
 
@@ -613,32 +606,32 @@ export default function Scenario({
         max_dis: r.maxDistance,
         max_bus: r.maxBuses,
         capacity: r.capacity,
-        bus_scenario_id: "bus-scenario-" + currentProjectId,
-        route_path_id: r.name + "-" + currentProjectId,
+        bus_scenario_id: "bus-" + currentScenarioId,
+        route_path_id: r.name + "-" + currentScenarioId,
       }));
 
       const busScenario: BusScenario = {
-        bus_scenario_id: "bus-scenario-" + currentProjectId,
+        bus_scenario_id: "bus-" + currentScenarioId,
         schedule_data: scheduleDatas,
         bus_informations: busInformations,
       };
 
       const routePaths: RoutePath[] = routes.map((r) => ({
-        route_path_id: r.name + "-" + currentProjectId,
+        route_path_id: r.name + "-" + currentScenarioId,
         name: r.name,
         color: r.color,
-        route_scenario_id: "route-scenario-" + currentProjectId, // to be filled by backend
+        route_scenario_id: "route-scenario-" + currentScenarioId, // to be filled by backend
         route: "", // to be filled by backend
         orders: r.orders,
       }));
 
       const routeScenario: RouteScenario = {
-        route_scenario_id: "route-scenario-" + currentProjectId,
+        route_scenario_id: "route-" + currentScenarioId,
         route_paths: routePaths,
       };
 
       const scenarioDetail: ScenarioDetail = {
-        scenario_detail_id: "scenario-detail-" + currentProjectId,
+        scenario_detail_id: currentScenarioId,
         bus_scenario_id: busScenario.bus_scenario_id,
         route_scenario_id: routeScenario.route_scenario_id,
         bus_scenario: busScenario,
@@ -646,7 +639,6 @@ export default function Scenario({
       };
 
       const simulationRequest: ProjectSimulationRequest = {
-        project_id: currentProjectId,
         configuration: configuration,
         scenario: scenarioDetail,
         time_periods: simStartHour + ".00-" + simEndHour + ".00",
@@ -655,7 +647,6 @@ export default function Scenario({
 
       const response = await runSimulation(simulationRequest);
       setSimulationResponse(response);
-
     } catch (error) {
       console.error("Simulation failed:", error);
       alert(

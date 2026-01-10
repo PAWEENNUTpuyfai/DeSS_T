@@ -1,4 +1,4 @@
-import type { DataFitResponse } from "../../app/models/DistriButionFitModel";
+import type { DataFitResponse } from "../../app/models/DistributionFitModel";
 import type { StationDetail } from "../../app/models/Network";
 import { API_BASE_URL } from "../config";
 import { buildStationNameToIdMap } from "../sheetHelpers";
@@ -19,14 +19,11 @@ export async function AlightingFitFromXlsx(
 
   let res: Response;
   try {
-    res = await fetch(
-      `${API_BASE_URL}/guest/alighting/distribution_fit`,
-      {
-        method: "POST",
-        body: form,
-        signal: controller.signal,
-      }
-    );
+    res = await fetch(`${API_BASE_URL}/guest/alighting/distribution_fit`, {
+      method: "POST",
+      body: form,
+      signal: controller.signal,
+    });
   } finally {
     clearTimeout(timeout);
   }
@@ -47,24 +44,18 @@ export async function InterarrivalFitFromXlsx(
   form.append("file", file);
   form.append("station_map", JSON.stringify(stationMap));
 
-
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
   let res: Response;
   try {
-    res = await fetch(
-      `${API_BASE_URL}/guest/interarrival/distribution_fit`,
-      {
-        method: "POST",
-        body: form,
-        signal: controller.signal,
-      }
-    );
+    res = await fetch(`${API_BASE_URL}/guest/interarrival/distribution_fit`, {
+      method: "POST",
+      body: form,
+      signal: controller.signal,
+    });
   } catch (err) {
     if ((err as any)?.name === "AbortError") {
-      throw new Error(
-        "Interarrival fit request timed out. Please try again."
-      );
+      throw new Error("Interarrival fit request timed out. Please try again.");
     }
     throw err;
   } finally {

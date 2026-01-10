@@ -7,10 +7,10 @@ import (
 )
 
 func UploadGuestSchedulefile(c *fiber.Ctx) error {
-	// ดึง projectID จากพารามิเตอร์
-	projectID := c.Params("projectID")
-	if projectID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "projectID is required")
+	// ดึง scenarioID จากพารามิเตอร์
+	scenarioID := c.Params("scenarioID")
+	if scenarioID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "scenarioID is required")
 	}
 	// รับไฟล์
 	f, err := c.FormFile("file")
@@ -26,7 +26,7 @@ func UploadGuestSchedulefile(c *fiber.Ctx) error {
 	defer reader.Close()
 
 	// อ่าน Excel → JSON (แก้ฟังก์ชันให้รับ io.Reader)
-	jsonData, err := models.ScheduleExcelToJsonReader(reader, projectID)
+	jsonData, err := models.ScheduleExcelToJsonReader(reader, scenarioID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}

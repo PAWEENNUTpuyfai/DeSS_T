@@ -596,7 +596,7 @@ export default function Scenario({
         name: r.name,
         color: r.color,
         route_scenario_id: "route-scenario-" + currentProjectId, // to be filled by backend
-        route: "", // to be filled by backend
+        route: JSON.stringify(r.segments),
         orders: r.orders,
       }));
 

@@ -3,8 +3,6 @@ import type { NetworkModel, StationDetail } from "./Network";
 // ------------------- CONFIGURATION DETAIL --------------------
 export interface ConfigurationDetail {
   configuration_detail_id: string;
-  alighting_data_id: string;
-  interarrival_data_id: string;
   network_model_id: string;
   network_model?: NetworkModel;
   alighting_datas?: AlightingData[];
@@ -19,6 +17,7 @@ export interface AlightingData {
   argument_list: string;
   station_id: string;
   station_detail?: StationDetail;
+  configuration_detail_id?: string;
 }
 
 // ------------------- INTER ARRIVAL DATA --------------------
@@ -29,4 +28,5 @@ export interface InterArrivalData {
   argument_list: string;
   station_id: string;
   station_detail?: StationDetail;
+  configuration_detail_id?: string;
 }

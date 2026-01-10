@@ -99,7 +99,7 @@ def map_bus_routes(scenarios, route_pairs):
     bus_routes = {}
 
     for sc in scenarios:
-        order = sc.route_order.split("-")
+        order = sc.route_order.split("$")
         stations = []
 
         for pid in order:

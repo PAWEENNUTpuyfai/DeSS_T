@@ -1,4 +1,5 @@
 import math
+from turtle import delay
 import salabim as sim
 from app.services.simulation_logger import add_log, SimulationLogger
 
@@ -280,7 +281,8 @@ class ArrivalGenerator(sim.Component):
                         "ArrivalGenerator",
                         f"Arrival at {self.station.name}, wait={wait:.2f}"
                     )
-
+                    if wait <= 0 or math.isnan(wait):
+                        wait = 0.0001 # avoid zero or negative wait time
                     yield self.hold(wait)
                     Passenger(self.station, env=self.env)
                     break
@@ -312,8 +314,9 @@ class Bus(sim.Component):
         self.passengers = []
 
     def process(self):
-        if self.env.now() < self.depart_time:
-            yield self.hold(self.depart_time - self.env.now())
+        delay = self.depart_time - self.env.now()
+        if delay > 0:
+            yield self.hold(delay)
 
         add_log(self.env, "Bus", f"Bus {self.route_id} departed")
 
@@ -413,7 +416,8 @@ class Bus(sim.Component):
 
                 slots[slot]["route_travel_time"][self.route_id].tally(travel_time)
                 slots[slot]["route_travel_dist"][self.route_id].tally(travel_dist)
-
+                if travel_time <= 0:
+                    travel_time = 0.0001
                 yield self.hold(travel_time)
 
         add_log(self.env, "Bus", f"Bus {self.route_id} finished route")

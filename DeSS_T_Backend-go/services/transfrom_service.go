@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"fmt"
+
 )
 
 func TransformSimulationRequest(
@@ -14,10 +14,8 @@ func TransformSimulationRequest(
 	timePeriods string,
 	timeSlot string,
 ) models.SimulationRequest {
-	fmt.Printf("ScenarioData: %+v\n", scenario)
-	fmt.Printf("ConfigurationData: %+v\n", cfg)
 
-	scenarioData := TransformScenario(scenario)
+	scenarioData := TransformScenario(scenario, timePeriods)
 	configurationData := TransformConfiguration(cfg, timePeriods)
 	return models.SimulationRequest{
 		TimePeriod:        timePeriods,
@@ -37,37 +35,52 @@ func buildRouteOrder(orders []models.Order) string {
 		ids = append(ids, o.StationPairID)
 	}
 
-	return strings.Join(ids, "-")
+	return strings.Join(ids, "$")
 }
 
 func indexBusScenario(
 	busScenarios models.BusScenario,
+	timePeriods string,
 ) (map[string][]string, map[string]models.BusInformation) {
 
 	scheduleMap := make(map[string][]string)
 	busInfoMap := make(map[string]models.BusInformation)
 
-	// 1) map schedule ด้วย RoutePathID
 	for _, sch := range busScenarios.ScheduleData {
-		times := strings.Split(sch.ScheduleList, ",")
-		scheduleMap[sch.RoutePathID] = times
+
+		rawTimes := strings.Split(sch.ScheduleList, ",")
+		filtered := make([]string, 0)
+
+		for _, t := range rawTimes {
+			t = strings.TrimSpace(t)
+
+			if isTimeInPeriod(t, timePeriods) {
+				filtered = append(filtered, t)
+			}
+		}
+
+		// ใส่เฉพาะเวลาที่ผ่าน filter
+		if len(filtered) > 0 {
+			scheduleMap[sch.RoutePathID] = filtered
+		}
 	}
-	// 2) map bus information ด้วย RoutePathID (ไม่ใช้ index)
+
 	for _, bi := range busScenarios.BusInformations {
 		busInfoMap[bi.RoutePathID] = bi
 	}
-	
 
 	return scheduleMap, busInfoMap
 }
 
+
 func TransformScenario(
 	scenario models.ScenarioDetail,
+	timePeriods string,
 ) []models.ScenarioData {
 
 	var result []models.ScenarioData
 
-	scheduleMap, busInfoMap := indexBusScenario(scenario.BusScenario)
+	scheduleMap, busInfoMap := indexBusScenario(scenario.BusScenario, timePeriods)
 
 	rs := scenario.RouteScenario
 	for _, rp := range rs.RoutePaths {
@@ -125,19 +138,19 @@ func TransformConfiguration(
 	}
 
 	alightingFitItems := AlightingDataToFitItems(cfg.AlightingData)
-	fmt.Printf("Alighting Fit Items: %+v\n", alightingFitItems)
+	
 	alightingData := groupFitItemsToSimData(
 		alightingFitItems,
 		timePeriods,
 	)
-    fmt.Printf("Alighting Sim Data: %+v\n", alightingData)
+    
 	interArrivalFitItems := InterArrivalDataToFitItems(cfg.InterArrivalData)
-	fmt.Printf("Interarrival Fit Items: %+v\n", interArrivalFitItems)
+	
 	interarrivalData := groupFitItemsToSimData(
 		interArrivalFitItems,
 		timePeriods,
 	)
-	fmt.Printf("Interarrival Sim Data: %+v\n", interarrivalData)
+	
 	return models.ConfigurationData{
 		StationList:         stationList,
 		RoutePair:           routePairs,
@@ -240,4 +253,13 @@ func isTimeRangeInPeriod(timeRange, period string) bool {
 	prEnd := timeToMinute(pr[1])
 
 	return trStart >= prStart && trStart < prEnd
+}
+func isTimeInPeriod(timeStr, period string) bool {
+	pr := strings.Split(period, "-")
+
+	t := timeToMinute(timeStr)
+	start := timeToMinute(pr[0])
+	end := timeToMinute(pr[1])
+
+	return t >= start && t < end
 }

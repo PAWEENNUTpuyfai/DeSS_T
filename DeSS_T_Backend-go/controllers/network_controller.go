@@ -368,38 +368,32 @@ func SaveRoutes(c *fiber.Ctx) error {
 	}
 
 	// Convert routes to backend format (geometry + stations only)
-	routePaths := make([]models.Route_Path, 0, len(body.Routes))
+	routePaths := make([]models.RoutePath, 0, len(body.Routes))
 	for _, route := range body.Routes {
-		segments := make([]models.RouteSegmentData, 0, len(route.Segments))
-		for _, seg := range route.Segments {
-			segments = append(segments, models.RouteSegmentData{
-				From:   seg.From,
-				To:     seg.To,
-				Coords: seg.Coords,
-			})
-		}
-
-		routePath := models.Route_Path{
-			RoutePathID:    route.ID,
-			RoutePathName:  route.Name,
-			RoutePathColor: route.Color,
-			Hidden:         route.Hidden,
-			Locked:         route.Locked,
-			RouteSegments:  segments,
+		// Note: RoutePath model uses simplified structure
+		// For now, we'll store the route data in a simple format
+		routePath := models.RoutePath{
+			RoutePathID: route.ID,
+			Name:        route.Name,
+			Color:       route.Color,
+			// Route field could store JSON-encoded route data if needed
+			Route:  "", // TODO: Store route geometry/segments as needed
+			Orders: []models.Order{},
 		}
 		routePaths = append(routePaths, routePath)
 	}
 
 	// Convert bus info to backend format
-	busInfoList := make([]models.Bus_Information, 0, len(body.BusInfo))
+	busInfoList := make([]models.BusInformation, 0, len(body.BusInfo))
 	for i, busInfo := range body.BusInfo {
-		busInformation := models.Bus_Information{
+		busInformation := models.BusInformation{
 			BusInformationID: fmt.Sprintf("bus-%d", i+1),
 			RoutePathID:      busInfo.RouteID,
-			BusSpeed:         busInfo.Speed,
-			MaxDistance:      busInfo.MaxDistance,
-			BusCapacity:      busInfo.Capacity,
-			MaxBuses:         busInfo.MaxBuses,
+			Speed:            float32(busInfo.Speed),
+			MaxDis:           float32(busInfo.MaxDistance),
+			Capacity:         busInfo.Capacity,
+			MaxBus:           busInfo.MaxBuses,
+			BusScenarioID:    "", // TODO: Set appropriate bus scenario ID
 		}
 		busInfoList = append(busInfoList, busInformation)
 	}

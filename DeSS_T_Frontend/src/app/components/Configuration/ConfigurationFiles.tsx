@@ -57,6 +57,10 @@ export default function ConfigurationFiles({
     );
   };
 
+  const configuration_detail_id: string = configuration
+    ? configuration.configuration_detail_id
+    : "guest-configuration-detail" + Date.now();
+
   const toAlightingData = (
     res: unknown,
     stations: StationDetail[]
@@ -69,6 +73,7 @@ export default function ConfigurationFiles({
       argument_list: item.ArgumentList,
       station_id: item.Station,
       station_detail: findStationDetail(item.Station, stations),
+      configuration_detail_id: configuration_detail_id,
     }));
   };
 
@@ -84,6 +89,7 @@ export default function ConfigurationFiles({
       argument_list: item.ArgumentList,
       station_id: item.Station,
       station_detail: findStationDetail(item.Station, stations),
+      configuration_detail_id: configuration_detail_id,
     }));
   };
   const [alightingFile, setAlightingFile] = useState<File | null>(null);
@@ -315,11 +321,7 @@ export default function ConfigurationFiles({
       }
 
       const cfg: ConfigurationDetail = {
-        configuration_detail_id: configuration
-          ? configuration.configuration_detail_id
-          : "guest-configuration-" + Date.now(),
-        alighting_data_id: "alighting-data-" + Date.now(),
-        interarrival_data_id: "interarrival-data-" + Date.now(),
+        configuration_detail_id: configuration_detail_id,
         network_model_id:
           configNetworkModel.network_model_id || "guest_network",
         network_model: configNetworkModel,

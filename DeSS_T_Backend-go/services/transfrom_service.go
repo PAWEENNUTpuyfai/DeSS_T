@@ -5,18 +5,20 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"fmt"
 )
 
 func TransformSimulationRequest(
-	scenario models.Scenario,
-	cfg models.Configuration,
+	scenario models.ScenarioDetail,
+	cfg models.ConfigurationDetail,
 	timePeriods string,
 	timeSlot string,
 ) models.SimulationRequest {
+	fmt.Printf("ScenarioData: %+v\n", scenario)
+	fmt.Printf("ConfigurationData: %+v\n", cfg)
 
 	scenarioData := TransformScenario(scenario)
 	configurationData := TransformConfiguration(cfg, timePeriods)
-
 	return models.SimulationRequest{
 		TimePeriod:        timePeriods,
 		TimeSlot:          timeSlot,
@@ -25,9 +27,9 @@ func TransformSimulationRequest(
 	}
 }
 
-func buildRouteOrder(orders []models.Order_Path) string {
+func buildRouteOrder(orders []models.Order) string {
 	sort.Slice(orders, func(i, j int) bool {
-		return orders[i].OrderNumber < orders[j].OrderNumber
+		return orders[i].Order < orders[j].Order
 	})
 
 	ids := make([]string, 0, len(orders))
@@ -39,70 +41,67 @@ func buildRouteOrder(orders []models.Order_Path) string {
 }
 
 func indexBusScenario(
-	busScenarios []models.Bus_Scenario,
-) (map[string][]string, map[string]models.Bus_Information) {
+	busScenarios models.BusScenario,
+) (map[string][]string, map[string]models.BusInformation) {
 
 	scheduleMap := make(map[string][]string)
-	busInfoMap := make(map[string]models.Bus_Information)
+	busInfoMap := make(map[string]models.BusInformation)
 
-	for _, bs := range busScenarios {
-
-		// 1) map schedule ด้วย RoutePathID
-		for _, sch := range bs.ScheduleData {
-			times := strings.Split(sch.ScheduleList, ",")
-			scheduleMap[sch.RoutePathID] = times
-		}
-
-		// 2) map bus information ด้วย RoutePathID (ไม่ใช้ index)
-		for _, bi := range bs.BusInformation {
-			busInfoMap[bi.RoutePathID] = bi
-		}
+	// 1) map schedule ด้วย RoutePathID
+	for _, sch := range busScenarios.ScheduleData {
+		times := strings.Split(sch.ScheduleList, ",")
+		scheduleMap[sch.RoutePathID] = times
 	}
+	// 2) map bus information ด้วย RoutePathID (ไม่ใช้ index)
+	for _, bi := range busScenarios.BusInformations {
+		busInfoMap[bi.RoutePathID] = bi
+	}
+	
 
 	return scheduleMap, busInfoMap
 }
 
 func TransformScenario(
-	scenario models.Scenario,
+	scenario models.ScenarioDetail,
 ) []models.ScenarioData {
 
 	var result []models.ScenarioData
 
-	scheduleMap, busInfoMap := indexBusScenario(scenario.Bus_Scenario)
+	scheduleMap, busInfoMap := indexBusScenario(scenario.BusScenario)
 
-	for _, rs := range scenario.Route_Scenario {
-		for _, rp := range rs.RoutePath {
+	rs := scenario.RouteScenario
+	for _, rp := range rs.RoutePaths {
 
-			routeOrder := buildRouteOrder(rp.Order)
+		routeOrder := buildRouteOrder(rp.Orders)
 
-			var schedules []models.RouteSchedule
-			for _, t := range scheduleMap[rp.RoutePathID] {
-				schedules = append(schedules, models.RouteSchedule{
-					DepartureTime: strings.TrimSpace(t),
-				})
-			}
-
-			bi := busInfoMap[rp.RoutePathID]
-
-			result = append(result, models.ScenarioData{
-				RouteID:       rp.RoutePathID,
-				RouteName:     rp.RoutePathName,
-				RouteOrder:    routeOrder,
-				RouteSchedule: schedules,
-				RouteBusInformation: models.RouteBusInformation{
-					BusSpeed:    bi.BusSpeed,
-					MaxDistance: bi.MaxDistance,
-					MaxBus:      bi.MaxBuses,
-					BusCapacity: bi.BusCapacity,
-				},
+		var schedules []models.RouteSchedule
+		for _, t := range scheduleMap[rp.RoutePathID] {
+			schedules = append(schedules, models.RouteSchedule{
+				DepartureTime: strings.TrimSpace(t),
 			})
 		}
+
+		bi := busInfoMap[rp.RoutePathID]
+
+		result = append(result, models.ScenarioData{
+			RouteID:       rp.RoutePathID,
+			RouteName:     rp.Name,
+			RouteOrder:    routeOrder,
+			RouteSchedule: schedules,
+			RouteBusInformation: models.RouteBusInformation{
+				BusSpeed:    float64(bi.Speed),
+				MaxDistance: float64(bi.MaxDis),
+				MaxBus:      bi.MaxBus,
+				BusCapacity: bi.Capacity,
+			},
+		})
 	}
+	
 
 	return result
 }
 func TransformConfiguration(
-	cfg models.Configuration,
+	cfg models.ConfigurationDetail,
 	timePeriods string,
 ) models.ConfigurationData {
 
@@ -125,16 +124,20 @@ func TransformConfiguration(
 		})
 	}
 
+	alightingFitItems := AlightingDataToFitItems(cfg.AlightingData)
+	fmt.Printf("Alighting Fit Items: %+v\n", alightingFitItems)
 	alightingData := groupFitItemsToSimData(
-		cfg.AlightingDistribution.DataFitResponse,
+		alightingFitItems,
 		timePeriods,
 	)
-
+    fmt.Printf("Alighting Sim Data: %+v\n", alightingData)
+	interArrivalFitItems := InterArrivalDataToFitItems(cfg.InterArrivalData)
+	fmt.Printf("Interarrival Fit Items: %+v\n", interArrivalFitItems)
 	interarrivalData := groupFitItemsToSimData(
-		cfg.InterarrivalDistribution.DataFitResponse,
+		interArrivalFitItems,
 		timePeriods,
 	)
-
+	fmt.Printf("Interarrival Sim Data: %+v\n", interarrivalData)
 	return models.ConfigurationData{
 		StationList:         stationList,
 		RoutePair:           routePairs,
@@ -143,11 +146,47 @@ func TransformConfiguration(
 	}
 }
 
+func AlightingDataToFitItems(
+	data []models.AlightingData,
+) []models.FitItem {
+
+	items := make([]models.FitItem, 0, len(data))
+
+	for _, d := range data {
+		items = append(items, models.FitItem{
+			Station:      d.StationID,          // หรือ d.StationDetail.StationName
+			TimeRange:    d.TimePeriod,
+			Distribution: d.Distribution,
+			ArgumentList: d.ArgumentList,
+		})
+	}
+
+	return items
+}
+
+func InterArrivalDataToFitItems(
+	data []models.InterArrivalData,
+) []models.FitItem {
+
+	items := make([]models.FitItem, 0, len(data))
+
+	for _, d := range data {
+		items = append(items, models.FitItem{
+			Station:      d.StationID,
+			TimeRange:    d.TimePeriod,
+			Distribution: d.Distribution,
+			ArgumentList: d.ArgumentList,
+		})
+	}
+
+	return items
+}
+
 func groupFitItemsToSimData(
 	items []models.FitItem,
 	timePeriods string,
 ) []models.SimData {
-
+	
 	groups := make(map[string][]models.DisRecord)
 
 	for _, item := range items {
@@ -177,7 +216,7 @@ func groupFitItemsToSimData(
 }
 
 func timeToMinute(t string) int {
-	parts := strings.Split(t, ".")
+	parts := strings.Split(t, ":")
 	hour := atoi(parts[0])
 	min := 0
 	if len(parts) > 1 {

@@ -18,8 +18,8 @@ func TransformSimulationHandler(c *fiber.Ctx) error {
 	}
 
 	result := services.TransformSimulationRequest(
-		req.Scenario,
-		req.Configuration,
+		req.ScenarioDetail,
+		req.ConfigurationDetail,
         req.TimePeriods,
 		req.TimeSlot,
 	)
@@ -38,8 +38,8 @@ func RunSimulationHandler(c *fiber.Ctx) error {
 
 	// Transform the request first
 	transformedData := services.TransformSimulationRequest(
-		req.Scenario,
-		req.Configuration,
+		req.ScenarioDetail,
+		req.ConfigurationDetail,
 		req.TimePeriods,
 		req.TimeSlot,
 	)

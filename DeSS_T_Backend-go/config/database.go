@@ -9,7 +9,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"DeSS_T_Backend-go/models"
+	// "DeSS_T_Backend-go/models"
+	"DeSS_T_Backend-go/model_database"
 )
 
 var DB *gorm.DB
@@ -45,27 +46,27 @@ func ConnectDatabase() {
 	// 	&models.PythonLog{},
 	// )
 	err = db.AutoMigrate(
-		&models.User{},
-		&models.CoverImageProject{},
-		&models.CoverImageConf{},
-		&models.PublicScenario{},
-		&models.UserScenario{},
-		&models.ScenarioDetail{},
-		&models.BusScenario{},
-		&models.ScheduleData{},
-		&models.BusInformation{},
-		&models.RouteScenario{},
-		&models.RoutePath{},
-		&models.Order{},
-		&models.UserConfiguration{},
-		&models.PublicConfiguration{},
-		&models.ConfigurationDetail{},
-		&models.AlightingData{},
-		&models.InterArrivalData{},
-		&models.NetworkModel{},
-		&models.StationDetail{},
-		&models.StationPair{},
-		&models.RouteBetween{},
+		&model_database.User{},
+		&model_database.CoverImageProject{},
+		&model_database.CoverImageConf{},
+		&model_database.PublicScenario{},
+		&model_database.UserScenario{},
+		&model_database.ScenarioDetail{},
+		&model_database.BusScenario{},
+		&model_database.ScheduleData{},
+		&model_database.BusInformation{},
+		&model_database.RouteScenario{},
+		&model_database.RoutePath{},
+		&model_database.Order{},
+		&model_database.UserConfiguration{},
+		&model_database.PublicConfiguration{},
+		&model_database.ConfigurationDetail{},
+		&model_database.AlightingData{},
+		&model_database.InterArrivalData{},
+		&model_database.NetworkModel{},
+		&model_database.StationDetail{},
+		&model_database.StationPair{},
+		&model_database.RouteBetween{},
 	)
 
 	if err != nil {

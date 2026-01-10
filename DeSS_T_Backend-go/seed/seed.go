@@ -2,7 +2,7 @@ package seed
 
 import (
 	"DeSS_T_Backend-go/config"
-	"DeSS_T_Backend-go/models"
+	"DeSS_T_Backend-go/model_database"
 	"fmt"
 )
 
@@ -18,15 +18,15 @@ func SeedData() {
 	// config.DB.Create(&models.User{Name: "Hannah", Age: 24})
 	// config.DB.Create(&models.User{Name: "Ian", Age: 31})
 	// config.DB.Create(&models.User{Name: "Jane", Age: 26})
-	config.DB.Create(&models.User{Name: "Alice"})
-	config.DB.Create(&models.User{Name: "Bob"})
-	config.DB.Create(&models.User{Name: "Charlie"})
-	config.DB.Create(&models.User{Name: "Diana"})
-	config.DB.Create(&models.User{Name: "Ethan"})
-	config.DB.Create(&models.User{Name: "Fiona"})
-	config.DB.Create(&models.User{Name: "George"})
-	config.DB.Create(&models.User{Name: "Hannah"})
-	config.DB.Create(&models.User{Name: "Ian"})
-	config.DB.Create(&models.User{Name: "Jane"})
+	config.DB.Create(&model_database.User{Name: "Alice"})
+	config.DB.Create(&model_database.User{Name: "Bob"})
+	config.DB.Create(&model_database.User{Name: "Charlie"})
+	config.DB.Create(&model_database.User{Name: "Diana"})
+	config.DB.Create(&model_database.User{Name: "Ethan"})
+	config.DB.Create(&model_database.User{Name: "Fiona"})
+	config.DB.Create(&model_database.User{Name: "George"})
+	config.DB.Create(&model_database.User{Name: "Hannah"})
+	config.DB.Create(&model_database.User{Name: "Ian"})
+	config.DB.Create(&model_database.User{Name: "Jane"})
 	fmt.Println("✅ Data seeded")
 }

@@ -43,17 +43,6 @@ export default function Scenario({
   project?: ProjectSimulationRequest;
   projectName?: string;
 }) {
-  useEffect(() => {
-    console.log("=== Scenario Component Loaded ===");
-    console.log("Configuration:", configuration);
-    console.log("Configuration Name:", configurationName);
-    console.log("Project Name:", projectName);
-    console.log("Network Model:", configuration?.network_model);
-    console.log("Alighting Data:", configuration?.alighting_datas);
-    console.log("InterArrival Data:", configuration?.interarrival_datas);
-    console.log("================================");
-  }, [configuration, configurationName, projectName]);
-
   const nodes: StationDetail[] = useMemo(() => {
     const networkModel = configuration?.network_model as
       | (NetworkModel & {
@@ -255,6 +244,7 @@ export default function Scenario({
     project?.project_id || null
   );
   const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
+  const [showOutputPage, setShowOutputPage] = useState(false);
 
   const timeSlotOptions = [
     "5 Minutes",
@@ -421,12 +411,6 @@ export default function Scenario({
       const stationPairs = (networkModel as any)?.StationPair || [];
       const orders: Order[] = [];
 
-      // Debug: Show actual station sequence
-      console.log(
-        "📍 Station Sequence (route.stations):",
-        route.stations.map((sid, idx) => `${idx + 1}. ${getStationName(sid)}`)
-      );
-
       for (let i = 0; i < route.stations.length - 1; i++) {
         const currentStationId = route.stations[i];
         const nextStationId = route.stations[i + 1];
@@ -463,21 +447,6 @@ export default function Scenario({
           orders.push(order);
         }
       }
-
-      // Console log created orders with station names
-      console.log("🎯 Created Orders for Route:", route.name);
-      console.log("   Route ID:", routeId);
-      console.log("   Total Orders:", orders.length);
-      console.log(
-        "   Order Details:",
-        orders.map((o) => ({
-          order: o.order,
-          order_id: o.order_id,
-          station_pair_id: o.station_pair_id,
-          from: getStationName(o.station_pair?.FstStation || ""),
-          to: getStationName(o.station_pair?.SndStation || ""),
-        }))
-      );
 
       // Update route with segments and orders
       setRoutes((prev) =>
@@ -596,7 +565,6 @@ export default function Scenario({
         currentProjectId,
         busScheduleFile
       );
-      console.log("Schedule Data received:", scheduleData);
 
       const scheduleDatas: ScheduleData[] = scheduleData.ScheduleData.map(
         (sd) => ({
@@ -687,10 +655,62 @@ export default function Scenario({
     setBusScheduleFile(file);
   };
 
+  // Build playbackSeed from routes + stations (doesn't require simulation to complete)
+  const playbackSeed = useMemo(
+    () => {
+      // Check if we have any routes with segments
+      const routesWithSegments = routes.filter((r) => r.segments.length > 0);
+      
+      // Always create playbackSeed if we have stations (even without routes)
+      if (nodes.length === 0) {
+        return undefined;
+      }
+
+      const seed = {
+        simWindow: `${String(simStartHour).padStart(2, "0")}:00-${String(
+          simEndHour
+        ).padStart(2, "0")}:00`,
+        timeSlotMinutes: parseInt(timeSlot.split(" ")[0]),
+        stations: nodes.map((st) => ({
+          id: st.station_detail_id || `st-${Math.random()}`,
+          name: st.name || "Unknown",
+          lat: st.lat || 0,
+          lon: st.lon || 0,
+        })),
+        routes: routesWithSegments.map((r) => ({
+          id: r.id,
+          name: r.name,
+          color: r.color,
+          segments: r.segments,
+        })),
+      };
+      return seed;
+    },
+    [routes, simStartHour, simEndHour, timeSlot, nodes]
+  );
+
+  // Save playbackSeed to localStorage for real-time sync with InteractiveMap
+  useEffect(() => {
+    if (playbackSeed) {
+      localStorage.setItem('scenario_playback_data', JSON.stringify(playbackSeed));
+      // Trigger storage event for other tabs/components
+      window.dispatchEvent(new Event('scenario_data_updated'));
+    }
+  }, [playbackSeed]);
+
   return (
     <>
-      {simulationResponse ? (
-        <Outputpage simulationResponse={simulationResponse} />
+      {showOutputPage ? (
+        <Outputpage 
+          simulationResponse={simulationResponse} 
+          playbackSeed={playbackSeed}
+          onBackToScenario={() => setShowOutputPage(false)}
+        />
+      ) : simulationResponse ? (
+        <Outputpage 
+          simulationResponse={simulationResponse} 
+          playbackSeed={playbackSeed}
+        />
       ) : (
         <main className="">
           <div className="">
@@ -703,6 +723,17 @@ export default function Scenario({
             >
               Back
             </span>
+            {playbackSeed && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={() => setShowOutputPage(true)}
+                onKeyDown={(e) => e.key === "Enter" && setShowOutputPage(true)}
+                className="inline-block ml-3 px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 cursor-pointer"
+              >
+                View Output Map
+              </span>
+            )}
           </div>
           <div className="flex flex-col">
             <div className="flex justify-between items-center">

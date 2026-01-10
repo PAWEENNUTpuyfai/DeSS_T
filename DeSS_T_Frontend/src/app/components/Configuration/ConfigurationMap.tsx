@@ -17,7 +17,6 @@ interface ConfigurationMapProps {
 export default function ConfigurationMap({
   mode = "guest",
   configurationName,
-  configuration
 }: ConfigurationMapProps = {}) {
   // File upload state - cleared when going back
   const [submittedConfig, setSubmittedConfig] = useState<ConfigurationDetail | null>(

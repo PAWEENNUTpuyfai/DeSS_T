@@ -110,11 +110,13 @@ export default function LineChart({
 
   // Helpers to map data to SVG coords
   const xPos = (t: number) => {
+    if (!Number.isFinite(t)) return paddingLeft + dataOffsetLeft;
     if (maxTime === minTime) return paddingLeft + dataOffsetLeft;
     return paddingLeft + dataOffsetLeft + ((t - minTime) / (maxTime - minTime)) * innerWidth;
   };
 
   const yPos = (v: number) => {
+    if (!Number.isFinite(v)) return paddingTop + innerHeight / 2;
     if (yMax === yMin) return paddingTop + innerHeight / 2;
     return paddingTop + (1 - (v - yMin) / (yMax - yMin)) * innerHeight;
   };
@@ -122,10 +124,16 @@ export default function LineChart({
   const buildPath = (points: { t: number; v: number }[]) => {
     if (!points.length) return "";
     return points
+      .filter((p) => Number.isFinite(p.t) && Number.isFinite(p.v)) // Filter out NaN values
       .map((p, idx) => {
         const cmd = idx === 0 ? "M" : "L";
-        return `${cmd}${xPos(p.t).toFixed(1)},${yPos(p.v).toFixed(1)}`;
+        const x = xPos(p.t);
+        const y = yPos(p.v);
+        // Double-check the results are finite
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return "";
+        return `${cmd}${x.toFixed(1)},${y.toFixed(1)}`;
       })
+      .filter(Boolean) // Remove empty strings
       .join(" ");
   };
 
@@ -238,14 +246,21 @@ export default function LineChart({
             {dataByRoute.map(({ id, points }, idx) => {
               const [, , color] = routes[idx];
               const pathD = buildPath(points);
+              if (!pathD) return null; // Skip if path is empty
               const adjustedPath = pathD
                 .replace(
-                  /M([\d.]+)/g,
-                  (match, x) => `M${parseFloat(x) - paddingLeft}`
+                  /M([\d.-]+(?:\.\d+)?)/g,
+                  (match, x) => {
+                    const num = parseFloat(x);
+                    return `M${Number.isFinite(num) ? num - paddingLeft : 0}`;
+                  }
                 )
                 .replace(
-                  /L([\d.]+)/g,
-                  (match, x) => `L${parseFloat(x) - paddingLeft}`
+                  /L([\d.-]+(?:\.\d+)?)/g,
+                  (match, x) => {
+                    const num = parseFloat(x);
+                    return `L${Number.isFinite(num) ? num - paddingLeft : 0}`;
+                  }
                 );
               return (
                 <path
@@ -261,25 +276,28 @@ export default function LineChart({
             {/* Data points with labels */}
             {dataByRoute.map(({ id, points }, idx) => {
               const [, , color] = routes[idx];
-              return points.map((p, i) => {
-                const svgX = xPos(p.t) - paddingLeft;
-                const svgY = yPos(p.v);
-                return (
-                  <g key={`${id}-${i}`}>
-                    <circle cx={svgX} cy={svgY} r={3} fill={color} />
-                    {/* <text
-                      x={svgX}
-                      y={svgY - 8}
-                      fontSize={9}
-                      textAnchor="middle"
-                      fill={color}
-                      fontWeight="600"
-                    >
-                      {p.v.toFixed(1)}
-                    </text> */}
-                  </g>
-                );
-              });
+              return points
+                .filter((p) => Number.isFinite(p.t) && Number.isFinite(p.v)) // Only render finite points
+                .map((p, i) => {
+                  const svgX = xPos(p.t) - paddingLeft;
+                  const svgY = yPos(p.v);
+                  if (!Number.isFinite(svgX) || !Number.isFinite(svgY)) return null;
+                  return (
+                    <g key={`${id}-${i}`}>
+                      <circle cx={svgX} cy={svgY} r={3} fill={color} />
+                      {/* <text
+                        x={svgX}
+                        y={svgY - 8}
+                        fontSize={9}
+                        textAnchor="middle"
+                        fill={color}
+                        fontWeight="600"
+                      >
+                        {p.v.toFixed(1)}
+                      </text> */}
+                    </g>
+                  );
+                });
             })}
           </svg>
         </div>

@@ -16,7 +16,6 @@ import type { NetworkModel } from "../../models/Network";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
 import { isDataFitResponse } from "../../models/DistriButionFitModel";
 import HelpButton from "../HelpButton";
-import { API_BASE_URL } from "../../../utility/config";
 interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
@@ -38,12 +37,10 @@ export default function ConfigurationFiles({
 }: GuestConfigurationFilesProps) {
   const makeId = (): string => {
     try {
-      // @ts-ignore
       if (typeof crypto !== "undefined" && crypto.randomUUID) {
-        // @ts-ignore
         return crypto.randomUUID();
       }
-    } catch {}
+    } catch { /* empty */ }
     return Math.random().toString(36).slice(2);
   };
 
@@ -287,33 +284,6 @@ export default function ConfigurationFiles({
         Station_detail: normalizedStations, // Properly formatted stations with IDs
       };
 
-      // Save configuration to backend with StationPairs and RouteBetween data
-      try {
-        const saveRes = await fetch(
-          `${API_BASE_URL}/network/save-configuration`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              network_model_id:
-                configNetworkModel.network_model_id || "guest_network",
-              name: configNetworkModel.Network_model || "guest_configuration",
-              stations: normalizedStations,
-              station_pairs: configNetworkModel.StationPair || [],
-            }),
-          }
-        );
-
-        if (!saveRes.ok) {
-          const errText = await saveRes.text().catch(() => "");
-          console.error("Failed to save configuration to backend:", errText);
-          // Continue anyway - we have the data locally
-        }
-      } catch (err) {
-        console.error("Configuration save request error:", err);
-        // Continue anyway - we have the data locally
-      }
-
       const cfg: ConfigurationDetail = {
         configuration_detail_id: configuration
           ? configuration.configuration_detail_id
@@ -325,6 +295,16 @@ export default function ConfigurationFiles({
         alighting_datas: toAlightingData(alightRes, normalizedStations),
         interarrival_datas: toInterArrivalData(interRes, normalizedStations),
       };
+
+      // Save stations to localStorage for InteractiveMap real-time sync
+      const stationsForPlayback = normalizedStations.map((st) => ({
+        id: st.station_detail_id || `st-${Math.random()}`,
+        name: st.name || "Unknown",
+        lat: st.lat ?? 0,
+        lon: st.lon ?? 0,
+      }));
+      
+      localStorage.setItem('scenario_stations', JSON.stringify(stationsForPlayback));
 
       onSubmit(cfg);
     } catch (err) {

@@ -5,6 +5,7 @@ import "../style/App.css";
 import GuestSetup from "./pages/GuestSetup";
 import GuestDecision from "./components/GuestDecision";
 import Outputpage from "./pages/Outputpage";
+import { mockSimulationResponse } from "./models/mockSimulationData";
 
 export default function App() {
   return (
@@ -13,8 +14,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/guest/decision" element={<GuestDecision />} />
         <Route path="/guest/setup" element={<GuestSetup />} />
-        <Route path="/guest/setup" element={<GuestSetup />} />
-        <Route path="/output" element={<Outputpage />} />
+        <Route path="/output" element={<Outputpage simulationResponse={mockSimulationResponse} />} />
       </Routes>
     </div>
   );

@@ -3,7 +3,6 @@ import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
 } from "../../../utility/api/distribution_fit";
-import ConfigurationNav from "./ConfigurationNav";
 import MapViewer from "../MapViewer";
 import LoadingModal from "../LoadingModal";
 import type { StationDetail, StationPair } from "../../models/Network";
@@ -20,18 +19,22 @@ interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
   onBack: () => void;
+  OnBackScenario: () => void;
   onSubmit: (config: ConfigurationDetail) => void;
-  mode?: "guest" | "user";
+  usermode?: "guest" | "user";
   configurationName?: string;
   configuration?: ConfigurationDetail;
 }
+import "../../../style/configuration.css";
+import Nav from "../NavBar";
 
 export default function ConfigurationFiles({
   stationDetails,
   mapBounds,
   onBack,
+  OnBackScenario,
   onSubmit,
-  mode = "guest",
+  usermode = "guest",
   configurationName,
   configuration,
 }: GuestConfigurationFilesProps) {
@@ -216,7 +219,7 @@ export default function ConfigurationFiles({
   };
 
   const submitSelected = async () => {
-    if (mode === "user") {
+    if (usermode === "user") {
       // For user mode, do nothing on save click
       return;
     }
@@ -308,13 +311,13 @@ export default function ConfigurationFiles({
 
   return (
     <>
-      <ConfigurationNav mode={mode} configurationName={configurationName} />
       <LoadingModal
         isOpen={loadingA || loadingI || isSubmitting}
         message={
           isSubmitting ? "Applying configuration..." : "Processing files..."
         }
       />
+      <Nav usermode={usermode} inpage="Configuration" />
       <main>
         <div className="h-[12vh]"></div>
         <div className="content h-full mx-auto">
@@ -514,7 +517,7 @@ export default function ConfigurationFiles({
                 >
                   {isSubmitting || loadingA || loadingI
                     ? "Applying..."
-                    : mode === "user"
+                    : usermode === "user"
                     ? "Save"
                     : "Apply"}
                 </button>

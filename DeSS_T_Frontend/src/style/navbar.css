@@ -1,0 +1,94 @@
+.nav {
+  background: #ffffff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin: 0;
+  padding: 0 2rem;
+  height: 70px;
+  display: flex;
+  align-items: center;
+
+  background: #ffffff;
+  box-shadow: 0px 10px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 0px 0px 20px 20px;
+}
+
+.nav-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-icon {
+  flex-shrink: 0;
+}
+
+.nav-title {
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 31px;
+  color: #323232;
+}
+
+.nav-mode-badge {
+  background: #81069e;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: "Lexend";
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 1.5rem;
+}
+
+.confirm-modal {
+  background: #ffffff;
+  border-radius: 25px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+  max-width: 480px;
+  width: 100%;
+  padding: 24px;
+  font-family: "Lexend";
+  color: #323232;
+}
+
+.confirm-modal-title {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+  text-align: center;
+  font-style: normal;
+  font-weight: 400;
+  color: #81069e;
+}
+
+.confirm-modal-subtitle {
+  font-size: 15px;
+  margin: 0 0 20px 0;
+  color: #323232;
+  text-align: center;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}

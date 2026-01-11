@@ -3,7 +3,7 @@ import Dashboard from "../components/Dashboard/Dashboard";
 import InteractiveMap from "../components/InteractiveMap";
 import type { SimulationResponse } from "../models/SimulationModel";
 import "../../style/Output.css";
-import OutputNav from "../components/OutputNav";
+import Nav from "../components/NavBar";
 
 export type PlaybackSeed = {
   stations: Array<{ id: string; name: string; lat: number; lon: number }>;
@@ -17,20 +17,23 @@ export type PlaybackSeed = {
   timeSlotMinutes?: number;
 };
 
-export default function GuestSetup({
+export default function Outputpage ({
   simulationResponse,
   playbackSeed,
+  onBackClick,
+  usermode = "guest",
 }: {
   simulationResponse?: SimulationResponse;
   playbackSeed?: PlaybackSeed;
+  onBackClick?: () => void;
+  usermode?: "guest" | "user";
 }) {
   const [mode, setMode] = useState<"dashboard" | "map">("map");
 
   return (
     <main>
-      <OutputNav />
-      <div className="h-[85px]"></div>
-      <div className="dashboard-bg flex flex-col items-center min-h-screen py-4 overflow-x-hidden">
+      <Nav usermode={usermode} inpage="Output" onBackClick={onBackClick} />
+      <div className="dashboard-bg flex flex-col items-center min-h-screen overflow-x-hidden">
         <div className="flex justify-between w-full items-center">
           <div className="flex gap-3 mb-4 w-full justify-start items-center">
             <button

@@ -1,21 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import MapViewer from "../MapViewer";
 import Scenario from "../Scenario";
-import ConfigurationNav from "./ConfigurationNav";
 import ConfigurationFiles from "./ConfigurationFiles";
 import LoadingModal from "../LoadingModal";
 import type { StationDetail } from "../../models/Network";
 import HelpButton from "../HelpButton";
 import type { ConfigurationDetail } from "../../models/Configuration";
+import Nav from "../NavBar";
+import "../../../style/configuration.css";
 
 interface ConfigurationMapProps {
-  mode?: "guest" | "user";
+  usermode?: "guest" | "user";
   configurationName?: string;
   configuration?: ConfigurationDetail;
 }
 
 export default function ConfigurationMap({
-  mode = "guest",
+  usermode = "guest",
   configurationName,
 }: ConfigurationMapProps = {}) {
   // File upload state - cleared when going back
@@ -251,12 +252,19 @@ export default function ConfigurationMap({
     }
   };
 
+  const onBackClick = () => {
+    if (usermode === "guest") {
+      window.location.href = "/guest/decision";
+      return;
+    }
+  };
+
   // Render GuestScenario if config submitted
   if (submittedConfig) {
     return (
       <Scenario
         configuration={submittedConfig}
-        mode={mode}
+        usermode={usermode}
         onBack={() => setSubmittedConfig(null)}
       />
     );
@@ -268,13 +276,14 @@ export default function ConfigurationMap({
       <ConfigurationFiles
         stationDetails={stationDetails}
         mapBounds={mapBounds}
-        mode={mode}
+        usermode={usermode}
         configurationName={configurationName}
         onBack={() => {
           setMapConfirmed(false);
           setMapBounds(undefined);
           setStationDetails(null);
         }}
+        OnBackScenario={onBackClick}
         onSubmit={(config) => setSubmittedConfig(config)}
       />
     );
@@ -283,7 +292,11 @@ export default function ConfigurationMap({
   // Default: render map configuration page
   return (
     <>
-      <ConfigurationNav mode={mode} configurationName={configurationName} />
+      <Nav
+        usermode={usermode}
+        inpage="Configuration"
+        onBackClick={onBackClick}
+      />
       <main>
         <div className="h-[12vh]"></div>
         <div className="content h-full mx-auto">

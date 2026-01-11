@@ -14,15 +14,22 @@ import (
 /* ───────────────────────────── ORS MATRIX ───────────────────────────── */
 
 type ORSMatrixRequest struct {
-	Locations [][]float64 `json:"locations"`
-	Metrics   []string    `json:"metrics"`
-	Units     string      `json:"units"`
+	Locations    [][]float64 `json:"locations"`
+	Metrics      []string    `json:"metrics"`
+	Units        string      `json:"units"`
+	Sources      []int       `json:"sources,omitempty"`
+	Destinations []int       `json:"destinations,omitempty"`
 }
 
 type ORSMatrixResponse struct {
 	Distances [][]float64 `json:"distances"`
 	Durations [][]float64 `json:"durations"`
 }
+
+const (
+	orsMatrixURL       = "https://api.openrouteservice.org/v2/matrix/driving-car"
+	orsMatrixChunkSize = 30
+)
 
 func OrsMatrix(stations []models.StationDetail, key string) (*ORSMatrixResponse, error) {
 	// ORS Matrix has a limit of 3500 routes
@@ -32,12 +39,10 @@ func OrsMatrix(stations []models.StationDetail, key string) (*ORSMatrixResponse,
 	const srcChunkSize = 29
 	const dstChunkSize = 29
 
-	locations := [][]float64{}
-	for _, s := range stations {
-		locations = append(locations, []float64{
-			s.Location.Coordinates[0],
-			s.Location.Coordinates[1],
-		})
+	if n <= orsMatrixChunkSize {
+		locations := buildLocations(stations, nil)
+		reqBody := ORSMatrixRequest{Locations: locations, Metrics: []string{"distance", "duration"}, Units: "m"}
+		return doOrsMatrix(reqBody, key, client)
 	}
 
 	n := len(locations)
@@ -117,17 +122,46 @@ func sendOrsMatrixRequest(locations [][]float64, key string) (*ORSMatrixResponse
 		Units:     "m",
 	}
 
-	b, _ := json.Marshal(body)
+	for si := 0; si < n; si += orsMatrixChunkSize {
+		srcEnd := minInt(si+orsMatrixChunkSize, n)
+		srcBlock := stations[si:srcEnd]
 
-	req, _ := http.NewRequest(
-		"POST",
-		"https://api.openrouteservice.org/v2/matrix/driving-car",
-		bytes.NewBuffer(b),
-	)
+		for di := 0; di < n; di += orsMatrixChunkSize {
+			dstEnd := minInt(di+orsMatrixChunkSize, n)
+			dstBlock := stations[di:dstEnd]
+
+			locations := buildLocations(srcBlock, dstBlock)
+			body := ORSMatrixRequest{
+				Locations:    locations,
+				Metrics:      []string{"distance", "duration"},
+				Units:        "m",
+				Sources:      makeIndices(0, len(srcBlock)),
+				Destinations: makeIndices(len(srcBlock), len(srcBlock)+len(dstBlock)),
+			}
+
+			chunk, err := doOrsMatrix(body, key, client)
+			if err != nil {
+				return nil, fmt.Errorf("ORS Matrix chunk (%d-%d,%d-%d) failed: %w", si, srcEnd, di, dstEnd, err)
+			}
+
+			for i := range chunk.Distances {
+				for j := range chunk.Distances[i] {
+					distances[si+i][di+j] = chunk.Distances[i][j]
+					durations[si+i][di+j] = chunk.Durations[i][j]
+				}
+			}
+		}
+	}
+
+	return &ORSMatrixResponse{Distances: distances, Durations: durations}, nil
+}
+
+func doOrsMatrix(body ORSMatrixRequest, key string, client *http.Client) (*ORSMatrixResponse, error) {
+	b, _ := json.Marshal(body)
+	req, _ := http.NewRequest("POST", orsMatrixURL, bytes.NewBuffer(b))
 	req.Header.Set("Authorization", key)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("ORS Matrix request failed: %v", err)
@@ -135,7 +169,6 @@ func sendOrsMatrixRequest(locations [][]float64, key string) (*ORSMatrixResponse
 	defer resp.Body.Close()
 
 	data, _ := ioutil.ReadAll(resp.Body)
-
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("ORS Matrix error (%d): %s", resp.StatusCode, string(data))
 	}
@@ -144,8 +177,33 @@ func sendOrsMatrixRequest(locations [][]float64, key string) (*ORSMatrixResponse
 	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("Invalid ORS Matrix response: %v", err)
 	}
-
 	return &result, nil
+}
+
+func buildLocations(src []models.StationDetail, dst []models.StationDetail) [][]float64 {
+	locations := make([][]float64, 0, len(src)+len(dst))
+	for _, s := range src {
+		locations = append(locations, []float64{s.Location.Coordinates[0], s.Location.Coordinates[1]})
+	}
+	for _, s := range dst {
+		locations = append(locations, []float64{s.Location.Coordinates[0], s.Location.Coordinates[1]})
+	}
+	return locations
+}
+
+func makeIndices(start, end int) []int {
+	indices := make([]int, end-start)
+	for i := range indices {
+		indices[i] = start + i
+	}
+	return indices
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 /* ───────────────────────────── ORS ROUTE ───────────────────────────── */

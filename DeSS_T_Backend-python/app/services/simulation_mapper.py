@@ -168,6 +168,29 @@ def build_distribution(name: str, args: str):
     #     dist = sim.Lognormal(shape=shape, scale=scale)
     #     return dist + loc if loc != 0.0 else dist
 
+    # =====================================================
+    # UNIFORM
+    # =====================================================
+    if name == "uniform":
+        # รองรับทั้ง low/high และ min/max
+        low = params.get("low", params.get("min"))
+        high = params.get("high", params.get("max"))
+        loc = params.get("loc", 0.0)
+
+        if low is None or high is None:
+            raise ValueError("Uniform requires low/high or min/max")
+
+        # ⭐ กรณีค่าคงที่
+        if high == low:
+            value = low + loc
+            return sim.Constant(value)
+
+        if high < low:
+            raise ValueError("Uniform requires high >= low")
+
+        dist = sim.Uniform(low, high)
+        return dist + loc if loc != 0.0 else dist
+    
     raise ValueError(f"Unsupported distribution: {name}")
 
 

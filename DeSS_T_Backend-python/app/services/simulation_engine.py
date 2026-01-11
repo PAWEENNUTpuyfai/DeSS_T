@@ -1,5 +1,5 @@
 import math
-from turtle import delay
+from turtle import delay, st
 import salabim as sim
 from app.services.simulation_logger import add_log, SimulationLogger
 
@@ -20,14 +20,14 @@ class SimulationEngine:
         self.env.logger = SimulationLogger(self.config["TIME_CTX"])
         self.env.sim_engine = self   # 👈 สำคัญ
         self.slots = {}  
+        
         # ---------- METRICS ----------
         self.env.global_waiting_mon = sim.Monitor()
         self.env.global_travel_time_mon = sim.Monitor()
         self.env.global_travel_dist_mon = sim.Monitor()
-        
+        self.env.global_utilization_mon = sim.Monitor()
 
         self.env.station_waiting_mon = {}   # station_name -> Monitor
-        self.env.station_queue_mon = {}     # station_name -> Monitor
 
         self.env.route_util_mon = {}        # route_id -> Monitor
         self.env.route_travel_time_mon = {} # route_id -> Monitor
@@ -38,12 +38,12 @@ class SimulationEngine:
         # environments), so keep an explicit int counter as well
         self.env.route_customer_count = {}
         self.env.route_waiting_mon = {}        # route_id -> Monitor
-        self.env.route_queue_mon = {}        # route_id -> Monitor
 
         self.stations = {}
 
 
     def build(self):
+
         # Collect stations
         station_names = set()
         for route in self.config["BUS_ROUTES"].values():
@@ -53,7 +53,6 @@ class SimulationEngine:
         for name in station_names:
             self.stations[name] = Station(name, env=self.env)
             self.env.station_waiting_mon[name] = sim.Monitor()
-            self.env.station_queue_mon[name] = self.stations[name].wait_store.length
 
 
         # Arrival generators
@@ -74,10 +73,10 @@ class SimulationEngine:
             self.env.route_util_mon.setdefault(rid, sim.Monitor())
             self.env.route_travel_time_mon.setdefault(rid, sim.Monitor())
             self.env.route_travel_dist_mon.setdefault(rid, sim.Monitor())
+            
             # self.env.route_customer_count_mon.setdefault(rid, sim.Monitor())
             self.env.route_customer_count.setdefault(rid, 0)
             self.env.route_waiting_mon.setdefault(rid, sim.Monitor())
-            self.env.route_queue_mon.setdefault(rid, sim.Monitor())
 
             for depart_time in self.config["BUS_SCHEDULES"][route_id]:
             
@@ -92,15 +91,23 @@ class SimulationEngine:
                     travel_distances=self.config["TRAVEL_DISTANCES"],  # 👈 เพิ่ม
                     env=self.env
                 )
+        # Slot ticker
+        SlotTicker(
+            time_ctx=self.config["TIME_CTX"],
+            env=self.env
+        )
 
 
     def _ensure_slot(self, slot):
         if slot not in self.slots:
             self.slots[slot] = {
                 "station_waiting": {s: sim.Monitor() for s in self.stations},
-                "station_queue": {s: sim.Monitor() for s in self.stations},
+
+                # ⭐ on-demand queue
+                "station_queue": {s: {"sum": 0.0, "count": 0} for s in self.stations},
+                "route_queue": {r: {"sum": 0.0, "count": 0} for r in self.env.route_util_mon},
+
                 "route_waiting": {r: sim.Monitor() for r in self.env.route_util_mon},
-                "route_queue": {r: sim.Monitor() for r in self.env.route_util_mon},
                 "route_util": {r: sim.Monitor() for r in self.env.route_util_mon},
                 "route_travel_time": {r: sim.Monitor() for r in self.env.route_util_mon},
                 "route_travel_dist": {r: sim.Monitor() for r in self.env.route_util_mon},
@@ -108,68 +115,78 @@ class SimulationEngine:
             }
 
 
-    
+    def _init_all_slots(self):
+        t = self.config["TIME_CTX"].real_start
+        end = self.config["TIME_CTX"].real_end
+        while t < end:
+            slot = self.config["TIME_CTX"].slot_index(t)
+            self._ensure_slot(slot)
+            t += self.config["TIME_CTX"].slot_length
+
+
+
     def run(self):
         self.build()
-
+        self._init_all_slots()
         # run simulation
         self.env.run(
             till=self.config["TIME_CTX"].real_end -
                 self.config["TIME_CTX"].real_start
         )
+        all_station_q = []
+
+        for slot_data in self.slots.values():
+            for v in slot_data["station_queue"].values():
+                if v["count"] > 0:
+                    all_station_q.append(conditional_avg(v))
 
         # =====================================================
         # SUMMARY (ทั้ง simulation)
         # =====================================================
         summary = ResultSummary(
             average_waiting_time=safe_mean(self.env.global_waiting_mon),
-            average_queue_length=
-                sum(safe_mean(m) for m in self.env.station_queue_mon.values())
-                / max(1, len(self.env.station_queue_mon)),
-            average_utilization=
-                sum(safe_mean(m) for m in self.env.route_util_mon.values())
-                / max(1, len(self.env.route_util_mon)),
+            average_queue_length = (
+                sum(all_station_q) / max(1, len(all_station_q))
+            ),
+            average_utilization=safe_mean(self.env.global_utilization_mon),
             average_travel_time=safe_mean(self.env.global_travel_time_mon),
             average_travel_distance=safe_mean(self.env.global_travel_dist_mon),
         )
 
-        # =====================================================
-        # STATION (รวมทั้งช่วง)
-        # =====================================================
-        station_results = []
-        for name in self.stations:
-            station_results.append(
-                ResultStation(
-                    station_name=name,
-                    average_waiting_time=
-                        safe_mean(self.env.station_waiting_mon[name]),
-                    average_queue_length=
-                        safe_mean(self.env.station_queue_mon[name])
-                )
-            )   
+        # # =====================================================
+        # # STATION (รวมทั้งช่วง)
+        # # =====================================================
+        # station_results = []
+        # for name in self.stations:
+        #     station_results.append(
+        #         ResultStation(
+        #             station_name=name,
+        #             average_waiting_time=
+        #                 safe_mean(self.env.station_waiting_mon[name]),
+        #             average_queue_length=0.00  
+        #         )
+        #     )   
 
-        # =====================================================
-        # ROUTE (รวมทั้งช่วง)
-        # =====================================================
-        route_results = []
-        for rid in self.env.route_util_mon:
-            route_results.append(
-                ResultRoute(
-                    route_id=rid,
-                    average_utilization=
-                        safe_mean(self.env.route_util_mon[rid]),
-                    average_travel_time=
-                        safe_mean(self.env.route_travel_time_mon[rid]),
-                    average_travel_distance=
-                        safe_mean(self.env.route_travel_dist_mon[rid]),
-                    average_waiting_time=
-                        safe_mean(self.env.route_waiting_mon[rid]),
-                    average_queue_length=
-                        safe_mean(self.env.route_queue_mon[rid]),
-                    customers_count=
-                        int(self.env.route_customer_count.get(rid, 0))
-                )
-            )
+        # # =====================================================
+        # # ROUTE (รวมทั้งช่วง)
+        # # =====================================================
+        # route_results = []
+        # for rid in self.env.route_util_mon:
+        #     route_results.append(
+        #         ResultRoute(
+        #             route_id=rid,
+        #             average_utilization=
+        #                 safe_mean(self.env.route_util_mon[rid]),
+        #             average_travel_time=
+        #                 safe_mean(self.env.route_travel_time_mon[rid]),
+        #             average_travel_distance=
+        #                 safe_mean(self.env.route_travel_dist_mon[rid]),
+        #             average_waiting_time=
+        #                 safe_mean(self.env.route_waiting_mon[rid]),
+        #             customers_count=
+        #                 int(self.env.route_customer_count.get(rid, 0))
+        #         )
+        #     )
 
 
         # =====================================================
@@ -191,8 +208,14 @@ class SimulationEngine:
                             sum(safe_mean(m) for m in slot_data["station_waiting"].values())
                             / max(1, len(slot_data["station_waiting"])),
                         average_queue_length=
-                            sum(safe_mean(m) for m in slot_data["station_queue"].values())
-                            / max(1, len(slot_data["station_queue"]))
+                            sum(
+                                conditional_avg(v)
+                                for v in slot_data["station_queue"].values()
+                                if v["count"] > 0
+                            ) / max(
+                                1,
+                                sum(1 for v in slot_data["station_queue"].values() if v["count"] > 0)
+                            )
                     ),
 
                     # ---------- PER STATION ----------
@@ -200,7 +223,7 @@ class SimulationEngine:
                         ResultStation(
                             station_name=s,
                             average_waiting_time=safe_mean(slot_data["station_waiting"][s]),
-                            average_queue_length=safe_mean(slot_data["station_queue"][s])
+                            average_queue_length=conditional_avg(slot_data["station_queue"][s])
                         )
                         for s in slot_data["station_waiting"]
                     ],
@@ -213,7 +236,7 @@ class SimulationEngine:
                             average_travel_time=safe_mean(slot_data["route_travel_time"][r]),
                             average_travel_distance=safe_mean(slot_data["route_travel_dist"][r]),
                             average_waiting_time=safe_mean(slot_data["route_waiting"][r]),
-                            average_queue_length=safe_mean(slot_data["route_queue"][r]),
+                            average_queue_length=conditional_avg(slot_data["route_queue"][r]),
                             customers_count=slot_data["route_customer_count"][r]
                         )
                         for r in slot_data["route_util"]
@@ -233,6 +256,30 @@ class SimulationEngine:
             ),
             logs=self.env.logger.logs
         )
+    
+class SlotTicker(sim.Component):
+    def __init__(self, time_ctx, env):
+        super().__init__(env=env)
+        self.time_ctx = time_ctx
+
+    def process(self):
+        while True:
+            now = self.env.now()
+            engine = self.env.sim_engine
+
+            slot = self.time_ctx.slot_index(now)
+            engine._ensure_slot(slot)
+
+            slots = engine.slots[slot]
+
+            # ---- station queue baseline ----
+            for s, st in engine.stations.items():
+                q = st.wait_store.length()
+                if q > 0:
+                    slots["station_queue"][s]["sum"] += q
+                    slots["station_queue"][s]["count"] += 1
+
+            yield self.hold(self.time_ctx.slot_length)
 
 def safe_mean(mon, default=0.0):
     if mon is None:
@@ -241,6 +288,12 @@ def safe_mean(mon, default=0.0):
     if v is None or math.isnan(v):
         return default
     return float(v)
+
+def conditional_avg(d):
+    if d["count"] == 0:
+        return 0.0
+    return d["sum"] / d["count"]
+
 
 class Station(sim.Component):
     def __init__(self, name, env):
@@ -348,16 +401,20 @@ class Bus(sim.Component):
             add_log(self.env, "Bus", f"Bus {self.route_id} alight {alight_count}")
             # ---------- QUEUE LENGTH (per route) ----------
             queue_len = station.wait_store.length()
-            self.env.route_queue_mon[self.route_id].tally(
-                queue_len,
-                weight=1
-            )
+
             slot = self.time_ctx.slot_index(self.env.now())
             self.env.sim_engine._ensure_slot(slot)
 
             slots = self.env.sim_engine.slots
-            slots[slot]["station_queue"][station.name].tally(queue_len)
-            slots[slot]["route_queue"][self.route_id].tally(queue_len)
+            if queue_len > 0:
+                sq = slots[slot]["station_queue"][station.name]
+                sq["sum"] += queue_len
+                sq["count"] += 1
+
+                rq = slots[slot]["route_queue"][self.route_id]
+                rq["sum"] += queue_len
+                rq["count"] += 1
+
 
             # ---------- LOADING ----------
             if not is_last_station:
@@ -394,13 +451,19 @@ class Bus(sim.Component):
                 travel_time = self.travel_times[key]
                 travel_dist = self.travel_distances[key]
 
+
+
                 # ---- UTILIZATION (time-weighted) ----
                 utilization = len(self.passengers) / self.capacity
                 self.env.route_util_mon[self.route_id].tally(
                     utilization,
                     weight=travel_time
                 )
-
+                # ✅ GLOBAL (time-weighted)
+                self.env.global_utilization_mon.tally(
+                    utilization,
+                    weight=travel_time
+                )              
                 # ---- TRAVEL TIME ----
                 self.env.route_travel_time_mon[self.route_id].tally(travel_time)
                 self.env.global_travel_time_mon.tally(travel_time)
@@ -421,3 +484,4 @@ class Bus(sim.Component):
                 yield self.hold(travel_time)
 
         add_log(self.env, "Bus", f"Bus {self.route_id} finished route")
+

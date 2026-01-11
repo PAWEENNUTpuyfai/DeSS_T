@@ -33,6 +33,7 @@ def fit_best_distribution(values: List[float]) -> Dict:
         "Exponential": stats.expon,
         "Weibull": stats.weibull_min,
         "Gamma": stats.gamma,
+        "Uniform": stats.uniform,
         # "Lognormal": stats.lognorm,
     }
 
@@ -56,6 +57,19 @@ def fit_best_distribution(values: List[float]) -> Dict:
 
         except Exception:
             continue
+    # ----- Poisson (Discrete) -----
+    try:
+        lam = np.mean(values)
+        logL = np.sum(stats.poisson.logpmf(values, mu=lam))
+        aic = 2 * 1 - 2 * logL  # k = 1
+
+        if aic < best_aic:
+            best_aic = aic
+            best_name = "Poisson"
+            best_params = (lam,)
+
+    except Exception:
+        pass
 
     return {
         "name": best_name,
@@ -81,10 +95,17 @@ def params_to_string(dist_name: str, params) -> str:
     if dist_name == "Gamma":
         shape, loc, scale = params
         return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
+    if dist_name == "Uniform":
+        loc, scale = params
+        return f"min={loc:.4f}, max={(loc + scale):.4f}"
 
+    if dist_name == "Poisson":
+        (lam,) = params
+        return f"lambda={lam:.4f}"
+    
     # if dist_name == "Lognormal":
     #     shape, loc, scale = params
-    #     return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
+    #     return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f }"
 
     return str(params)
 

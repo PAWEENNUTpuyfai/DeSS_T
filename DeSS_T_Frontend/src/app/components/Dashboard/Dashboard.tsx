@@ -1,14 +1,17 @@
 import "../../../style/Output.css";
 import { useMemo, useState } from "react";
 import type { SimulationResponse } from "../../models/SimulationModel";
+import type { PlaybackSeed } from "../../pages/Outputpage";
 import LineChart from "./LineChart";
 import TopRoutesChart from "./TopRoutesChart";
 import RouteBarChart from "./RouteBarChart";
 
 export default function Dashboard({
   simulationResponse,
+  playbackSeed,
 }: {
   simulationResponse: SimulationResponse;
+  playbackSeed?: PlaybackSeed;
 }) {
   const [moded1, setModed1] = useState<
     "avg-waiting-time" | "avg-queue-length" | "avg-utilization"
@@ -18,7 +21,7 @@ export default function Dashboard({
     "avg-traveling-time" | "avg-traveling-distance"
   >("avg-traveling-time");
 
-  // Extract data from simulationResponse
+  // Extract data from simulationResponse, using route names from playbackSeed
   const allRoutes = useMemo(() => {
     const routes: [string, string, string][] = [];
     const colors = [
@@ -33,12 +36,19 @@ export default function Dashboard({
       "#7a644e",
     ];
 
+    // Build route map from playbackSeed for quick lookup
+    const routeNameMap = new Map(
+      (playbackSeed?.routes ?? []).map((r) => [r.id, r.name])
+    );
+
     simulationResponse.simulation_result.slot_results.forEach((slot) => {
-      slot.result_route.forEach((route, idx) => {
+      slot.result_route.forEach((route) => {
         if (!routes.find((r) => r[0] === route.route_id)) {
+          const positionalName = playbackSeed?.routes?.[routes.length]?.name;
+          const routeName = routeNameMap.get(route.route_id) || positionalName || `Route ${routes.length + 1}`;
           routes.push([
             route.route_id,
-            `${route.route_id}`,
+            routeName,
             colors[routes.length % colors.length],
           ]);
         }
@@ -46,7 +56,7 @@ export default function Dashboard({
     });
 
     return routes;
-  }, [simulationResponse]);
+  }, [simulationResponse, playbackSeed?.routes]);
 
   // Track selected routes
   const [selectedRoutes, setSelectedRoutes] = useState<string[]>(() =>

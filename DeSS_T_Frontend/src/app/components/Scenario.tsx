@@ -692,10 +692,29 @@ export default function Scenario({
     setBusScheduleFile(file);
   };
 
+  // Generate playbackSeed for Interactive Map
+  const playbackSeed = {
+    stations: nodes.map(st => ({
+      id: st.station_detail_id,
+      name: st.name,
+      lat: st.lat,
+      lon: st.lon,
+    })),
+    routes: routes.map(r => ({
+      id: r.id,
+      name: r.name,
+      color: r.color,
+      segments: r.segments,
+    })),
+  };
+
   return (
     <>
       {simulationResponse ? (
-        <Outputpage simulationResponse={simulationResponse} />
+        <Outputpage 
+          simulationResponse={simulationResponse} 
+          playbackSeed={playbackSeed}
+        />
       ) : (
         <main className="">
           <div className="">

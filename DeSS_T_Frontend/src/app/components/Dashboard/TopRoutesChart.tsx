@@ -172,7 +172,7 @@ export default function TopRoutesChart({
               const barGap = 8;
 
               return (
-                <g key={route.id}>
+                <g key={`bar-${idx}-${route.id}`}>
                   {/* Bar */}
                   <rect
                     x={paddingLeft + barGap}
@@ -200,7 +200,7 @@ export default function TopRoutesChart({
               const yPos = (idx + 0.5) * barSpacing;
               return (
                 <text
-                  key={`label-${route.id}`}
+                  key={`label-${idx}-${route.id}`}
                   x={paddingLeft - 8}
                   y={yPos + 4}
                   fontSize={12}

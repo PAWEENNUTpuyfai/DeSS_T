@@ -110,22 +110,30 @@ export default function LineChart({
 
   // Helpers to map data to SVG coords
   const xPos = (t: number) => {
-    if (maxTime === minTime) return paddingLeft + dataOffsetLeft;
-    return paddingLeft + dataOffsetLeft + ((t - minTime) / (maxTime - minTime)) * innerWidth;
+    if (maxTime === minTime || !Number.isFinite(t)) return paddingLeft + dataOffsetLeft;
+    const x = paddingLeft + dataOffsetLeft + ((t - minTime) / (maxTime - minTime)) * innerWidth;
+    return Number.isFinite(x) ? x : paddingLeft + dataOffsetLeft;
   };
 
   const yPos = (v: number) => {
-    if (yMax === yMin) return paddingTop + innerHeight / 2;
-    return paddingTop + (1 - (v - yMin) / (yMax - yMin)) * innerHeight;
+    if (yMax === yMin || !Number.isFinite(v)) return paddingTop + innerHeight / 2;
+    const y = paddingTop + (1 - (v - yMin) / (yMax - yMin)) * innerHeight;
+    return Number.isFinite(y) ? y : paddingTop + innerHeight / 2;
   };
 
   const buildPath = (points: { t: number; v: number }[]) => {
     if (!points.length) return "";
-    return points
+    const validPoints = points.filter(p => Number.isFinite(p.t) && Number.isFinite(p.v));
+    if (!validPoints.length) return "";
+    return validPoints
       .map((p, idx) => {
         const cmd = idx === 0 ? "M" : "L";
-        return `${cmd}${xPos(p.t).toFixed(1)},${yPos(p.v).toFixed(1)}`;
+        const x = xPos(p.t);
+        const y = yPos(p.v);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return "";
+        return `${cmd}${x.toFixed(1)},${y.toFixed(1)}`;
       })
+      .filter(s => s.length > 0)
       .join(" ");
   };
 
@@ -261,12 +269,15 @@ export default function LineChart({
             {/* Data points with labels */}
             {dataByRoute.map(({ id, points }, idx) => {
               const [, , color] = routes[idx];
-              return points.map((p, i) => {
-                const svgX = xPos(p.t) - paddingLeft;
-                const svgY = yPos(p.v);
-                return (
-                  <g key={`${id}-${i}`}>
-                    <circle cx={svgX} cy={svgY} r={3} fill={color} />
+              return points
+                .filter(p => Number.isFinite(p.t) && Number.isFinite(p.v))
+                .map((p, i) => {
+                  const svgX = xPos(p.t) - paddingLeft;
+                  const svgY = yPos(p.v);
+                  if (!Number.isFinite(svgX) || !Number.isFinite(svgY)) return null;
+                  return (
+                    <g key={`${id}-${i}`}>
+                      <circle cx={svgX} cy={svgY} r={3} fill={color} />
                     {/* <text
                       x={svgX}
                       y={svgY - 8}

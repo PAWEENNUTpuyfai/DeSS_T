@@ -5,10 +5,22 @@ import type { SimulationResponse } from "../models/SimulationModel";
 import "../../style/Output.css";
 import OutputNav from "../components/OutputNav";
 
+export type PlaybackSeed = {
+  stations: Array<{ id: string; name: string; lat: number; lon: number }>;
+  routes: Array<{
+    id: string;
+    name: string;
+    color: string;
+    segments: { coords: [number, number][] }[];
+  }>;
+};
+
 export default function GuestSetup({
   simulationResponse,
+  playbackSeed,
 }: {
-  simulationResponse: SimulationResponse;
+  simulationResponse?: SimulationResponse;
+  playbackSeed?: PlaybackSeed;
 }) {
   const [mode, setMode] = useState<"dashboard" | "map">("map");
 
@@ -17,8 +29,8 @@ export default function GuestSetup({
       <OutputNav />
       <div className="h-[85px]"></div>
       <div className="dashboard-bg flex flex-col items-center min-h-screen py-4 overflow-x-hidden">
-        <div className="flex justify-between w-full">
-          <div className="flex gap-3 mb-4 w-full justify-start">
+        <div className="flex justify-between w-full items-center">
+          <div className="flex gap-3 mb-4 w-full justify-start items-center">
             <button
               type="button"
               className={`px-8 ${
@@ -38,6 +50,8 @@ export default function GuestSetup({
                   : "output-mode-unselected"
               }`}
               onClick={() => setMode("dashboard")}
+              disabled={!simulationResponse}
+              title={!simulationResponse ? "Run simulation to view dashboard" : ""}
             >
               Dashboard
             </button>
@@ -59,11 +73,20 @@ export default function GuestSetup({
           </div>
         </div>
 
-        {mode === "dashboard" ? (
-          <Dashboard simulationResponse={simulationResponse} />
+        {mode === "dashboard" && simulationResponse ? (
+          <Dashboard simulationResponse={simulationResponse} playbackSeed={playbackSeed} />
+        ) : mode === "dashboard" && !simulationResponse ? (
+          <div className="w-full flex justify-center items-center py-20">
+            <div className="text-center text-gray-500">
+              <p className="text-lg">Please run a simulation to view the dashboard</p>
+            </div>
+          </div>
         ) : (
           <div className="w-full flex justify-center">
-            <InteractiveMap simulationResponse={simulationResponse} />
+            <InteractiveMap
+              simulationResponse={simulationResponse}
+              playbackSeed={playbackSeed}
+            />
           </div>
         )}
       </div>

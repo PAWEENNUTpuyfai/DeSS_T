@@ -25,8 +25,8 @@ export default function ConfigurationMap({
   );
 
   // Map States
-  const [mapMode, setMapMode] = useState<"area" | "manual">("manual");
-  const [areaCode, setAreaCode] = useState("");
+  const [mapMode, setMapMode] = useState<"area" | "manual">("area");
+  const [areaCode, setAreaCode] = useState("189632187");
   const [minLat, setMinLat] = useState(13.72);
   const [maxLat, setMaxLat] = useState(13.75);
   const [minLon, setMinLon] = useState(100.5);
@@ -64,7 +64,7 @@ export default function ConfigurationMap({
 
   const handleConfirmMap = async () => {
     setLoadingStops(true);
-    setStationDetails(null);
+    // Keep current stationDetails while loading to avoid flicker
 
     if (mapMode === "area") {
       if (areaCode.trim() === "") {

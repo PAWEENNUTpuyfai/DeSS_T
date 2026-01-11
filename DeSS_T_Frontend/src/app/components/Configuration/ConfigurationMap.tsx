@@ -19,9 +19,8 @@ export default function ConfigurationMap({
   configurationName,
 }: ConfigurationMapProps = {}) {
   // File upload state - cleared when going back
-  const [submittedConfig, setSubmittedConfig] = useState<ConfigurationDetail | null>(
-    null
-  );
+  const [submittedConfig, setSubmittedConfig] =
+    useState<ConfigurationDetail | null>(null);
 
   // Map States
   const [mapMode, setMapMode] = useState<"area" | "manual">("area");
@@ -101,6 +100,14 @@ export default function ConfigurationMap({
           minLon: bb.minlon,
           maxLon: bb.maxlon,
         });
+
+        // Validate if stations were found
+        if (stationDetails.length === 0) {
+          alert("ไม่พบสถานีรถเมล์ในพื้นที่นี้ กรุณาเลือกพื้นที่อื่น");
+          setLoadingStops(false);
+          return;
+        }
+
         setStationDetails(stationDetails);
         setMapConfirmed(true);
       } catch (err: unknown) {
@@ -112,7 +119,6 @@ export default function ConfigurationMap({
 
       return;
     }
-    
 
     // manual lat/lon mode
     setMapBounds({ minLat, maxLat, minLon, maxLon });
@@ -141,10 +147,21 @@ export default function ConfigurationMap({
         station_id_osm: String(stop.id),
       }));
 
+      // Validate if stations were found
+      if (stationDetails.length === 0) {
+        alert("ไม่พบสถานีรถเมล์ในพื้นที่นี้ กรุณาเลือกพื้นที่อื่น");
+        setLoadingStops(false);
+        return;
+      }
+
       setStationDetails(stationDetails);
       setMapConfirmed(true);
     } catch (err: unknown) {
       console.error("Failed to fetch bus stops for manual bounds:", err);
+      alert(
+        "ไม่สามารถโหลดสถานีได้: " +
+          (err instanceof Error ? err.message : "Unknown error")
+      );
     } finally {
       setLoadingStops(false);
     }

@@ -119,7 +119,7 @@ func FetchBusStopsInArea(areaCode string) ([]OverpassNode, error) {
 		out body;
 	`, areaCode)
 
-	for attempt := 0; attempt < 3; attempt++ {
+	for attempt := 0; attempt < 2; attempt++ {
 		client := &http.Client{Timeout: 70 * time.Second}
 		resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
 		if err == nil {
@@ -128,13 +128,29 @@ func FetchBusStopsInArea(areaCode string) ([]OverpassNode, error) {
 			if readErr == nil && resp.StatusCode == 200 {
 				var result OverpassResponse
 				if err := json.Unmarshal(data, &result); err == nil {
+					fmt.Printf("✅ FetchBusStopsInArea: Found %d bus stops in area %s\n", len(result.Elements), areaCode)
 					return result.Elements, nil
+				} else {
+					fmt.Printf("⚠️ FetchBusStopsInArea: JSON error: %v\n", err)
 				}
+			} else if resp.StatusCode == 429 {
+				fmt.Printf("❌ FetchBusStopsInArea: Rate limited (429) - stopping\n")
+				return []OverpassNode{}, fmt.Errorf("Overpass API rate limit")
+			} else if resp.StatusCode == 504 {
+				fmt.Printf("❌ FetchBusStopsInArea: Timeout (504) - stopping\n")
+				return []OverpassNode{}, fmt.Errorf("Overpass API timeout")
+			} else {
+				fmt.Printf("⚠️ FetchBusStopsInArea: HTTP %d\n", resp.StatusCode)
 			}
+		} else {
+			fmt.Printf("⚠️ FetchBusStopsInArea attempt %d: %v\n", attempt+1, err)
 		}
-		time.Sleep(time.Duration(400*(attempt+1)) * time.Millisecond)
+		if attempt < 1 {
+			time.Sleep(2 * time.Second)
+		}
 	}
-	return []OverpassNode{}, nil
+	fmt.Printf("❌ FetchBusStopsInArea: Failed for area %s\n", areaCode)
+	return []OverpassNode{}, fmt.Errorf("Overpass API unavailable")
 }
 
 type OverpassWay struct {

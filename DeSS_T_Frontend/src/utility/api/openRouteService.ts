@@ -77,7 +77,7 @@ export async function buildNetworkModelFromStations(
     .filter((s): s is StationPayload => s !== null);
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 45000);
+  const timeout = setTimeout(() => controller.abort(), 90000);
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}/network/build`, {

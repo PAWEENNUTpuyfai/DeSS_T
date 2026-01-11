@@ -15,7 +15,7 @@ export async function AlightingFitFromXlsx(
   form.append("station_map", JSON.stringify(stationMap));
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), 60000);
 
   let res: Response;
   try {
@@ -45,7 +45,7 @@ export async function InterarrivalFitFromXlsx(
   form.append("station_map", JSON.stringify(stationMap));
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), 60000);
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}/guest/interarrival/distribution_fit`, {

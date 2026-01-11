@@ -13,6 +13,8 @@ export type PlaybackSeed = {
     color: string;
     segments: { coords: [number, number][] }[];
   }>;
+  simWindow?: string;
+  timeSlotMinutes?: number;
 };
 
 export default function GuestSetup({

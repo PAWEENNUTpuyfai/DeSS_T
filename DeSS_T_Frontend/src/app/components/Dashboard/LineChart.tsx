@@ -249,11 +249,11 @@ export default function LineChart({
               const adjustedPath = pathD
                 .replace(
                   /M([\d.]+)/g,
-                  (match, x) => `M${parseFloat(x) - paddingLeft}`
+                  (_match, x) => `M${parseFloat(x) - paddingLeft}`
                 )
                 .replace(
                   /L([\d.]+)/g,
-                  (match, x) => `L${parseFloat(x) - paddingLeft}`
+                  (_match, x) => `L${parseFloat(x) - paddingLeft}`
                 );
               return (
                 <path

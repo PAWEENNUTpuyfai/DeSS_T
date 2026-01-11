@@ -9,7 +9,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-import type { LatLng, StationDetail, GeoPoint } from "../models/Network";
+import type { LatLng, StationDetail } from "../models/Network";
 
 L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -39,15 +39,6 @@ export default function MapViewer({
   const [bounds, setBounds] = useState<
     [[number, number], [number, number]] | undefined
   >();
-  const [areaPolygons, setAreaPolygons] = useState<
-    [number, number][][] | undefined
-  >();
-
-  // Convert GeoPoint → LatLng (Leaflet format)
-  const geoPointToLatLng = (g: GeoPoint): LatLng => {
-    const [lon, lat] = g.coordinates; // GeoJSON = [lon, lat]
-    return [lat, lon]; // Leaflet = [lat, lon]
-  };
 
   // Safe station to LatLng conversion with fallback
   const stationToLatLng = (s: StationDetail): LatLng => {
@@ -107,8 +98,6 @@ export default function MapViewer({
         const mapApi = await import("../../utility/api/mapApi");
         const polys = await mapApi.fetchAreaGeometry(areaCode);
         if (!polys || polys.length === 0) return;
-
-        setAreaPolygons(polys);
 
         let minLat = Infinity,
           minLon = Infinity,

@@ -9,7 +9,6 @@ import type { SimulationResponse } from "../models/SimulationModel";
 import ScenarioMap from "./ScenarioMap";
 import type { RouteSegment } from "./ScenarioMap";
 import { computeRouteSegments } from "../../utility/api/routeBatch";
-import { saveRoutes } from "../../utility/api/routeSave";
 import { SketchPicker, type ColorResult } from "react-color";
 import CustomDropdown from "./CustomDropdown";
 import Outputpage from "../pages/Outputpage";
@@ -33,7 +32,6 @@ export default function Scenario({
   configuration,
   configurationName,
   onBack,
-  project,
   projectName,
 }: {
   configuration: ConfigurationDetail;
@@ -415,7 +413,7 @@ export default function Scenario({
       const networkModel = configuration?.network_model as
         | NetworkModel
         | undefined;
-      const stationPairs = (networkModel as any)?.StationPair || [];
+      const stationPairs = (networkModel as NetworkModel & { StationPair?: StationPair[] })?.StationPair || [];
       const orders: Order[] = [];
 
       // Debug: Show actual station sequence
@@ -692,14 +690,28 @@ export default function Scenario({
     setBusScheduleFile(file);
   };
 
+  const validStations = useMemo(
+    () =>
+      nodes
+        .filter(
+          (st) =>
+            !!st.station_detail_id &&
+            !!st.name &&
+            st.lat !== undefined &&
+            st.lon !== undefined
+        )
+        .map((st) => ({
+          id: st.station_detail_id as string,
+          name: st.name as string,
+          lat: st.lat as number,
+          lon: st.lon as number,
+        })),
+    [nodes]
+  );
+
   // Generate playbackSeed for Interactive Map
   const playbackSeed = {
-    stations: nodes.map(st => ({
-      id: st.station_detail_id,
-      name: st.name,
-      lat: st.lat,
-      lon: st.lon,
-    })),
+    stations: validStations,
     routes: routes.map(r => ({
       id: r.id,
       name: r.name,

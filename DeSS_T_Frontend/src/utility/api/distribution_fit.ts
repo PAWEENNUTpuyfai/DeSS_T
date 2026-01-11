@@ -54,7 +54,7 @@ export async function InterarrivalFitFromXlsx(
       signal: controller.signal,
     });
   } catch (err) {
-    if ((err as any)?.name === "AbortError") {
+    if ((err as { name?: string })?.name === "AbortError") {
       throw new Error("Interarrival fit request timed out. Please try again.");
     }
     throw err;

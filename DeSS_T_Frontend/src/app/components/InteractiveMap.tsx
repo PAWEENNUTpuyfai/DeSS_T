@@ -235,7 +235,7 @@ export default function InteractiveMap({
             </MapContainer>
 
             {/* Legend overlay */}
-            <div className="absolute left-3 top-3 bg-white/90 border border-gray-200 rounded-md p-3 text-xs space-y-2 shadow-sm max-w-[200px]">
+            <div className="absolute left-3 bottom-3 z-30 pointer-events-auto bg-white/90 border border-gray-200 rounded-md p-3 text-xs space-y-2 shadow-sm max-w-[220px]">
               <div className="font-semibold text-gray-800 mb-2">Routes</div>
               {mockRoutes.map((r) => (
                 <button

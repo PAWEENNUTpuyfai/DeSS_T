@@ -13,7 +13,7 @@ export async function buildNetworkModelFromStations(
   networkName = "guest_network"
 ): Promise<NetworkModel> {
   if (!stations || stations.length === 0) {
-    return { Network_model: networkName, Station_detail: [], station_pairs: [] };
+    return { Network_model: networkName, Station_detail: [], StationPair: [] };
   }
 
   // Map frontend StationDetail → backend Station_Detail shape
@@ -37,10 +37,9 @@ export async function buildNetworkModelFromStations(
 
   const stationsPayload: StationPayload[] = stations
     .map((s, idx): StationPayload | null => {
-      const lat = toNum(s.lat ?? s.latitude);
-      const lon = toNum(s.lon ?? s.longitude);
+      const lat = toNum(s.lat);
+      const lon = toNum(s.lon);
       const coordSource =
-        (s.location as { coordinates?: unknown })?.coordinates ??
         (s.Location as { coordinates?: unknown })?.coordinates;
       const lonFromLoc = Array.isArray(coordSource) ? toNum(coordSource[0]) : undefined;
       const latFromLoc = Array.isArray(coordSource) ? toNum(coordSource[1]) : undefined;
@@ -57,7 +56,6 @@ export async function buildNetworkModelFromStations(
       const stationId = rawId || `${finalLat.toFixed(6)},${finalLon.toFixed(6)}` || `station-${idx}`;
       const stationName =
         s.name ||
-        s.station_name ||
         s.StationName ||
         rawId ||
         `Station ${idx + 1}`;

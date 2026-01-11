@@ -37,12 +37,10 @@ export default function ConfigurationFiles({
 }: GuestConfigurationFilesProps) {
   const makeId = (): string => {
     try {
-      // @ts-ignore
       if (typeof crypto !== "undefined" && crypto.randomUUID) {
-        // @ts-ignore
         return crypto.randomUUID();
       }
-    } catch {}
+    } catch { /* empty */ }
     return Math.random().toString(36).slice(2);
   };
 

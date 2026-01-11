@@ -86,6 +86,7 @@ func FetchAreaBounds(areaCode string) (*OverpassBounds, error) {
 
 // FetchBusStops queries Overpass API to get bus stops within bounds
 func FetchBusStops(minLat, minLon, maxLat, maxLon float64) ([]OverpassNode, error) {
+	// Overpass API bbox format: (south, west, north, east)
 	query := fmt.Sprintf(`
 		[out:json][timeout:25];
 		node["highway"="bus_stop"](%f,%f,%f,%f);
@@ -101,12 +102,24 @@ func FetchBusStops(minLat, minLon, maxLat, maxLon float64) ([]OverpassNode, erro
 			if readErr == nil && resp.StatusCode == 200 {
 				var result OverpassResponse
 				if err := json.Unmarshal(data, &result); err == nil {
+					if len(result.Elements) > 0 {
+						fmt.Printf("✅ FetchBusStops: Found %d bus stops\n", len(result.Elements))
+						return result.Elements, nil
+					}
+					fmt.Printf("⚠️ FetchBusStops: No bus stops found in bbox\n")
 					return result.Elements, nil
+				} else {
+					fmt.Printf("⚠️ FetchBusStops: JSON unmarshal error: %v\n", err)
 				}
+			} else {
+				fmt.Printf("⚠️ FetchBusStops: HTTP error status=%d\n", resp.StatusCode)
 			}
+		} else {
+			fmt.Printf("⚠️ FetchBusStops attempt %d: %v\n", attempt, err)
 		}
 		time.Sleep(time.Duration(300*(attempt+1)) * time.Millisecond)
 	}
+	fmt.Printf("❌ FetchBusStops: Failed after 3 attempts\n")
 	return []OverpassNode{}, nil
 }
 
@@ -128,12 +141,24 @@ func FetchBusStopsInArea(areaCode string) ([]OverpassNode, error) {
 			if readErr == nil && resp.StatusCode == 200 {
 				var result OverpassResponse
 				if err := json.Unmarshal(data, &result); err == nil {
+					if len(result.Elements) > 0 {
+						fmt.Printf("✅ FetchBusStopsInArea: Found %d bus stops in area %s\n", len(result.Elements), areaCode)
+						return result.Elements, nil
+					}
+					fmt.Printf("⚠️ FetchBusStopsInArea: No bus stops found in area %s\n", areaCode)
 					return result.Elements, nil
+				} else {
+					fmt.Printf("⚠️ FetchBusStopsInArea: JSON unmarshal error: %v\n", err)
 				}
+			} else {
+				fmt.Printf("⚠️ FetchBusStopsInArea: HTTP error status=%d\n", resp.StatusCode)
 			}
+		} else {
+			fmt.Printf("⚠️ FetchBusStopsInArea attempt %d: %v\n", attempt, err)
 		}
 		time.Sleep(time.Duration(400*(attempt+1)) * time.Millisecond)
 	}
+	fmt.Printf("❌ FetchBusStopsInArea: Failed after 3 attempts for area %s\n", areaCode)
 	return []OverpassNode{}, nil
 }
 

@@ -5,8 +5,6 @@ import (
 	"DeSS_T_Backend-go/services"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -95,46 +93,24 @@ func BuildNetworkModel(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "No valid stations found in request")
 	}
 
-	// 1) Matrix mode selection
-	// Defaults to local for speed and reliability. Enable ORS via env when desired.
-	matrixMode := strings.ToLower(os.Getenv("MATRIX_MODE")) // "local" | "ors"
-	if matrixMode == "" {
-		matrixMode = "local"
+	// Check if ORS API key is available
+	if orsKey == "" {
+		return fiber.NewError(fiber.StatusInternalServerError, "ORS_API_KEY is not configured")
 	}
-	maxStations := 30
-	if v := os.Getenv("MATRIX_MAX_STATIONS"); v != "" {
-		if p, perr := strconv.Atoi(v); perr == nil && p > 0 {
-			maxStations = p
-		}
-	}
-	fallbackSpeedKmh := 30.0
-	if v := os.Getenv("FALLBACK_SPEED_KMH"); v != "" {
-		if f, ferr := strconv.ParseFloat(v, 64); ferr == nil && f > 0 {
-			fallbackSpeedKmh = f
-		}
-	}
-	metersPerSecond := fallbackSpeedKmh * 1000.0 / 3600.0
 
 	var matrix *services.ORSMatrixResponse
 	var err error
-	useORSMatrix := (matrixMode == "ors" && orsKey != "" && len(stations) <= maxStations)
-	if useORSMatrix {
-		// Soft timeout guard: ensure the handler returns fast even if ORS is slow
-		done := make(chan struct{})
-		var mErr error
-		go func() {
-			matrix, mErr = services.OrsMatrix(stations, orsKey)
-			close(done)
-		}()
-		select {
-		case <-done:
-			err = mErr
-		case <-time.After(20 * time.Second):
-			err = fmt.Errorf("ORS matrix timed out")
-		}
+
+	// Always use ORS for matrix computation (optimized chunking handles large datasets)
+	// Direct call without goroutine to avoid blocking other requests
+	matrix, err = services.OrsMatrix(stations, orsKey)
+	if err != nil {
+		fmt.Printf("❌ ORS Matrix error: %v\n", err)
+		return fiber.NewError(fiber.StatusBadGateway, fmt.Sprintf("ORS Matrix API error: %v", err))
 	}
-	if err != nil || matrix == nil {
-		matrix, _ = services.LocalMatrix(stations, metersPerSecond)
+
+	if matrix == nil {
+		return fiber.NewError(fiber.StatusBadGateway, fmt.Sprintf("ORS Matrix returned empty response for %d stations", len(stations)))
 	}
 
 	// 2. Create pair list with RouteBetween data

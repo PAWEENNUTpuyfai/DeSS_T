@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"time"
 
@@ -26,6 +25,12 @@ type ORSMatrixResponse struct {
 }
 
 func OrsMatrix(stations []models.StationDetail, key string) (*ORSMatrixResponse, error) {
+	// ORS Matrix has a limit of 3500 routes
+	// Routes = N * (N-1) for N locations sent to API
+	// Safe chunk size: N where N*(N-1) <= 3500
+	// N=59: 59*58 = 3422 ✓ (use 29 for double chunks src+dest)
+	const srcChunkSize = 29
+	const dstChunkSize = 29
 
 	locations := [][]float64{}
 	for _, s := range stations {
@@ -35,6 +40,77 @@ func OrsMatrix(stations []models.StationDetail, key string) (*ORSMatrixResponse,
 		})
 	}
 
+	n := len(locations)
+
+	// Initialize full result matrix
+	distances := make([][]float64, n)
+	durations := make([][]float64, n)
+	for i := 0; i < n; i++ {
+		distances[i] = make([]float64, n)
+		durations[i] = make([]float64, n)
+	}
+
+	// Process matrix in chunks: for each source chunk and dest chunk
+	for srcStart := 0; srcStart < n; srcStart += srcChunkSize {
+		srcEnd := srcStart + srcChunkSize
+		if srcEnd > n {
+			srcEnd = n
+		}
+
+		for dstStart := 0; dstStart < n; dstStart += dstChunkSize {
+			dstEnd := dstStart + dstChunkSize
+			if dstEnd > n {
+				dstEnd = n
+			}
+
+			// Build chunk request: combine source chunk + dest chunk
+			chunkedLocs := make([][]float64, 0, (srcEnd-srcStart)+(dstEnd-dstStart))
+
+			// Map indices: original src/dst -> chunked indices
+			srcToChunkIdx := make([]int, srcEnd-srcStart)
+			dstToChunkIdx := make([]int, dstEnd-dstStart)
+
+			// Add sources first
+			for i := srcStart; i < srcEnd; i++ {
+				srcToChunkIdx[i-srcStart] = len(chunkedLocs)
+				chunkedLocs = append(chunkedLocs, locations[i])
+			}
+
+			// Add destinations
+			for i := dstStart; i < dstEnd; i++ {
+				dstToChunkIdx[i-dstStart] = len(chunkedLocs)
+				chunkedLocs = append(chunkedLocs, locations[i])
+			}
+
+			// Request matrix for this chunk
+			result, err := sendOrsMatrixRequest(chunkedLocs, key)
+			if err != nil {
+				return nil, err
+			}
+
+			// Copy results back to full matrix
+			for srcIdx := 0; srcIdx < srcEnd-srcStart; srcIdx++ {
+				for dstIdx := 0; dstIdx < dstEnd-dstStart; dstIdx++ {
+					origSrcIdx := srcStart + srcIdx
+					origDstIdx := dstStart + dstIdx
+					chunkSrcIdx := srcToChunkIdx[srcIdx]
+					chunkDstIdx := dstToChunkIdx[dstIdx]
+					distances[origSrcIdx][origDstIdx] = result.Distances[chunkSrcIdx][chunkDstIdx]
+					durations[origSrcIdx][origDstIdx] = result.Durations[chunkSrcIdx][chunkDstIdx]
+				}
+			}
+
+			time.Sleep(100 * time.Millisecond) // Rate limiting
+		}
+	}
+
+	return &ORSMatrixResponse{
+		Distances: distances,
+		Durations: durations,
+	}, nil
+}
+
+func sendOrsMatrixRequest(locations [][]float64, key string) (*ORSMatrixResponse, error) {
 	body := ORSMatrixRequest{
 		Locations: locations,
 		Metrics:   []string{"distance", "duration"},
@@ -137,51 +213,4 @@ func OrsRoute(start [2]float64, end [2]float64, key string) ([][2]float64, error
 	return result, nil
 }
 
-/* ──────────────────────── FALLBACK (LOCAL) MATRIX ──────────────────────── */
 
-// haversineDistance returns meters between two lon/lat points
-func haversineDistance(a [2]float64, b [2]float64) float64 {
-	const R = 6371000.0 // Earth radius meters
-	lon1 := a[0] * math.Pi / 180.0
-	lat1 := a[1] * math.Pi / 180.0
-	lon2 := b[0] * math.Pi / 180.0
-	lat2 := b[1] * math.Pi / 180.0
-
-	dlon := lon2 - lon1
-	dlat := lat2 - lat1
-	sinDLat := math.Sin(dlat / 2)
-	sinDLon := math.Sin(dlon / 2)
-	h := sinDLat*sinDLat + math.Cos(lat1)*math.Cos(lat2)*sinDLon*sinDLon
-	c := 2 * math.Atan2(math.Sqrt(h), math.Sqrt(1-h))
-	return R * c
-}
-
-// LocalMatrix computes distances and durations using straight-line distance
-// and a constant speed (e.g., 30 km/h ≈ 8.333 m/s). Returns same shape as ORS
-// matrix to allow seamless fallback.
-func LocalMatrix(stations []models.StationDetail, metersPerSecond float64) (*ORSMatrixResponse, error) {
-	n := len(stations)
-	distances := make([][]float64, n)
-	durations := make([][]float64, n)
-	for i := 0; i < n; i++ {
-		distances[i] = make([]float64, n)
-		durations[i] = make([]float64, n)
-		for j := 0; j < n; j++ {
-			if i == j {
-				distances[i][j] = 0
-				durations[i][j] = 0
-				continue
-			}
-			a := stations[i].Location.Coordinates
-			b := stations[j].Location.Coordinates
-			d := haversineDistance(a, b) // meters
-			distances[i][j] = d
-			if metersPerSecond > 0 {
-				durations[i][j] = d / metersPerSecond // seconds
-			} else {
-				durations[i][j] = 0
-			}
-		}
-	}
-	return &ORSMatrixResponse{Distances: distances, Durations: durations}, nil
-}

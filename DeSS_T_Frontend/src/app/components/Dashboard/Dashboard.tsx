@@ -87,6 +87,15 @@ export default function Dashboard({
     );
   }, [simulationResponse]);
 
+  // Aggregate customer data by route (sum across all time slots)
+  const aggregatedCustomerData: [string, number][] = useMemo(() => {
+    const map = new Map<string, number>();
+    customerData.forEach(([routeId, count]) => {
+      map.set(routeId, (map.get(routeId) || 0) + count);
+    });
+    return Array.from(map.entries());
+  }, [customerData]);
+
   // Extract traveling time data
   const travelingTimeData: [string, number][] = useMemo(() => {
     return simulationResponse.simulation_result.slot_results
@@ -143,12 +152,31 @@ export default function Dashboard({
   // Extract summary statistics
   const summaryStats = useMemo(() => {
     const summary = simulationResponse.simulation_result.result_summary;
+    
+    // Convert waiting time from seconds to minutes (or keep as seconds if very small)
+    const waitingTimeMinutes = summary.average_waiting_time / 60;
+    const waitingTimeDisplay = waitingTimeMinutes > 1 
+      ? `${waitingTimeMinutes.toFixed(1)} mins`
+      : `${summary.average_waiting_time.toFixed(1)} secs`;
+    
+    // Convert traveling time from seconds to minutes
+    const travelingTimeMinutes = summary.average_travel_time / 60;
+    const travelingTimeDisplay = travelingTimeMinutes > 1
+      ? `${travelingTimeMinutes.toFixed(1)} mins`
+      : `${summary.average_travel_time.toFixed(1)} secs`;
+    
+    // Convert traveling distance from meters to km
+    const travelingDistanceKm = summary.average_travel_distance / 1000;
+    const travelingDistanceDisplay = travelingDistanceKm > 1
+      ? `${travelingDistanceKm.toFixed(1)} km`
+      : `${summary.average_travel_distance.toFixed(1)} m`;
+    
     return {
-      avgWaitingTime: summary.average_waiting_time.toFixed(1),
+      avgWaitingTime: waitingTimeDisplay,
       avgQueueLength: summary.average_queue_length.toFixed(1),
       avgUtilization: (summary.average_utilization * 100).toFixed(0),
-      avgTravelingTime: summary.average_travel_time.toFixed(1),
-      avgTravelingDistance: summary.average_travel_distance.toFixed(1),
+      avgTravelingTime: travelingTimeDisplay,
+      avgTravelingDistance: travelingDistanceDisplay,
     };
   }, [simulationResponse]);
 
@@ -231,7 +259,7 @@ export default function Dashboard({
           </p>
           <TopRoutesChart
             route={allRoutes}
-            customerData={customerData}
+            customerData={aggregatedCustomerData}
             limit={3}
           />
         </div>
@@ -282,7 +310,7 @@ export default function Dashboard({
         </div>
         <div className="w-[14%] flex flex-col justify-between">
           <div className="dashboard-card flex flex-col items-center justify-center">
-            <p className="chart-header">{summaryStats.avgWaitingTime} mins</p>
+            <p className="chart-header">{summaryStats.avgWaitingTime}</p>
             <p className="chart-context">Avg. Waiting Time</p>
           </div>
           <div className="dashboard-card flex flex-col items-center justify-center">
@@ -296,12 +324,12 @@ export default function Dashboard({
             <p className="chart-context">Avg. Utilization</p>
           </div>
           <div className="dashboard-card flex flex-col items-center justify-center">
-            <p className="chart-header">{summaryStats.avgTravelingTime} mins</p>
+            <p className="chart-header">{summaryStats.avgTravelingTime}</p>
             <p className="chart-context">Avg. Traveling Time</p>
           </div>
           <div className="dashboard-card flex flex-col items-center justify-center">
             <p className="chart-header">
-              {summaryStats.avgTravelingDistance} km
+              {summaryStats.avgTravelingDistance}
             </p>
             <p className="chart-context">Avg. Traveling Distance</p>
           </div>

@@ -738,6 +738,21 @@ export default function Scenario({
       route_id: r.id,
       station_ids: r.stations,
     })),
+    routeStationDetails: routes.map((r) => ({
+      route_id: r.id,
+      route_name: r.name,
+      stations: r.stations.map((stationId, idx) => {
+        const station = validStations.find((st) => st.id === stationId);
+        const totalStations = r.stations.length;
+        const positionProgress = totalStations > 1 ? idx / (totalStations - 1) : 0;
+        return {
+          station_id: stationId,
+          station_name: station?.name || "Unknown",
+          position: positionProgress,
+          coordinates: [station?.lat ?? 0, station?.lon ?? 0] as [number, number],
+        };
+      }),
+    })),
     simWindow: `${simStartHour.toString().padStart(2, '0')}:00-${simEndHour.toString().padStart(2, '0')}:00`,
     timeSlotMinutes: parseInt(timeSlot.split(" ")[0]),
     simulationResponse: simulationResponse,
@@ -747,8 +762,32 @@ export default function Scenario({
       speed: r.speed,
       capacity: r.capacity,
     })),
+    routeOrders: routes.map((r) => ({
+      route_id: r.id,
+      orders: r.orders,
+      totalTravelTimeSeconds: r.orders.reduce((sum, order) => {
+        const travelTime = order.station_pair?.RouteBetween?.TravelTime ?? 0;
+        return sum + travelTime;
+      }, 0),
+    })),
     routeResults: simulationResponse?.simulation_result?.slot_results?.[0]?.result_route || [],
-    scheduleData: scheduleDataRef.current,
+    scheduleData: (() => {
+      // Priority: use scheduleData from simulationResponse, fallback to file upload
+      const scheduleList = simulationResponse?.scenario?.bus_scenario?.schedule_data || [];
+      if (scheduleList.length > 0) {
+        return scheduleList.map((schedule: any) => {
+          // Match route by name prefix (e.g., "Route 1" from "Route 1-scenario-detail-...")
+          const matchingRoute = routes.find((r) =>
+            schedule.route_path_id?.startsWith(r.name)
+          );
+          return {
+            route_id: matchingRoute?.id || schedule.route_path_id,
+            schedule_list: schedule.schedule_list || schedule.ScheduleList,
+          };
+        });
+      }
+      return scheduleDataRef.current;
+    })(),
   };
 
   const onBackClickInOutputPage = () => {

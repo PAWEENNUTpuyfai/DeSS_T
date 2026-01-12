@@ -112,9 +112,15 @@ export default function InteractiveMap({
   const buildFrames = (): PlaybackFrame[] => {
     if (!mockRoutes.length || timeLabels.length === 0) return [];
     
+    // Get simulation window times
+    const [simStartStr, simEndStr] = activePlaybackData?.simWindow?.split("-") ?? ["08:00", "16:00"];
+    const simStartMinutes = timeToMinutes(simStartStr);
+    const simEndMinutes = timeToMinutes(simEndStr);
+    
     return timeLabels.map((tLabel, frameIdx) => {
       const buses: { id: string; coord: [number, number] }[] = [];
       const currentTime = tLabel; // e.g., "08:00"
+      const currentTimeMinutes = timeToMinutes(currentTime);
       
       mockRoutes.forEach((r) => {
         if (r.coords.length < 2) return;
@@ -123,14 +129,23 @@ export default function InteractiveMap({
         const routeBusInfo = playbackSeed?.busInfo?.find((bi) => bi.route_id === r.id);
         const maxBuses = routeBusInfo?.max_bus ?? 1;
         const routeSchedule = playbackSeed?.scheduleData?.find((s) => s.route_id === r.id);
+        const routeOrders = playbackSeed?.routeOrders?.find((ro) => ro.route_id === r.id);
+        const totalTravelTimeSeconds = routeOrders?.totalTravelTimeSeconds ?? 0;
         
         // Debug: Log schedule data
         if (frameIdx === 0) {
           console.log(`🚌 Route ${r.name} (${r.id}):`, {
             maxBuses,
-            scheduleData: routeSchedule,
-            allScheduleData: playbackSeed?.scheduleData,
+            scheduleFound: !!routeSchedule,
+            schedule_list: routeSchedule?.schedule_list,
+            totalTravelTimeSeconds,
+            simWindow: activePlaybackData?.simWindow,
           });
+          console.log(`  DEBUG: Checking schedule data match:`);
+          console.log(`    Looking for route_id = '${r.id}'`);
+          console.log(`    Available schedules:`, 
+            playbackSeed?.scheduleData?.map((s: any) => ({route_id: s.route_id, has_schedule: !!s.schedule_list}))
+          );
         }
         
         // Parse schedule: "08:00,08:15,08:30,..." or "08:00, 08:15, 08:30,..."
@@ -139,38 +154,43 @@ export default function InteractiveMap({
           .map((t) => t.trim())
           .filter((t) => t.length > 0) || [];
         
-        if (frameIdx === 0 && departureTimes.length > 0) {
-          console.log(`  Departure times:`, departureTimes);
+        // Filter to only include departures within simulation period
+        const validDepartureTimes = departureTimes.filter((depTime) => {
+          const depTimeMinutes = timeToMinutes(depTime);
+          return depTimeMinutes >= simStartMinutes && depTimeMinutes <= simEndMinutes;
+        });
+        
+        if (frameIdx === 0 && validDepartureTimes.length > 0) {
+          console.log(`  Valid Departure times (within sim period):`, validDepartureTimes);
+          console.log(`  Max buses for this route: ${maxBuses}`);
+          console.log(`  Schedule list raw:`, routeSchedule?.schedule_list);
         }
         
-        // If no schedule, use fallback: distribute buses evenly
-        if (departureTimes.length === 0) {
-          for (let busNum = 0; busNum < maxBuses; busNum++) {
-            // Fallback: show all buses distributed along the route at this frame
-            const busProgress = (busNum + frameIdx) / (maxBuses * timeLabels.length);
-            const coordIdx = Math.min(
-              Math.floor(busProgress * r.coords.length),
-              r.coords.length - 1
-            );
-            const coord = r.coords[coordIdx];
-            buses.push({
-              id: `${r.name || "route"}-bus${busNum + 1}`,
-              coord: [coord[0], coord[1]] as [number, number],
-            });
-          }
+        // If no schedule, show no buses (don't use maxBuses fallback)
+        if (validDepartureTimes.length === 0) {
+          // Do nothing - no buses without schedule
         } else {
           // Create bus instances based on schedule
-          departureTimes.forEach((departureTime, busIdx) => {
-            if (busIdx >= maxBuses) return; // Don't exceed max_bus count
+          // Each departure time = one bus instance, don't use maxBuses as limit
+          validDepartureTimes.forEach((departureTime, busIdx) => {
+            const departureTimeMinutes = timeToMinutes(departureTime);
             
-            // Check if bus has departed at current time
-            if (departureTime <= currentTime) {
+            // Check if bus has departed at current time AND current time is within sim period
+            if (departureTimeMinutes <= currentTimeMinutes && currentTimeMinutes >= simStartMinutes) {
               // Bus is active - interpolate position along coordinates
-              // Calculate how many time slots since departure
-              const timeSinceDeparture = timeToMinutes(currentTime) - timeToMinutes(departureTime);
-              const estimatedProgress = (timeSinceDeparture / 60) * 0.3;
+              // Calculate how many seconds since departure
+              const timeSinceDeparture = currentTimeMinutes - departureTimeMinutes;
+              const timeSinceDepartureSeconds = timeSinceDeparture * 60;
+              
+              // Calculate progress: if totalTravelTime > 0, use it; otherwise use fallback
+              let progress = 0;
+              if (totalTravelTimeSeconds > 0) {
+                progress = Math.min(timeSinceDepartureSeconds / totalTravelTimeSeconds, 0.95);
+              } else {
+                // Fallback: distribute buses along time
+                progress = Math.min((busIdx + 1) / (validDepartureTimes.length + 1), 0.95);
+              }
 
-              const progress = Math.min(estimatedProgress + (busIdx + 1) / (maxBuses + 1), 0.95);
               const coordIdx = Math.min(
                 Math.floor(progress * r.coords.length),
                 r.coords.length - 1
@@ -195,6 +215,7 @@ export default function InteractiveMap({
     timeLabels,
     playbackSeed?.busInfo,
     playbackSeed?.scheduleData,
+    playbackSeed?.routeOrders,
   ]);
   const [frameIdx, setFrameIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -287,6 +308,38 @@ export default function InteractiveMap({
                   <Popup>{st.name}</Popup>
                 </CircleMarker>
               ))}
+
+              {/* Route station labels */}
+              {activePlaybackData?.routeStationDetails?.map((routeDetail) =>
+                visibleRoutes.has(routeDetail.route_id) &&
+                routeDetail.stations.map((stDetail, idx) => {
+                  const route = mockRoutes.find((r) => r.id === routeDetail.route_id);
+                  if (!route || route.coords.length === 0) return null;
+
+                  const coordIdx = Math.min(
+                    Math.floor(stDetail.position * (route.coords.length - 1)),
+                    route.coords.length - 1
+                  );
+                  const coord = route.coords[coordIdx];
+
+                  return (
+                    <CircleMarker
+                      key={`route-station-${routeDetail.route_id}-${idx}`}
+                      center={[coord[0], coord[1]]}
+                      radius={4}
+                      weight={2}
+                      color={route.color}
+                      fillColor="white"
+                      fillOpacity={0.95}
+                    >
+                      <Popup>{stDetail.station_name}</Popup>
+                      <Tooltip direction="top" offset={[0, -10]} opacity={0.95}>
+                        {stDetail.station_name}
+                      </Tooltip>
+                    </CircleMarker>
+                  );
+                })
+              )}
 
               {frames[frameIdx]?.buses.map((b) => (
                 <CircleMarker

@@ -87,8 +87,10 @@ class SimulationEngine:
                     depart_time=depart_time,
                     alighting_rules=self.config["ALIGHTING_RULES"],
                     time_ctx=self.config["TIME_CTX"],
-                    travel_times=self.config["TRAVEL_TIMES"],
-                    travel_distances=self.config["TRAVEL_DISTANCES"],  # 👈 เพิ่ม
+                    travel_times={
+                        k: v / 60 for k, v in self.config["TRAVEL_TIMES"].items()
+                    },
+                    travel_distances=self.config["TRAVEL_DISTANCES"],
                     env=self.env
                 )
         # Slot ticker
@@ -152,41 +154,6 @@ class SimulationEngine:
             average_travel_time=safe_mean(self.env.global_travel_time_mon),
             average_travel_distance=safe_mean(self.env.global_travel_dist_mon),
         )
-
-        # # =====================================================
-        # # STATION (รวมทั้งช่วง)
-        # # =====================================================
-        # station_results = []
-        # for name in self.stations:
-        #     station_results.append(
-        #         ResultStation(
-        #             station_name=name,
-        #             average_waiting_time=
-        #                 safe_mean(self.env.station_waiting_mon[name]),
-        #             average_queue_length=0.00  
-        #         )
-        #     )   
-
-        # # =====================================================
-        # # ROUTE (รวมทั้งช่วง)
-        # # =====================================================
-        # route_results = []
-        # for rid in self.env.route_util_mon:
-        #     route_results.append(
-        #         ResultRoute(
-        #             route_id=rid,
-        #             average_utilization=
-        #                 safe_mean(self.env.route_util_mon[rid]),
-        #             average_travel_time=
-        #                 safe_mean(self.env.route_travel_time_mon[rid]),
-        #             average_travel_distance=
-        #                 safe_mean(self.env.route_travel_dist_mon[rid]),
-        #             average_waiting_time=
-        #                 safe_mean(self.env.route_waiting_mon[rid]),
-        #             customers_count=
-        #                 int(self.env.route_customer_count.get(rid, 0))
-        #         )
-        #     )
 
 
         # =====================================================
@@ -364,6 +331,8 @@ class Bus(sim.Component):
         self.time_ctx = time_ctx
         self.travel_times = travel_times
         self.travel_distances = travel_distances
+        self.total_travel_time = 0.0
+        self.total_travel_dist = 0.0
         self.passengers = []
 
     def process(self):
@@ -451,37 +420,54 @@ class Bus(sim.Component):
                 travel_time = self.travel_times[key]
                 travel_dist = self.travel_distances[key]
 
+                # ✅ สะสมต่อ route
+                self.total_travel_time += travel_time
+                self.total_travel_dist += travel_dist
 
-
-                # ---- UTILIZATION (time-weighted) ----
+                # ✅ utilization ยังต้องอยู่ตรงนี้ (time-based)
                 utilization = len(self.passengers) / self.capacity
                 self.env.route_util_mon[self.route_id].tally(
                     utilization,
                     weight=travel_time
                 )
-                # ✅ GLOBAL (time-weighted)
                 self.env.global_utilization_mon.tally(
                     utilization,
                     weight=travel_time
-                )              
-                # ---- TRAVEL TIME ----
-                self.env.route_travel_time_mon[self.route_id].tally(travel_time)
-                self.env.global_travel_time_mon.tally(travel_time)
+                )
 
-                # ---- TRAVEL DISTANCE ----
-                self.env.route_travel_dist_mon[self.route_id].tally(travel_dist)
-                self.env.global_travel_dist_mon.tally(travel_dist)
-                # ---- SLOT METRICS ----
                 slots[slot]["route_util"][self.route_id].tally(
                     utilization,
                     weight=travel_time
                 )
 
-                slots[slot]["route_travel_time"][self.route_id].tally(travel_time)
-                slots[slot]["route_travel_dist"][self.route_id].tally(travel_dist)
                 if travel_time <= 0:
                     travel_time = 0.0001
                 yield self.hold(travel_time)
+
+        # ===== END OF ROUTE =====
+        self.env.route_travel_time_mon[self.route_id].tally(
+            self.total_travel_time
+        )
+        self.env.route_travel_dist_mon[self.route_id].tally(
+            self.total_travel_dist
+        )
+
+        self.env.global_travel_time_mon.tally(
+            self.total_travel_time
+        )
+        self.env.global_travel_dist_mon.tally(
+            self.total_travel_dist
+        )
+
+        # (ถ้าจะทำ slot-level ต่อ route)
+        slot = self.time_ctx.slot_index(self.env.now())
+        slots[slot]["route_travel_time"][self.route_id].tally(
+            self.total_travel_time
+        )
+        slots[slot]["route_travel_dist"][self.route_id].tally(
+            self.total_travel_dist
+        )
+
 
         add_log(self.env, "Bus", f"Bus {self.route_id} finished route")
 

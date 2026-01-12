@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Dashboard from "../components/Dashboard/Dashboard";
 import InteractiveMap from "../components/InteractiveMap";
-import type { SimulationResponse } from "../models/SimulationModel";
+import type { SimulationResponse, ResultRoute } from "../models/SimulationModel";
 import "../../style/Output.css";
 import Nav from "../components/NavBar";
 
@@ -13,8 +13,24 @@ export type PlaybackSeed = {
     color: string;
     segments: { coords: [number, number][] }[];
   }>;
+  routeStations?: Array<{ 
+    route_id: string; 
+    station_ids: string[] 
+  }>;
   simWindow?: string;
   timeSlotMinutes?: number;
+  simulationResponse?: SimulationResponse | null;
+  busInfo?: Array<{
+    route_id: string;
+    max_bus: number;
+    speed: number;
+    capacity: number;
+  }>;
+  routeResults?: ResultRoute[];
+  scheduleData?: Array<{
+    route_id: string;
+    schedule_list: string; // Raw schedule string from Excel, e.g. "08:00,08:15,08:30..."
+  }>;
 };
 
 export default function Outputpage ({

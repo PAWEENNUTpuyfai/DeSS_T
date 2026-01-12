@@ -32,11 +32,22 @@ export default function RouteBarChart({
   // Build data with route info
   const chartData = dataset.map(([routeId, value], idx) => {
     const routeInfo = routeMap.get(routeId);
+    
+    // Convert units based on mode
+    let displayValue = Number(value);
+    if (mode === "avg-traveling-time") {
+      // Convert seconds to minutes
+      displayValue = Number(value) / 60;
+    } else if (mode === "avg-traveling-distance") {
+      // Convert meters to km
+      displayValue = Number(value) / 1000;
+    }
+    
     return {
       id: routeId,
       name: routeInfo?.name || `สาย ${routeId}`,
       color: routeInfo?.color || fallbackColors[idx % fallbackColors.length],
-      value: Number(value),
+      value: displayValue,
     };
   });
 
@@ -99,11 +110,21 @@ export default function RouteBarChart({
                   textAnchor="end"
                   fill="#6b7280"
                 >
-                  {tick} {idx === yTickValues.length - 1 ? yUnit : ""}
+                  {tick}
                 </text>
               </g>
             );
           })}
+          {/* Unit label at top */}
+          <text
+            x={axisWidth - 12}
+            y={paddingTop - 8}
+            fontSize={11}
+            textAnchor="end"
+            fill="#6b7280"
+          >
+            {yUnit}
+          </text>
           <line
             x1={axisWidth - 2}
             x2={axisWidth - 2}
@@ -163,13 +184,13 @@ export default function RouteBarChart({
                 />
                 <text
                   x={x + actualBarWidth / 2}
-                  y={Math.max(paddingTop + 12, y - 6)}
+                  y={y - 20}
                   fontSize={12}
                   textAnchor="middle"
                   fill={data.color}
                   fontWeight="600"
                 >
-                  {data.value.toFixed(1)}
+                  {data.value.toFixed(1)} {yUnit}
                 </text>
                 <text
                   x={x + actualBarWidth / 2}

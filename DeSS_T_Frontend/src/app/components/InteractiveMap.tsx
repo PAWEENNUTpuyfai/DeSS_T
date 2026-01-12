@@ -103,29 +103,120 @@ export default function InteractiveMap({
 
   const timeLabels = useMemo(generateTimeLables, [activePlaybackData?.simWindow, activePlaybackData?.timeSlotMinutes]);
 
+  // Helper function to convert "HH:MM" to minutes
+  const timeToMinutes = (timeStr: string): number => {
+    const [h, m] = timeStr.split(":").map(Number);
+    return h * 60 + m;
+  };
+
   const buildFrames = (): PlaybackFrame[] => {
     if (!mockRoutes.length || timeLabels.length === 0) return [];
-    return timeLabels.map((tLabel, idx) => {
+    
+    // Get simulation window times
+    const [simStartStr, simEndStr] = activePlaybackData?.simWindow?.split("-") ?? ["08:00", "16:00"];
+    const simStartMinutes = timeToMinutes(simStartStr);
+    const simEndMinutes = timeToMinutes(simEndStr);
+    
+    return timeLabels.map((tLabel, frameIdx) => {
       const buses: { id: string; coord: [number, number] }[] = [];
-      mockRoutes.forEach((r, rIdx) => {
+      const currentTime = tLabel; // e.g., "08:00"
+      const currentTimeMinutes = timeToMinutes(currentTime);
+      
+      mockRoutes.forEach((r) => {
         if (r.coords.length < 2) return;
-        const span = r.coords.length - 1;
-        const progress = (idx % r.coords.length) / span;
-        const segIndex = Math.min(span - 1, Math.floor(progress * span));
-        const segT = (progress * span) - segIndex;
-        const start = r.coords[segIndex];
-        const end = r.coords[segIndex + 1];
-        const interp: [number, number] = [
-          start[0] + (end[0] - start[0]) * segT,
-          start[1] + (end[1] - start[1]) * segT,
-        ];
-        buses.push({ id: `${r.name || "route"}-${rIdx + 1}`, coord: interp });
+        
+        // Get max_bus and schedule info
+        const routeBusInfo = playbackSeed?.busInfo?.find((bi) => bi.route_id === r.id);
+        const maxBuses = routeBusInfo?.max_bus ?? 1;
+        const routeSchedule = playbackSeed?.scheduleData?.find((s) => s.route_id === r.id);
+        const routeOrders = playbackSeed?.routeOrders?.find((ro) => ro.route_id === r.id);
+        const totalTravelTimeSeconds = routeOrders?.totalTravelTimeSeconds ?? 0;
+        
+        // Debug: Log schedule data
+        if (frameIdx === 0) {
+          console.log(`🚌 Route ${r.name} (${r.id}):`, {
+            maxBuses,
+            scheduleFound: !!routeSchedule,
+            schedule_list: routeSchedule?.schedule_list,
+            totalTravelTimeSeconds,
+            simWindow: activePlaybackData?.simWindow,
+          });
+          console.log(`  DEBUG: Checking schedule data match:`);
+          console.log(`    Looking for route_id = '${r.id}'`);
+          console.log(`    Available schedules:`, 
+            playbackSeed?.scheduleData?.map((s: any) => ({route_id: s.route_id, has_schedule: !!s.schedule_list}))
+          );
+        }
+        
+        // Parse schedule: "08:00,08:15,08:30,..." or "08:00, 08:15, 08:30,..."
+        const departureTimes = routeSchedule?.schedule_list
+          ?.split(",")
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0) || [];
+        
+        // Filter to only include departures within simulation period
+        const validDepartureTimes = departureTimes.filter((depTime) => {
+          const depTimeMinutes = timeToMinutes(depTime);
+          return depTimeMinutes >= simStartMinutes && depTimeMinutes <= simEndMinutes;
+        });
+        
+        if (frameIdx === 0 && validDepartureTimes.length > 0) {
+          console.log(`  Valid Departure times (within sim period):`, validDepartureTimes);
+          console.log(`  Max buses for this route: ${maxBuses}`);
+          console.log(`  Schedule list raw:`, routeSchedule?.schedule_list);
+        }
+        
+        // If no schedule, show no buses (don't use maxBuses fallback)
+        if (validDepartureTimes.length === 0) {
+          // Do nothing - no buses without schedule
+        } else {
+          // Create bus instances based on schedule
+          // Each departure time = one bus instance, don't use maxBuses as limit
+          validDepartureTimes.forEach((departureTime, busIdx) => {
+            const departureTimeMinutes = timeToMinutes(departureTime);
+            
+            // Check if bus has departed at current time AND current time is within sim period
+            if (departureTimeMinutes <= currentTimeMinutes && currentTimeMinutes >= simStartMinutes) {
+              // Bus is active - interpolate position along coordinates
+              // Calculate how many seconds since departure
+              const timeSinceDeparture = currentTimeMinutes - departureTimeMinutes;
+              const timeSinceDepartureSeconds = timeSinceDeparture * 60;
+              
+              // Calculate progress: if totalTravelTime > 0, use it; otherwise use fallback
+              let progress = 0;
+              if (totalTravelTimeSeconds > 0) {
+                progress = Math.min(timeSinceDepartureSeconds / totalTravelTimeSeconds, 0.95);
+              } else {
+                // Fallback: distribute buses along time
+                progress = Math.min((busIdx + 1) / (validDepartureTimes.length + 1), 0.95);
+              }
+
+              const coordIdx = Math.min(
+                Math.floor(progress * r.coords.length),
+                r.coords.length - 1
+              );
+              
+              const coord = r.coords[coordIdx];
+              buses.push({
+                id: `${r.name || "route"}-bus${busIdx + 1}`,
+                coord: [coord[0], coord[1]] as [number, number],
+              });
+            }
+          });
+        }
       });
+      
       return { timeLabel: tLabel, buses };
     });
   };
 
-  const frames = useMemo(buildFrames, [mockRoutes, timeLabels]);
+  const frames = useMemo(buildFrames, [
+    mockRoutes,
+    timeLabels,
+    playbackSeed?.busInfo,
+    playbackSeed?.scheduleData,
+    playbackSeed?.routeOrders,
+  ]);
   const [frameIdx, setFrameIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
 
@@ -133,16 +224,17 @@ export default function InteractiveMap({
     if (!playing || frames.length <= 1) return;
     const interval = window.setInterval(() => {
       setFrameIdx((i) => (i + 1) % frames.length);
-    }, Math.max(800, (activePlaybackData?.timeSlotMinutes ?? 5) * 250));
+    }, 600); // 600ms per frame for smooth playback
     return () => window.clearInterval(interval);
-  }, [playing, frames.length, activePlaybackData?.timeSlotMinutes]);
+  }, [playing, frames.length]);
 
   const timeSlotMinutes = activePlaybackData?.timeSlotMinutes ?? 5;
   const simWindow = activePlaybackData?.simWindow ?? "08:00-12:00";
 
   // Find station data from simulation response based on selected station
+  const activeSimulationResponse = playbackSeed?.simulationResponse || simulationResponse;
   const selectedStation = stations.find((st) => st.id === selectedStationId) ?? stations[0];
-  const selectedStationData = simulationResponse?.simulation_result?.slot_results?.[0]?.result_station?.find(
+  const selectedStationData = activeSimulationResponse?.simulation_result?.slot_results?.[0]?.result_station?.find(
     (st) => st.station_name === selectedStation?.name
   );
 
@@ -151,7 +243,7 @@ export default function InteractiveMap({
     average_waiting_time: 0,
     average_queue_length: 0,
   };
-  const summary = simulationResponse?.simulation_result?.result_summary;
+  const summary = activeSimulationResponse?.simulation_result?.result_summary;
 
   const mapCenter: [number, number] = [
     stations[0]?.lat ?? 13.75,
@@ -216,6 +308,38 @@ export default function InteractiveMap({
                   <Popup>{st.name}</Popup>
                 </CircleMarker>
               ))}
+
+              {/* Route station labels */}
+              {activePlaybackData?.routeStationDetails?.map((routeDetail) =>
+                visibleRoutes.has(routeDetail.route_id) &&
+                routeDetail.stations.map((stDetail, idx) => {
+                  const route = mockRoutes.find((r) => r.id === routeDetail.route_id);
+                  if (!route || route.coords.length === 0) return null;
+
+                  const coordIdx = Math.min(
+                    Math.floor(stDetail.position * (route.coords.length - 1)),
+                    route.coords.length - 1
+                  );
+                  const coord = route.coords[coordIdx];
+
+                  return (
+                    <CircleMarker
+                      key={`route-station-${routeDetail.route_id}-${idx}`}
+                      center={[coord[0], coord[1]]}
+                      radius={4}
+                      weight={2}
+                      color={route.color}
+                      fillColor="white"
+                      fillOpacity={0.95}
+                    >
+                      <Popup>{stDetail.station_name}</Popup>
+                      <Tooltip direction="top" offset={[0, -10]} opacity={0.95}>
+                        {stDetail.station_name}
+                      </Tooltip>
+                    </CircleMarker>
+                  );
+                })
+              )}
 
               {frames[frameIdx]?.buses.map((b) => (
                 <CircleMarker
@@ -335,10 +459,10 @@ export default function InteractiveMap({
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
               <li>
-                • Avg. Waiting Time <span className="font-semibold text-purple-700">{stationCard?.average_waiting_time ?? 0} mins</span>
+                • Avg. Waiting Time <span className="font-semibold text-purple-700">{(stationCard?.average_waiting_time ?? 0).toFixed(1)} mins</span>
               </li>
               <li>
-                • Avg. Queue Length <span className="font-semibold text-purple-700">{stationCard?.average_queue_length ?? 0} persons</span>
+                • Avg. Queue Length <span className="font-semibold text-purple-700">{(stationCard?.average_queue_length ?? 0).toFixed(1)} persons</span>
               </li>
             </ul>
           </div>
@@ -353,19 +477,10 @@ export default function InteractiveMap({
               </div>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li>
-                  • Avg. Waiting Time <span className="font-semibold text-purple-700">{summary.average_waiting_time} mins</span>
+                  • Avg. Waiting Time <span className="font-semibold text-purple-700">{summary.average_waiting_time.toFixed(1)} mins</span>
                 </li>
                 <li>
-                  • Avg. Queue Length <span className="font-semibold text-purple-700">{summary.average_queue_length} persons</span>
-                </li>
-                <li>
-                  • Avg. Utilization <span className="font-semibold text-purple-700">{Math.round(summary.average_utilization * 100)}%</span>
-                </li>
-                <li>
-                  • Avg. Traveling Time <span className="font-semibold text-purple-700">{summary.average_travel_time} mins</span>
-                </li>
-                <li>
-                  • Avg. Traveling Distance <span className="font-semibold text-purple-700">{summary.average_travel_distance} km</span>
+                  • Avg. Queue Length <span className="font-semibold text-purple-700">{summary.average_queue_length.toFixed(1)} persons</span>
                 </li>
               </ul>
             </div>

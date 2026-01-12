@@ -32,10 +32,8 @@ export default function ConfigurationFiles({
   stationDetails,
   mapBounds,
   onBack,
-  OnBackScenario,
   onSubmit,
   usermode = "guest",
-  configurationName,
   configuration,
 }: GuestConfigurationFilesProps) {
   const makeId = (): string => {

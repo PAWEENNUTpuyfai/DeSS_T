@@ -35,9 +35,19 @@ export default function TopRoutesChart({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const routeMap = new Map(allRoutes.map((r) => [r[0], r]));
 
-  // Sort by customer count and take top N
+  // Group by routeId and sum customers, then take top N
   const topRoutes = useMemo(() => {
-    const withInfo = customerData
+    // Aggregate customers by route (in case of multiple slots)
+    const routeCustomerMap = new Map<string, number>();
+    customerData.forEach(([routeId, count]) => {
+      routeCustomerMap.set(
+        routeId,
+        (routeCustomerMap.get(routeId) || 0) + count
+      );
+    });
+
+    // Convert to array with route info and sort by count
+    const withInfo = Array.from(routeCustomerMap.entries())
       .map(([routeId, count]) => {
         const routeInfo = routeMap.get(routeId);
         return {

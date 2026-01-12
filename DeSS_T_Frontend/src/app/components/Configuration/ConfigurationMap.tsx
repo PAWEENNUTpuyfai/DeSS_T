@@ -1,4 +1,4 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import MapViewer from "../MapViewer";
 import Scenario from "../Scenario";
 import ConfigurationFiles from "./ConfigurationFiles";

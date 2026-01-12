@@ -103,29 +103,99 @@ export default function InteractiveMap({
 
   const timeLabels = useMemo(generateTimeLables, [activePlaybackData?.simWindow, activePlaybackData?.timeSlotMinutes]);
 
+  // Helper function to convert "HH:MM" to minutes
+  const timeToMinutes = (timeStr: string): number => {
+    const [h, m] = timeStr.split(":").map(Number);
+    return h * 60 + m;
+  };
+
   const buildFrames = (): PlaybackFrame[] => {
     if (!mockRoutes.length || timeLabels.length === 0) return [];
-    return timeLabels.map((tLabel, idx) => {
+    
+    return timeLabels.map((tLabel, frameIdx) => {
       const buses: { id: string; coord: [number, number] }[] = [];
-      mockRoutes.forEach((r, rIdx) => {
+      const currentTime = tLabel; // e.g., "08:00"
+      
+      mockRoutes.forEach((r) => {
         if (r.coords.length < 2) return;
-        const span = r.coords.length - 1;
-        const progress = (idx % r.coords.length) / span;
-        const segIndex = Math.min(span - 1, Math.floor(progress * span));
-        const segT = (progress * span) - segIndex;
-        const start = r.coords[segIndex];
-        const end = r.coords[segIndex + 1];
-        const interp: [number, number] = [
-          start[0] + (end[0] - start[0]) * segT,
-          start[1] + (end[1] - start[1]) * segT,
-        ];
-        buses.push({ id: `${r.name || "route"}-${rIdx + 1}`, coord: interp });
+        
+        // Get max_bus and schedule info
+        const routeBusInfo = playbackSeed?.busInfo?.find((bi) => bi.route_id === r.id);
+        const maxBuses = routeBusInfo?.max_bus ?? 1;
+        const routeSchedule = playbackSeed?.scheduleData?.find((s) => s.route_id === r.id);
+        
+        // Debug: Log schedule data
+        if (frameIdx === 0) {
+          console.log(`🚌 Route ${r.name} (${r.id}):`, {
+            maxBuses,
+            scheduleData: routeSchedule,
+            allScheduleData: playbackSeed?.scheduleData,
+          });
+        }
+        
+        // Parse schedule: "08:00,08:15,08:30,..." or "08:00, 08:15, 08:30,..."
+        const departureTimes = routeSchedule?.schedule_list
+          ?.split(",")
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0) || [];
+        
+        if (frameIdx === 0 && departureTimes.length > 0) {
+          console.log(`  Departure times:`, departureTimes);
+        }
+        
+        // If no schedule, use fallback: distribute buses evenly
+        if (departureTimes.length === 0) {
+          for (let busNum = 0; busNum < maxBuses; busNum++) {
+            // Fallback: show all buses distributed along the route at this frame
+            const busProgress = (busNum + frameIdx) / (maxBuses * timeLabels.length);
+            const coordIdx = Math.min(
+              Math.floor(busProgress * r.coords.length),
+              r.coords.length - 1
+            );
+            const coord = r.coords[coordIdx];
+            buses.push({
+              id: `${r.name || "route"}-bus${busNum + 1}`,
+              coord: [coord[0], coord[1]] as [number, number],
+            });
+          }
+        } else {
+          // Create bus instances based on schedule
+          departureTimes.forEach((departureTime, busIdx) => {
+            if (busIdx >= maxBuses) return; // Don't exceed max_bus count
+            
+            // Check if bus has departed at current time
+            if (departureTime <= currentTime) {
+              // Bus is active - interpolate position along coordinates
+              // Calculate how many time slots since departure
+              const timeSinceDeparture = timeToMinutes(currentTime) - timeToMinutes(departureTime);
+              const estimatedProgress = (timeSinceDeparture / 60) * 0.3;
+
+              const progress = Math.min(estimatedProgress + (busIdx + 1) / (maxBuses + 1), 0.95);
+              const coordIdx = Math.min(
+                Math.floor(progress * r.coords.length),
+                r.coords.length - 1
+              );
+              
+              const coord = r.coords[coordIdx];
+              buses.push({
+                id: `${r.name || "route"}-bus${busIdx + 1}`,
+                coord: [coord[0], coord[1]] as [number, number],
+              });
+            }
+          });
+        }
       });
+      
       return { timeLabel: tLabel, buses };
     });
   };
 
-  const frames = useMemo(buildFrames, [mockRoutes, timeLabels]);
+  const frames = useMemo(buildFrames, [
+    mockRoutes,
+    timeLabels,
+    playbackSeed?.busInfo,
+    playbackSeed?.scheduleData,
+  ]);
   const [frameIdx, setFrameIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
 
@@ -133,16 +203,17 @@ export default function InteractiveMap({
     if (!playing || frames.length <= 1) return;
     const interval = window.setInterval(() => {
       setFrameIdx((i) => (i + 1) % frames.length);
-    }, Math.max(800, (activePlaybackData?.timeSlotMinutes ?? 5) * 250));
+    }, 600); // 600ms per frame for smooth playback
     return () => window.clearInterval(interval);
-  }, [playing, frames.length, activePlaybackData?.timeSlotMinutes]);
+  }, [playing, frames.length]);
 
   const timeSlotMinutes = activePlaybackData?.timeSlotMinutes ?? 5;
   const simWindow = activePlaybackData?.simWindow ?? "08:00-12:00";
 
   // Find station data from simulation response based on selected station
+  const activeSimulationResponse = playbackSeed?.simulationResponse || simulationResponse;
   const selectedStation = stations.find((st) => st.id === selectedStationId) ?? stations[0];
-  const selectedStationData = simulationResponse?.simulation_result?.slot_results?.[0]?.result_station?.find(
+  const selectedStationData = activeSimulationResponse?.simulation_result?.slot_results?.[0]?.result_station?.find(
     (st) => st.station_name === selectedStation?.name
   );
 
@@ -151,7 +222,7 @@ export default function InteractiveMap({
     average_waiting_time: 0,
     average_queue_length: 0,
   };
-  const summary = simulationResponse?.simulation_result?.result_summary;
+  const summary = activeSimulationResponse?.simulation_result?.result_summary;
 
   const mapCenter: [number, number] = [
     stations[0]?.lat ?? 13.75,
@@ -335,10 +406,10 @@ export default function InteractiveMap({
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
               <li>
-                • Avg. Waiting Time <span className="font-semibold text-purple-700">{stationCard?.average_waiting_time ?? 0} mins</span>
+                • Avg. Waiting Time <span className="font-semibold text-purple-700">{(stationCard?.average_waiting_time ?? 0).toFixed(1)} mins</span>
               </li>
               <li>
-                • Avg. Queue Length <span className="font-semibold text-purple-700">{stationCard?.average_queue_length ?? 0} persons</span>
+                • Avg. Queue Length <span className="font-semibold text-purple-700">{(stationCard?.average_queue_length ?? 0).toFixed(1)} persons</span>
               </li>
             </ul>
           </div>
@@ -353,19 +424,10 @@ export default function InteractiveMap({
               </div>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li>
-                  • Avg. Waiting Time <span className="font-semibold text-purple-700">{summary.average_waiting_time} mins</span>
+                  • Avg. Waiting Time <span className="font-semibold text-purple-700">{summary.average_waiting_time.toFixed(1)} mins</span>
                 </li>
                 <li>
-                  • Avg. Queue Length <span className="font-semibold text-purple-700">{summary.average_queue_length} persons</span>
-                </li>
-                <li>
-                  • Avg. Utilization <span className="font-semibold text-purple-700">{Math.round(summary.average_utilization * 100)}%</span>
-                </li>
-                <li>
-                  • Avg. Traveling Time <span className="font-semibold text-purple-700">{summary.average_travel_time} mins</span>
-                </li>
-                <li>
-                  • Avg. Traveling Distance <span className="font-semibold text-purple-700">{summary.average_travel_distance} km</span>
+                  • Avg. Queue Length <span className="font-semibold text-purple-700">{summary.average_queue_length.toFixed(1)} persons</span>
                 </li>
               </ul>
             </div>

@@ -247,6 +247,7 @@ export default function Scenario({
     Set<string>
   >(new Set());
   const colorPickerRef = useRef<HTMLDivElement | null>(null);
+  const scheduleDataRef = useRef<Array<{ route_id: string; schedule_list: string }>>([]);
   const [simStartHour, setSimStartHour] = useState<number>(8);
   const [simEndHour, setSimEndHour] = useState<number>(16);
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
@@ -549,8 +550,12 @@ export default function Scenario({
     const route = routes.find((r) => r.id === selectedRouteId);
     if (!route || route.locked) return;
 
-    // If already in the route, don't add again
-    if (route.stations.includes(stationId)) return;
+    // Prevent consecutive duplicate stations (same station back-to-back)
+    const lastStation = route.stations[route.stations.length - 1];
+    if (lastStation === stationId) {
+      alert("Cannot add the same station consecutively");
+      return;
+    }
 
     // Just add the station without fetching geometry yet
     // Geometry will be fetched when confirm is clicked
@@ -602,6 +607,12 @@ export default function Scenario({
           bus_scenario_id: "bus-" + currentScenarioId, // to be filled by backend
         })
       );
+
+      // Store schedule data in ref for playbackSeed
+      scheduleDataRef.current = scheduleData.ScheduleData.map((sd) => ({
+        route_id: routes.find(r => r.name === sd.RoutePathID)?.id || sd.RoutePathID,
+        schedule_list: sd.ScheduleList,
+      }));
 
       const busInformations: BusInformation[] = routes.map((r) => ({
         bus_information_id: `${r.id}-businfo`,
@@ -723,6 +734,21 @@ export default function Scenario({
       color: r.color,
       segments: r.segments,
     })),
+    routeStations: routes.map((r) => ({
+      route_id: r.id,
+      station_ids: r.stations,
+    })),
+    simWindow: `${simStartHour.toString().padStart(2, '0')}:00-${simEndHour.toString().padStart(2, '0')}:00`,
+    timeSlotMinutes: parseInt(timeSlot.split(" ")[0]),
+    simulationResponse: simulationResponse,
+    busInfo: routes.map((r) => ({
+      route_id: r.id,
+      max_bus: r.maxBuses,
+      speed: r.speed,
+      capacity: r.capacity,
+    })),
+    routeResults: simulationResponse?.simulation_result?.slot_results?.[0]?.result_route || [],
+    scheduleData: scheduleDataRef.current,
   };
 
   const onBackClickInOutputPage = () => {

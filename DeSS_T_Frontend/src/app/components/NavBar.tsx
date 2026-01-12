@@ -20,7 +20,7 @@ export default function Nav({
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleConfirmLeave = () => {
-    onBackClick && onBackClick();
+    onBackClick?.();
   };
 
   const handleCancelLeave = () => {

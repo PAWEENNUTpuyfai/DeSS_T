@@ -772,20 +772,7 @@ export default function Scenario({
     })),
     routeResults: simulationResponse?.simulation_result?.slot_results?.[0]?.result_route || [],
     scheduleData: (() => {
-      // Priority: use scheduleData from simulationResponse, fallback to file upload
-      const scheduleList = simulationResponse?.scenario?.bus_scenario?.schedule_data || [];
-      if (scheduleList.length > 0) {
-        return scheduleList.map((schedule: any) => {
-          // Match route by name prefix (e.g., "Route 1" from "Route 1-scenario-detail-...")
-          const matchingRoute = routes.find((r) =>
-            schedule.route_path_id?.startsWith(r.name)
-          );
-          return {
-            route_id: matchingRoute?.id || schedule.route_path_id,
-            schedule_list: schedule.schedule_list || schedule.ScheduleList,
-          };
-        });
-      }
+      // Use scheduleData from file upload (simulationResponse doesn't contain scenario data)
       return scheduleDataRef.current;
     })(),
   };

@@ -157,6 +157,9 @@ export default function Dashboard({
     
     simulationResponse.simulation_result.slot_results.forEach((slot) => {
       slot.result_route.forEach((route) => {
+        // Skip slots with 0 or near-zero values (no real data)
+        if (route.average_travel_time <= 0) return;
+        
         const existing = routeTimeMap.get(route.route_id);
         if (existing) {
           existing.sum += route.average_travel_time;
@@ -169,7 +172,7 @@ export default function Dashboard({
     
     const result = Array.from(routeTimeMap.entries()).map(([routeId, data]) => [
       routeId,
-      data.sum / data.count,
+      data.count > 0 ? data.sum / data.count : 0,
     ] as [string, number]);
     
     console.log('⏱️ RouteBarChart Time Data:', {
@@ -193,6 +196,9 @@ export default function Dashboard({
     
     simulationResponse.simulation_result.slot_results.forEach((slot) => {
       slot.result_route.forEach((route) => {
+        // Skip slots with 0 or near-zero values (no real data)
+        if (route.average_travel_distance <= 0) return;
+        
         const existing = routeDistanceMap.get(route.route_id);
         if (existing) {
           existing.sum += route.average_travel_distance;
@@ -205,7 +211,7 @@ export default function Dashboard({
     
     const result = Array.from(routeDistanceMap.entries()).map(([routeId, data]) => [
       routeId,
-      data.sum / data.count,
+      data.count > 0 ? data.sum / data.count : 0,
     ] as [string, number]);
     
     console.log('🚗 RouteBarChart Distance Data:', {
@@ -299,13 +305,13 @@ export default function Dashboard({
     const waitingTimeMinutes = summary.average_waiting_time / 60;
     const waitingTimeDisplay = waitingTimeMinutes > 1 
       ? `${waitingTimeMinutes.toFixed(1)} mins`
-      : `${summary.average_waiting_time.toFixed(1)} secs`;
+      : `${summary.average_waiting_time.toFixed(1)} mins`;
     
     // Convert traveling time from seconds to minutes
     const travelingTimeMinutes = summary.average_travel_time / 60;
     const travelingTimeDisplay = travelingTimeMinutes > 1
       ? `${travelingTimeMinutes.toFixed(1)} mins`
-      : `${summary.average_travel_time.toFixed(1)} secs`;
+      : `${summary.average_travel_time.toFixed(1)} mins`;
     
     // Convert traveling distance from meters to km
     const travelingDistanceKm = summary.average_travel_distance / 1000;

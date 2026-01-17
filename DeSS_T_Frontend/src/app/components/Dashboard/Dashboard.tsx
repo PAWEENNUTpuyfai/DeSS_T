@@ -1,10 +1,12 @@
 import "../../../style/Output.css";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SimulationResponse } from "../../models/SimulationModel";
 import type { PlaybackSeed } from "../../pages/Outputpage";
+import { analyzeSimulationResponse, compareWithScenario } from "../../utility/simulationDebug";
 import LineChart from "./LineChart";
 import TopRoutesChart from "./TopRoutesChart";
 import RouteBarChart from "./RouteBarChart";
+import PassengerWaitingHeatmap from "./PassengerWaitingHeatmap";
 
 export default function Dashboard({
   simulationResponse,
@@ -21,6 +23,52 @@ export default function Dashboard({
     "avg-traveling-time" | "avg-traveling-distance"
   >("avg-traveling-time");
 
+  // Validate that simulation routes match what user configured in Scenario
+  useEffect(() => {
+    // Analyze simulation response structure
+    analyzeSimulationResponse(simulationResponse);
+
+    // Compare with scenario
+    if (simulationResponse && playbackSeed?.routes) {
+      const scenarioRouteIds = playbackSeed.routes.map((r) => r.id);
+      compareWithScenario(simulationResponse, scenarioRouteIds);
+    }
+
+    if (!simulationResponse || !playbackSeed?.routes) return;
+
+    const seedRoutes = playbackSeed.routes;
+    const seedRouteNames = new Set(seedRoutes.map((r) => r.name));
+
+    // Extract unique routes from simulation
+    const simRouteSet = new Map<string, string>();
+    simulationResponse.simulation_result.slot_results.forEach((slot) => {
+      slot.result_route.forEach((route) => {
+        if (!simRouteSet.has(route.route_id)) {
+          // Extract route name from route_id (backend may append suffixes)
+          const nameMatch = route.route_id.match(/^(.*?)(?:-scenario-detail-|-bus-scenario-|-\d{13,})/i);
+          const routeName = nameMatch ? nameMatch[1].trim() : route.route_id;
+          simRouteSet.set(route.route_id, routeName);
+        }
+      });
+    });
+
+    const simRouteNames = new Set(Array.from(simRouteSet.values()));
+    const missingRoutes: string[] = [];
+    const unexpectedRoutes: string[] = [];
+
+    seedRoutes.forEach((r) => {
+      if (!simRouteNames.has(r.name)) {
+        missingRoutes.push(r.name);
+      }
+    });
+
+    simRouteNames.forEach((name) => {
+      if (!seedRouteNames.has(name)) {
+        unexpectedRoutes.push(name);
+      }
+    });
+  }, [simulationResponse, playbackSeed?.routes]);
+
   // Extract data from simulationResponse, using route names from playbackSeed
   const allRoutes = useMemo(() => {
     const routes: [string, string, string][] = [];
@@ -36,20 +84,27 @@ export default function Dashboard({
       "#7a644e",
     ];
 
-    // Build route map from playbackSeed for quick lookup
-    const routeNameMap = new Map(
-      (playbackSeed?.routes ?? []).map((r) => [r.id, r.name])
+    // Build route map from playbackSeed by name for matching
+    const seedRoutesByName = new Map(
+      (playbackSeed?.routes ?? []).map((r) => [r.name, { color: r.color, id: r.id }])
     );
 
     simulationResponse.simulation_result.slot_results.forEach((slot) => {
       slot.result_route.forEach((route) => {
         if (!routes.find((r) => r[0] === route.route_id)) {
-          const positionalName = playbackSeed?.routes?.[routes.length]?.name;
-          const routeName = routeNameMap.get(route.route_id) || positionalName || `Route ${routes.length + 1}`;
+          // Extract route name from backend's route_id
+          const nameMatch = route.route_id.match(/^(.*?)(?:-scenario-detail-|-bus-scenario-|-\d{13,})/i);
+          const extractedName = nameMatch ? nameMatch[1].trim() : route.route_id;
+          
+          // Try to find matching seed route by name
+          const seedRoute = seedRoutesByName.get(extractedName);
+          const displayName = seedRoute ? extractedName : (playbackSeed?.routes?.[routes.length]?.name || extractedName);
+          const color = seedRoute?.color || (playbackSeed?.routes?.[routes.length]?.color) || colors[routes.length % colors.length];
+          
           routes.push([
             route.route_id,
-            routeName,
-            colors[routes.length % colors.length],
+            displayName,
+            color,
           ]);
         }
       });
@@ -98,55 +153,142 @@ export default function Dashboard({
 
   // Extract traveling time data
   const travelingTimeData: [string, number][] = useMemo(() => {
-    return simulationResponse.simulation_result.slot_results
-      .flatMap((slot) =>
-        slot.result_route.map(
-          (route) =>
-            [route.route_id, route.average_travel_time] as [string, number]
-        )
-      )
-      .reduce((acc, [routeId, time]) => {
-        const existing = acc.find((item) => item[0] === routeId);
+    const routeTimeMap = new Map<string, { sum: number; count: number }>();
+    
+    simulationResponse.simulation_result.slot_results.forEach((slot) => {
+      slot.result_route.forEach((route) => {
+        const existing = routeTimeMap.get(route.route_id);
         if (existing) {
-          existing[1] = (existing[1] + time) / 2;
+          existing.sum += route.average_travel_time;
+          existing.count += 1;
         } else {
-          acc.push([routeId, time]);
+          routeTimeMap.set(route.route_id, { sum: route.average_travel_time, count: 1 });
         }
-        return acc;
-      }, [] as [string, number][]);
+      });
+    });
+    
+    const result = Array.from(routeTimeMap.entries()).map(([routeId, data]) => [
+      routeId,
+      data.sum / data.count,
+    ] as [string, number]);
+    
+    console.log('⏱️ RouteBarChart Time Data:', {
+      raw: result,
+      inMinutes: result.map(([id, seconds]) => [id, (seconds / 60).toFixed(2) + ' mins']),
+      sample: simulationResponse.simulation_result.slot_results.slice(0, 2).map(s => ({
+        slot: s.slot_name,
+        routes: s.result_route.map(r => ({
+          id: r.route_id,
+          time_seconds: r.average_travel_time,
+          time_minutes: (r.average_travel_time / 60).toFixed(2)
+        }))
+      }))
+    });
+    return result;
   }, [simulationResponse]);
 
   // Extract traveling distance data
   const travelingDistanceData: [string, number][] = useMemo(() => {
-    return simulationResponse.simulation_result.slot_results
-      .flatMap((slot) =>
-        slot.result_route.map(
-          (route) =>
-            [route.route_id, route.average_travel_distance] as [string, number]
-        )
-      )
-      .reduce((acc, [routeId, distance]) => {
-        const existing = acc.find((item) => item[0] === routeId);
+    const routeDistanceMap = new Map<string, { sum: number; count: number }>();
+    
+    simulationResponse.simulation_result.slot_results.forEach((slot) => {
+      slot.result_route.forEach((route) => {
+        const existing = routeDistanceMap.get(route.route_id);
         if (existing) {
-          existing[1] = (existing[1] + distance) / 2;
+          existing.sum += route.average_travel_distance;
+          existing.count += 1;
         } else {
-          acc.push([routeId, distance]);
+          routeDistanceMap.set(route.route_id, { sum: route.average_travel_distance, count: 1 });
         }
-        return acc;
-      }, [] as [string, number][]);
+      });
+    });
+    
+    const result = Array.from(routeDistanceMap.entries()).map(([routeId, data]) => [
+      routeId,
+      data.sum / data.count,
+    ] as [string, number]);
+    
+    console.log('🚗 RouteBarChart Distance Data:', {
+      raw: result,
+      inKm: result.map(([id, meters]) => [id, (meters / 1000).toFixed(2) + ' km']),
+      sample: simulationResponse.simulation_result.slot_results.slice(0, 2).map(s => ({
+        slot: s.slot_name,
+        routes: s.result_route.map(r => ({
+          id: r.route_id,
+          distance_meters: r.average_travel_distance,
+          distance_km: (r.average_travel_distance / 1000).toFixed(2)
+        }))
+      }))
+    });
+    return result;
   }, [simulationResponse]);
 
-  // Build dataset from slot results
+  // Build dataset from slot results based on selected mode
   const dataset = useMemo(() => {
     const data: [string, string, number][] = [];
 
     simulationResponse.simulation_result.slot_results.forEach((slot) => {
       slot.result_route.forEach((route) => {
-        data.push([slot.slot_name, route.route_id, route.average_queue_length]);
+        let value: number;
+        switch (moded1) {
+          case "avg-waiting-time":
+            // Convert seconds to minutes
+            value = route.average_waiting_time / 60;
+            break;
+          case "avg-queue-length":
+            value = route.average_queue_length;
+            break;
+          case "avg-utilization":
+            // Convert to percentage
+            value = route.average_utilization * 100;
+            break;
+          default:
+            value = route.average_queue_length;
+        }
+        
+        // Extract start time from range format (e.g., "08:00-08:15" -> "08:00")
+        const timeStr = slot.slot_name.split("-")[0].trim();
+        data.push([timeStr, route.route_id, value]);
       });
     });
 
+    console.log('📊 LineChart Dataset:', {
+      mode: moded1,
+      dataPoints: data.length,
+      routes: Array.from(new Set(data.map(d => d[1]))),
+      sample: data.slice(0, 5),
+      values: data.slice(0, 5).map(d => d[2]),
+      rawData: simulationResponse.simulation_result.slot_results.slice(0, 2).map(s => ({
+        slot: s.slot_name,
+        routes: s.result_route.map(r => ({
+          id: r.route_id,
+          waiting: r.average_waiting_time,
+          queue: r.average_queue_length,
+          util: r.average_utilization
+        }))
+      }))
+    });
     return data;
+  }, [simulationResponse, moded1]);
+
+  // Extract timeslot from simulation data (assume consistent intervals)
+  const timeslot = useMemo(() => {
+    const slots = simulationResponse.simulation_result.slot_results;
+    
+    if (slots.length < 2) return 15; // default 15 minutes
+    
+    // Parse time slots (e.g., "08:00-08:15", "08:15-08:30")
+    // Extract start time from range format
+    const parseTime = (timeStr: string): number => {
+      const firstTime = timeStr.split("-")[0].trim();
+      const [h, m] = firstTime.split(":").map(Number);
+      return h * 60 + m;
+    };
+    
+    const first = parseTime(slots[0].slot_name);
+    const second = parseTime(slots[1].slot_name);
+    const interval = second - first;
+    return interval > 0 ? interval : 15;
   }, [simulationResponse]);
 
   // Extract summary statistics
@@ -222,7 +364,7 @@ export default function Dashboard({
             </div>
             <div className="m-3 items-end h-full">
               <LineChart
-                timeslot={15}
+                timeslot={timeslot}
                 route={routes}
                 dataset={dataset}
                 mode={moded1}
@@ -269,9 +411,10 @@ export default function Dashboard({
       <div className="flex gap-3 w-full mt-3 justify-center items-stretch">
         <div className="w-[40%] dashboard-block">
           <p className="chart-header mb-2">Passenger Waiting Density</p>
-          <div className="bg-gray-200 rounded flex items-center justify-center h-[90%]">
-            <span className="text-gray-500">Map placeholder</span>
-          </div>
+          <PassengerWaitingHeatmap
+            simulationResponse={simulationResponse}
+            stations={playbackSeed?.stations ?? []}
+          />
         </div>
         <div className="w-[40%] dashboard-block">
           <div className="flex flex-wrap mb-4 mx-auto gap-4">

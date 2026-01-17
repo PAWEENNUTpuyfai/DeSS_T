@@ -28,6 +28,7 @@ import type {
 import { getScheduleData } from "../../utility/api/simulation";
 import type { PaserSchedule } from "../models/ScheduleModel";
 import Nav from "./NavBar";
+import ExcelJS from "exceljs";
 
 export default function Scenario({
   configuration,
@@ -75,7 +76,7 @@ export default function Scenario({
 
     const normalizeStation = (
       raw: unknown,
-      idx: number
+      idx: number,
     ): StationDetail | null => {
       if (!raw || typeof raw !== "object") return null;
       const rec = raw as Record<string, unknown>;
@@ -164,8 +165,8 @@ export default function Scenario({
           index ===
           self.findIndex(
             (s: StationDetail) =>
-              s.station_detail_id === station.station_detail_id
-          )
+              s.station_detail_id === station.station_detail_id,
+          ),
       );
 
       return unique;
@@ -182,8 +183,8 @@ export default function Scenario({
         index ===
         self.findIndex(
           (s: StationDetail) =>
-            s.station_detail_id === station.station_detail_id
-        )
+            s.station_detail_id === station.station_detail_id,
+        ),
     );
 
     return unique;
@@ -201,7 +202,7 @@ export default function Scenario({
       "#83c8f9",
       "#7a644e",
     ],
-    []
+    [],
   );
 
   type SimpleRoute = {
@@ -241,13 +242,15 @@ export default function Scenario({
     Record<string, string[]>
   >({});
   const [openColorPickerId, setOpenColorPickerId] = useState<string | null>(
-    null
+    null,
   );
   const [expandedStationRoutes, setExpandedStationRoutes] = useState<
     Set<string>
   >(new Set());
   const colorPickerRef = useRef<HTMLDivElement | null>(null);
-  const scheduleDataRef = useRef<Array<{ route_id: string; schedule_list: string }>>([]);
+  const scheduleDataRef = useRef<
+    Array<{ route_id: string; schedule_list: string }>
+  >([]);
   const [simStartHour, setSimStartHour] = useState<number>(8);
   const [simEndHour, setSimEndHour] = useState<number>(16);
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
@@ -279,22 +282,22 @@ export default function Scenario({
   const updateBusInfo = (
     routeId: string,
     key: "maxDistance" | "speed" | "capacity" | "maxBuses",
-    value: number
+    value: number,
   ) => {
     setRoutes((prev) =>
-      prev.map((r) => (r.id === routeId ? { ...r, [key]: value } : r))
+      prev.map((r) => (r.id === routeId ? { ...r, [key]: value } : r)),
     );
   };
 
   const updateName = (routeId: string, name: string) => {
     setRoutes((prev) =>
-      prev.map((r) => (r.id === routeId ? { ...r, name } : r))
+      prev.map((r) => (r.id === routeId ? { ...r, name } : r)),
     );
   };
 
   const handleColorPick = (routeId: string, color: ColorResult) => {
     setRoutes((prev) =>
-      prev.map((r) => (r.id === routeId ? { ...r, color: color.hex } : r))
+      prev.map((r) => (r.id === routeId ? { ...r, color: color.hex } : r)),
     );
   };
 
@@ -310,8 +313,8 @@ export default function Scenario({
               ...r,
               hidden: !r.hidden,
             }
-          : r
-      )
+          : r,
+      ),
     );
   };
 
@@ -323,8 +326,8 @@ export default function Scenario({
               ...r,
               locked: !r.locked,
             }
-          : r
-      )
+          : r,
+      ),
     );
   };
 
@@ -350,8 +353,8 @@ export default function Scenario({
         prev.map((r) =>
           r.id === routeId
             ? { ...r, stations: [], segments: [], orders: [] }
-            : r
-        )
+            : r,
+        ),
       );
       setSelectedRouteId(routeId);
       // Expand the station list to show details
@@ -425,7 +428,7 @@ export default function Scenario({
       // Debug: Show actual station sequence
       console.log(
         "📍 Station Sequence (route.stations):",
-        route.stations.map((sid, idx) => `${idx + 1}. ${getStationName(sid)}`)
+        route.stations.map((sid, idx) => `${idx + 1}. ${getStationName(sid)}`),
       );
 
       for (let i = 0; i < route.stations.length - 1; i++) {
@@ -436,7 +439,7 @@ export default function Scenario({
         const matchingPair = stationPairs.find(
           (pair: StationPair) =>
             pair.FstStation === currentStationId &&
-            pair.SndStation === nextStationId
+            pair.SndStation === nextStationId,
         );
 
         if (matchingPair) {
@@ -477,14 +480,16 @@ export default function Scenario({
           station_pair_id: o.station_pair_id,
           from: getStationName(o.station_pair?.FstStation || ""),
           to: getStationName(o.station_pair?.SndStation || ""),
-        }))
+        })),
       );
 
       // Update route with segments and orders
       setRoutes((prev) =>
         prev.map((r) =>
-          r.id === routeId ? { ...r, segments: newSegments, orders: orders } : r
-        )
+          r.id === routeId
+            ? { ...r, segments: newSegments, orders: orders }
+            : r,
+        ),
       );
 
       // Clear editing state
@@ -506,7 +511,7 @@ export default function Scenario({
     const original = originalStations[routeId];
     if (original) {
       setRoutes((prev) =>
-        prev.map((r) => (r.id === routeId ? { ...r, stations: original } : r))
+        prev.map((r) => (r.id === routeId ? { ...r, stations: original } : r)),
       );
     }
     setSelectedRouteId(null);
@@ -520,8 +525,8 @@ export default function Scenario({
   const resetRoutePath = (routeId: string) => {
     setRoutes((prev) =>
       prev.map((r) =>
-        r.id === routeId ? { ...r, stations: [], segments: [], orders: [] } : r
-      )
+        r.id === routeId ? { ...r, stations: [], segments: [], orders: [] } : r,
+      ),
     );
   };
 
@@ -561,8 +566,8 @@ export default function Scenario({
     // Geometry will be fetched when confirm is clicked
     setRoutes((prev) =>
       prev.map((r) =>
-        r.id === route.id ? { ...r, stations: [...r.stations, stationId] } : r
-      )
+        r.id === route.id ? { ...r, stations: [...r.stations, stationId] } : r,
+      ),
     );
   };
 
@@ -595,7 +600,7 @@ export default function Scenario({
 
       const scheduleData: PaserSchedule = await getScheduleData(
         currentScenarioId,
-        busScheduleFile
+        busScheduleFile,
       );
       console.log("Schedule Data received:", scheduleData);
 
@@ -605,12 +610,13 @@ export default function Scenario({
           schedule_list: sd.ScheduleList,
           route_path_id: sd.RoutePathID,
           bus_scenario_id: "bus-" + currentScenarioId, // to be filled by backend
-        })
+        }),
       );
 
       // Store schedule data in ref for playbackSeed
       scheduleDataRef.current = scheduleData.ScheduleData.map((sd) => ({
-        route_id: routes.find(r => r.name === sd.RoutePathID)?.id || sd.RoutePathID,
+        route_id:
+          routes.find((r) => r.name === sd.RoutePathID)?.id || sd.RoutePathID,
         schedule_list: sd.ScheduleList,
       }));
 
@@ -679,7 +685,7 @@ export default function Scenario({
       console.error("Simulation failed:", error);
       alert(
         "Simulation failed: " +
-          (error instanceof Error ? error.message : "Unknown error")
+          (error instanceof Error ? error.message : "Unknown error"),
       );
     }
   };
@@ -706,6 +712,52 @@ export default function Scenario({
     setBusScheduleFile(file);
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      // สร้าง workbook ใหม่
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Bus Schedule");
+
+      // สร้าง header row โดยใช้ชื่อ route แต่ละตัว
+      const headerRow = routes.map((route) => route.name);
+      worksheet.addRow(headerRow);
+
+      // จัด style ให้ header
+      worksheet.getRow(1).font = { bold: true, size: 12 };
+      worksheet.getRow(1).alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      worksheet.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE0E0E0" },
+      };
+
+      // ตั้งความกว้างของ column
+      routes.forEach((_, index) => {
+        worksheet.getColumn(index + 1).width = 20;
+      });
+
+      // Export เป็นไฟล์ .xlsx
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `bus-schedule-template-${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating template:", error);
+      alert("Failed to generate template");
+    }
+  };
+
   const validStations = useMemo(
     () =>
       nodes
@@ -714,7 +766,7 @@ export default function Scenario({
             !!st.station_detail_id &&
             !!st.name &&
             st.lat !== undefined &&
-            st.lon !== undefined
+            st.lon !== undefined,
         )
         .map((st) => ({
           id: st.station_detail_id as string,
@@ -722,7 +774,7 @@ export default function Scenario({
           lat: st.lat as number,
           lon: st.lon as number,
         })),
-    [nodes]
+    [nodes],
   );
 
   // Generate playbackSeed for Interactive Map
@@ -744,16 +796,20 @@ export default function Scenario({
       stations: r.stations.map((stationId, idx) => {
         const station = validStations.find((st) => st.id === stationId);
         const totalStations = r.stations.length;
-        const positionProgress = totalStations > 1 ? idx / (totalStations - 1) : 0;
+        const positionProgress =
+          totalStations > 1 ? idx / (totalStations - 1) : 0;
         return {
           station_id: stationId,
           station_name: station?.name || "Unknown",
           position: positionProgress,
-          coordinates: [station?.lat ?? 0, station?.lon ?? 0] as [number, number],
+          coordinates: [station?.lat ?? 0, station?.lon ?? 0] as [
+            number,
+            number,
+          ],
         };
       }),
     })),
-    simWindow: `${simStartHour.toString().padStart(2, '0')}:00-${simEndHour.toString().padStart(2, '0')}:00`,
+    simWindow: `${simStartHour.toString().padStart(2, "0")}:00-${simEndHour.toString().padStart(2, "0")}:00`,
     timeSlotMinutes: parseInt(timeSlot.split(" ")[0]),
     simulationResponse: simulationResponse,
     busInfo: routes.map((r) => ({
@@ -770,7 +826,9 @@ export default function Scenario({
         return sum + travelTime;
       }, 0),
     })),
-    routeResults: simulationResponse?.simulation_result?.slot_results?.[0]?.result_route || [],
+    routeResults:
+      simulationResponse?.simulation_result?.slot_results?.[0]?.result_route ||
+      [],
     scheduleData: (() => {
       // Use scheduleData from file upload (simulationResponse doesn't contain scenario data)
       return scheduleDataRef.current;
@@ -783,7 +841,7 @@ export default function Scenario({
 
   return (
     <>
-      <Nav usermode={usermode} inpage="Project" onBackClick={onBack}/>
+      <Nav usermode={usermode} inpage="Project" onBackClick={onBack} />
       <main className="">
         <div className="h-[85px]"></div>
         {simulationResponse ? (
@@ -954,14 +1012,14 @@ export default function Scenario({
                                     onClick={() =>
                                       !isDisabled &&
                                       setOpenColorPickerId((prev) =>
-                                        prev === r.id ? null : r.id
+                                        prev === r.id ? null : r.id,
                                       )
                                     }
                                     onKeyDown={(e) =>
                                       e.key === "Enter" &&
                                       !isDisabled &&
                                       setOpenColorPickerId((prev) =>
-                                        prev === r.id ? null : r.id
+                                        prev === r.id ? null : r.id,
                                       )
                                     }
                                     aria-label="Change color"
@@ -1302,7 +1360,7 @@ export default function Scenario({
                           onClick={() =>
                             (
                               document.getElementById(
-                                "bus-schedule-file"
+                                "bus-schedule-file",
                               ) as HTMLInputElement | null
                             )?.click()
                           }
@@ -1332,6 +1390,19 @@ export default function Scenario({
                               </p>
                             </>
                           )}
+                        </div>
+                        <div className="mt-2">
+                          <span>
+                            <span
+                              onClick={handleDownloadTemplate}
+                              className="text-[#81069e] underline hover:text-[#323232] cursor-pointer"
+                            >
+                              Click here
+                            </span>
+                            <span className="ml-3">
+                              to download the .xlsx template
+                            </span>
+                          </span>
                         </div>
                       </div>
 
@@ -1397,7 +1468,7 @@ export default function Scenario({
                                         updateBusInfo(
                                           route.id,
                                           field.key,
-                                          Number(e.target.value)
+                                          Number(e.target.value),
                                         )
                                       }
                                       disabled={busLocked}
@@ -1472,7 +1543,7 @@ export default function Scenario({
                       allRoutes={
                         transportMode === "Route"
                           ? routes.filter(
-                              (r) => !r.hidden && r.id !== selectedRouteId
+                              (r) => !r.hidden && r.id !== selectedRouteId,
                             )
                           : routes.filter((r) => !r.hidden)
                       }

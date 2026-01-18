@@ -45,29 +45,44 @@ func ConnectDatabase() {
 	// 	&models.User{},
 	// 	&models.PythonLog{},
 	// )
-	err = db.AutoMigrate(
+	// Migrate in dependency order to satisfy FK constraints
+	if err = db.AutoMigrate(
+		// Core lookup tables first
 		&model_database.User{},
 		&model_database.CoverImageProject{},
 		&model_database.CoverImageConf{},
-		&model_database.PublicScenario{},
-		&model_database.UserScenario{},
-		&model_database.ScenarioDetail{},
+		&model_database.StationDetail{},
+		&model_database.RouteBetween{},
+		// Network and configuration roots
+		&model_database.NetworkModel{},
+		&model_database.ConfigurationDetail{},
+		// Transport graph roots
 		&model_database.BusScenario{},
-		&model_database.ScheduleData{},
-		&model_database.BusInformation{},
 		&model_database.RouteScenario{},
 		&model_database.RoutePath{},
+	); err != nil {
+		log.Fatal("❌ AutoMigrate failed:", err)
+	}
+
+	if err = db.AutoMigrate(
+		// Transport dependents
+		&model_database.ScheduleData{},
+		&model_database.BusInformation{},
+		&model_database.StationPair{},
 		&model_database.Order{},
-		&model_database.UserConfiguration{},
-		&model_database.PublicConfiguration{},
-		&model_database.ConfigurationDetail{},
+		// Scenario detail and passenger data
+		&model_database.ConfigurationDetail{}, // ensure present before child tables
+		&model_database.ScenarioDetail{},
 		&model_database.AlightingData{},
 		&model_database.InterArrivalData{},
-		&model_database.NetworkModel{},
-		&model_database.StationDetail{},
-		&model_database.StationPair{},
-		&model_database.RouteBetween{},
-	)
+		// Scenario/publication wrappers
+		&model_database.UserScenario{},
+		&model_database.PublicScenario{},
+		&model_database.UserConfiguration{},
+		&model_database.PublicConfiguration{},
+	); err != nil {
+		log.Fatal("❌ AutoMigrate failed:", err)
+	}
 
 	if err != nil {
 		log.Fatal("❌ AutoMigrate failed:", err)

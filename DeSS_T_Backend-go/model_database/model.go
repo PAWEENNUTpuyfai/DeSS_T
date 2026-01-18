@@ -86,11 +86,11 @@ type PublicScenario struct {
 	Description      string    `json:"description"`
 	ModifyDate       time.Time `json:"modify_date"`
 	PublishDate      time.Time `json:"publish_date"`
-	CreateBy         string    `json:"create_by"`
-	PublishBy        string    `json:"publish_by"`
-	OriginFrom       string    `json:"origin_from"`
-	CoverImgID       string    `json:"cover_img"`
-	ScenarioDetailID string    `json:"scenario_detail"`
+	CreateBy         string    `json:"create_by" gorm:"column:create_by"`
+	PublishBy        string    `json:"publish_by" gorm:"column:publish_by"`
+	OriginFrom       string    `json:"origin_from" gorm:"column:origin_from"`
+	CoverImgID       string    `json:"cover_img" gorm:"column:cover_img"`
+	ScenarioDetailID string    `json:"scenario_detail" gorm:"column:scenario_detail"`
 
 	CoverImage     CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
 	ScenarioDetail ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID"`
@@ -101,9 +101,9 @@ type UserScenario struct {
 	UserScenarioID   string    `gorm:"primaryKey" json:"user_scenario_id"`
 	Name             string    `json:"name"`
 	ModifyDate       time.Time `json:"modify_date"`
-	CreateBy         string    `json:"create_by"`
-	CoverImgID       string    `json:"cover_img"`
-	ScenarioDetailID string    `json:"scenario_detail"`
+	CreateBy         string    `json:"create_by" gorm:"column:create_by"`
+	CoverImgID       string    `json:"cover_img" gorm:"column:cover_img"`
+	ScenarioDetailID string    `json:"scenario_detail" gorm:"column:scenario_detail"`
 
 	CoverImage     CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
 	ScenarioDetail ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID"`
@@ -111,20 +111,19 @@ type UserScenario struct {
 
 // ------------------- SCENARIO DETAIL --------------------
 type ScenarioDetail struct {
-	ScenarioDetailID string `gorm:"primaryKey" json:"scenario_detail_id"`
-	BusScenarioID    string `json:"bus_scenario"`
-	RouteScenarioID  string `json:"route_scenario"`
+	ScenarioDetailID      string `gorm:"primaryKey" json:"scenario_detail_id"`
+	BusScenarioID         string `json:"bus_scenario" gorm:"column:bus_scenario"`
+	RouteScenarioID       string `json:"route_scenario" gorm:"column:route_scenario"`
+	ConfigurationDetailID string `json:"configuration_detail" gorm:"column:configuration_detail"`
 
-	BusScenario   BusScenario   `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
-	RouteScenario RouteScenario `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
+	BusScenario         BusScenario         `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
+	RouteScenario       RouteScenario       `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- BUS SCENARIO --------------------
 type BusScenario struct {
-	BusScenarioID  string `gorm:"primaryKey" json:"bus_scenario_id"`
-
-	ScheduleData    []ScheduleData   `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
-	BusInformations []BusInformation `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
+	BusScenarioID string `gorm:"primaryKey" json:"bus_scenario_id"`
 }
 
 // ------------------- SCHEDULE DATA --------------------
@@ -154,8 +153,6 @@ type BusInformation struct {
 // ------------------- ROUTE SCENARIO --------------------
 type RouteScenario struct {
 	RouteScenarioID string `gorm:"primaryKey" json:"route_scenario_id"`
-
-	RoutePaths []RoutePath `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ROUTE PATH --------------------
@@ -165,8 +162,6 @@ type RoutePath struct {
 	Color           string `json:"color"`
 	RouteScenarioID string `json:"route_scenario"`
 	Route           string `json:"route" gorm:"type:geometry(LINESTRING,4326)"`
-
-	Orders []Order `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE"`
 }
 
 // ------------------- ORDER --------------------
@@ -185,9 +180,9 @@ type UserConfiguration struct {
 	UserConfigurationID   string    `gorm:"primaryKey" json:"user_configuration_id"`
 	Name                  string    `json:"name"`
 	ModifyDate            time.Time `json:"modify_date"`
-	CreateBy              string    `json:"create_by"`
-	CoverImgID            string    `json:"cover_img"`
-	ConfigurationDetailID string    `json:"configuration_detail"`
+	CreateBy              string    `json:"create_by" gorm:"column:create_by"`
+	CoverImgID            string    `json:"cover_img" gorm:"column:cover_img"`
+	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail"`
 
 	CoverImage CoverImageConf `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
 }
@@ -199,11 +194,11 @@ type PublicConfiguration struct {
 	Description           string    `json:"description"`
 	ModifyDate            time.Time `json:"modify_date"`
 	PublishDate           time.Time `json:"publish_date"`
-	CoverImgID            string    `json:"cover_img"`
-	CreateBy              string    `json:"create_by"`
-	PublishBy             string    `json:"publish_by"`
-	OriginFrom            string    `json:"origin_from"`
-	ConfigurationDetailID string    `json:"configuration_detail"`
+	CoverImgID            string    `json:"cover_img" gorm:"column:cover_img"`
+	CreateBy              string    `json:"create_by" gorm:"column:create_by"`
+	PublishBy             string    `json:"publish_by" gorm:"column:publish_by"`
+	OriginFrom            string    `json:"origin_from" gorm:"column:origin_from"`
+	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail"`
 
 	CoverImage CoverImageConf `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
 }
@@ -211,46 +206,39 @@ type PublicConfiguration struct {
 // ------------------- CONFIGURATION DETAIL --------------------
 type ConfigurationDetail struct {
 	ConfigurationDetailID string `gorm:"primaryKey" json:"configuration_detail_id"`
-	NetworkModelID        string `json:"network_model"`
-	
-	NetworkModel      NetworkModel       `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
-	AlightingData      []AlightingData    `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
-    InterArrivalData   []InterArrivalData `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+	NetworkModelID        string `json:"network_model" gorm:"column:network_model"`
+
+	NetworkModel NetworkModel `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ALIGHTING DATA --------------------
 type AlightingData struct {
 	AlightingDataID       string `gorm:"primaryKey" json:"alighting_data_id"`
-	ConfigurationDetailID string `json:"configuration_detail_id"`
-	TimePeriod            string `json:"time_period"`
-	Distribution          string `json:"distribution_name"`
-	ArgumentList          string `json:"argument_list"`
-	StationID             string `json:"station_id"`
+	ConfigurationDetailID string `json:"configuration_detail_id" gorm:"column:configuration_detail"`
+	TimePeriod            string `json:"time_period" gorm:"column:time_period"`
+	Distribution          string `json:"distribution_name" gorm:"column:distribution_name"`
+	ArgumentList          string `json:"argument_list" gorm:"column:argument_list"`
+	StationID             string `json:"station_id" gorm:"column:station_id"`
 
 	StationDetail StationDetail `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
-	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- INTER ARRIVAL DATA --------------------
 type InterArrivalData struct {
-	InterArrivalDataID    string `gorm:"primaryKey" json:"inter_arrival_data_id"`
-	ConfigurationDetailID string `json:"configuration_detail_id"`
-	TimePeriod            string `json:"time_period"`
-	Distribution          string `json:"distribution_name"`
-	ArgumentList          string `json:"argument_list"`
-	StationID             string `json:"station_id"`
+	InterArrivalDataID    string `gorm:"primaryKey" json:"interarrival_data_id"`
+	ConfigurationDetailID string `json:"configuration_detail_id" gorm:"column:configuration_detail"`
+	TimePeriod            string `json:"time_period" gorm:"column:time_period"`
+	Distribution          string `json:"distribution_name" gorm:"column:distribution_name"`
+	ArgumentList          string `json:"argument_list" gorm:"column:argument_list"`
+	StationID             string `json:"station_id" gorm:"column:station_id"`
 
 	StationDetail StationDetail `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
-	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- NETWORK MODEL --------------------
 type NetworkModel struct {
 	NetworkModelID string `gorm:"primaryKey" json:"network_model_id"`
 	Name           string `json:"Network_model" gorm:"-"` // API response only (not stored in DB)
-
-	StationPairs   []StationPair   `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"StationPair,omitempty"`
-	StationDetails []StationDetail `gorm:"many2many:network_stations;" json:"Station_detail,omitempty"`
 }
 
 // ------------------- STATION DETAIL --------------------
@@ -268,10 +256,10 @@ type StationDetail struct {
 // ------------------- STATION PAIR --------------------
 type StationPair struct {
 	StationPairID  string `gorm:"primaryKey" json:"StationPairID"`
-	FstStationID   string `json:"FstStation" gorm:"column:fst_station_id"`
-	SndStationID   string `json:"SndStation" gorm:"column:snd_station_id"`
-	RouteBetweenID string `json:"route_between_id" gorm:"column:route_between_id"`
-	NetworkModelID string `json:"network_model_id" gorm:"column:network_model_id"`
+	FstStationID   string `json:"FstStation" gorm:"column:fst_station"`
+	SndStationID   string `json:"SndStation" gorm:"column:snd_station"`
+	RouteBetweenID string `json:"route_between_id" gorm:"column:route_between"`
+	NetworkModelID string `json:"network_model_id" gorm:"column:network_model"`
 
 	FstStation   StationDetail `gorm:"foreignKey:FstStationID;constraint:OnDelete:CASCADE;" json:"-"`
 	SndStation   StationDetail `gorm:"foreignKey:SndStationID;constraint:OnDelete:CASCADE;" json:"-"`

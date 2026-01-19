@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 interface HelpButtonProps {
-  helpType: "Alighting" | "Interarrival" | "Schedule" | "Map";
+  helpType: "Alighting" | "Interarrival" | "Schedule" | "Map" | "Heatmap";
 }
 
 export default function HelpButton({ helpType }: HelpButtonProps) {
@@ -45,18 +45,49 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
             </>
           ),
         };
+      case "Heatmap":
+        return {
+          title: "Passenger Waiting Density",
+          content: (
+            <>
+              <div className="px-4 py-2 border-b border-gray-200">
+                <div className="mb-3">
+                  <div className="text-sm mb-2">Queue Length (Color)</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-600">Low</span>
+                    <div
+                      className="flex-1 h-4 rounded"
+                      style={{
+                        background:
+                          "linear-gradient(to right, #0096ff, #00ff00, #ffff00, #ff8800, #ff0000)",
+                      }}
+                    ></div>
+                    <span className="text-xs text-gray-600">High</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm mb-2">Waiting Time (Blur Width)</div>
+                  <p className="text-xs text-gray-600">
+                    Thicker/wider blur = longer waiting time
+                  </p>
+                </div>
+              </div>
+            </>
+          ),
+        };
       case "Map":
         return {
-          title: "Map Configuration Help",
+          title: "Map Interaction Help",  
           content: (
             <>
               <p className="mb-3">
-                Configure your simulation scenario parameters including bus
-                capacity, number of buses, and simulation duration.
+                Use the map to visualize bus routes and station locations. You
+                can zoom in and out using the mouse wheel or the zoom controls  
+                on the map. Click and drag to pan around the map area.
               </p>
               <p>
-                Adjust the settings according to your analysis requirements and
-                run the simulation to see results.
+                The map provides an interactive way to explore the transit
+                system and analyze simulation results.  
               </p>
             </>
           ),

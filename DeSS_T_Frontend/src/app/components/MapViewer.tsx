@@ -35,7 +35,7 @@ export default function MapViewer({
   areaCode,
   stationDetails,
 }: MapViewerProps) {
-  const [center, setCenter] = useState<LatLng>([13.75, 100.5]);
+  const [center, setCenter] = useState<LatLng>([18.7993267, 98.9527566]);
   const [bounds, setBounds] = useState<
     [[number, number], [number, number]] | undefined
   >();

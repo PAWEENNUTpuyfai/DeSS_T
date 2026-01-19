@@ -115,7 +115,7 @@ export default function Dashboard({
 
   // Track selected routes
   const [selectedRoutes, setSelectedRoutes] = useState<string[]>(() =>
-    allRoutes.slice(0, 2).map((r) => r[0])
+    allRoutes.map((r) => r[0])
   );
 
   // Filter routes for display
@@ -174,19 +174,6 @@ export default function Dashboard({
       routeId,
       data.count > 0 ? data.sum / data.count : 0,
     ] as [string, number]);
-    
-    console.log('⏱️ RouteBarChart Time Data:', {
-      raw: result,
-      inMinutes: result.map(([id, seconds]) => [id, (seconds / 60).toFixed(2) + ' mins']),
-      sample: simulationResponse.simulation_result.slot_results.slice(0, 2).map(s => ({
-        slot: s.slot_name,
-        routes: s.result_route.map(r => ({
-          id: r.route_id,
-          time_seconds: r.average_travel_time,
-          time_minutes: (r.average_travel_time / 60).toFixed(2)
-        }))
-      }))
-    });
     return result;
   }, [simulationResponse]);
 
@@ -213,24 +200,29 @@ export default function Dashboard({
       routeId,
       data.count > 0 ? data.sum / data.count : 0,
     ] as [string, number]);
-    
-    console.log('🚗 RouteBarChart Distance Data:', {
-      raw: result,
-      inKm: result.map(([id, meters]) => [id, (meters / 1000).toFixed(2) + ' km']),
-      sample: simulationResponse.simulation_result.slot_results.slice(0, 2).map(s => ({
-        slot: s.slot_name,
-        routes: s.result_route.map(r => ({
-          id: r.route_id,
-          distance_meters: r.average_travel_distance,
-          distance_km: (r.average_travel_distance / 1000).toFixed(2)
-        }))
-      }))
-    });
     return result;
   }, [simulationResponse]);
 
+  // Debug: Log the dataset used by moded4 (time/distance) in readable units
+  useEffect(() => {
+    const dataset =
+      moded4 === "avg-traveling-time" ? travelingTimeData : travelingDistanceData;
+
+    const pretty: Array<[string, string]> = dataset.map(([routeId, value]) => {
+      if (moded4 === "avg-traveling-time") {
+        return [routeId, value.toFixed(2) + " mins"]; // already in minutes from backend
+      }
+      return [routeId, (value / 1000).toFixed(2) + " km"]; // meters -> km
+    });
+
+    const routeNames: Record<string, string> = {};
+    allRoutes.forEach(([id, name]) => {
+      routeNames[id] = name;
+    });
+  }, [moded4, travelingTimeData, travelingDistanceData, allRoutes]);
+
   // Build dataset from slot results based on selected mode
-  const dataset = useMemo(() => {
+  const fullDataset = useMemo(() => {
     const data: [string, string, number][] = [];
 
     simulationResponse.simulation_result.slot_results.forEach((slot) => {
@@ -258,24 +250,13 @@ export default function Dashboard({
       });
     });
 
-    console.log('📊 LineChart Dataset:', {
-      mode: moded1,
-      dataPoints: data.length,
-      routes: Array.from(new Set(data.map(d => d[1]))),
-      sample: data.slice(0, 5),
-      values: data.slice(0, 5).map(d => d[2]),
-      rawData: simulationResponse.simulation_result.slot_results.slice(0, 2).map(s => ({
-        slot: s.slot_name,
-        routes: s.result_route.map(r => ({
-          id: r.route_id,
-          waiting: r.average_waiting_time,
-          queue: r.average_queue_length,
-          util: r.average_utilization
-        }))
-      }))
-    });
     return data;
   }, [simulationResponse, moded1]);
+
+  // Filter dataset by selected routes
+  const dataset = useMemo(() => {
+    return fullDataset.filter(([, routeId]) => selectedRoutes.includes(routeId));
+  }, [fullDataset, selectedRoutes]);
 
   // Extract timeslot from simulation data (assume consistent intervals)
   const timeslot = useMemo(() => {

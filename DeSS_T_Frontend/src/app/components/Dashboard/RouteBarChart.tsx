@@ -36,8 +36,8 @@ export default function RouteBarChart({
     // Convert units based on mode
     let displayValue = Number(value);
     if (mode === "avg-traveling-time") {
-      // Convert seconds to minutes
-      displayValue = Number(value) / 60;
+      // Already in minutes from backend
+      displayValue = Number(value);
     } else if (mode === "avg-traveling-distance") {
       // Convert meters to km
       displayValue = Number(value) / 1000;
@@ -86,7 +86,7 @@ export default function RouteBarChart({
   );
 
   // Unit label
-  const yUnit = mode === "avg-traveling-distance" ? "km" : "mins";
+  const yUnit = mode === "avg-traveling-distance" ? "km" : "min";
 
   // Scale helpers
   const yScale = (value: number) => {

@@ -211,12 +211,11 @@ export default function PassengerWaitingHeatmap({
   const centerLon = (minLon + maxLon) / 2;
 
   return (
-    <div className="w-full h-full flex flex-col bg-white rounded-lg">
-
+    <div className="w-full h-[90%] flex flex-col bg-white rounded-lg">
       {/* Map with density heatmap */}
       <div
         className="flex-1 rounded border border-gray-200 overflow-hidden"
-        style={{ minHeight: "250px" }}
+        style={{ minHeight: "200px" }}
       >
         <MapContainer
           center={[centerLat, centerLon]}

@@ -106,7 +106,7 @@ class SimulationEngine:
                 "station_waiting": {s: sim.Monitor() for s in self.stations},
 
                 # ⭐ on-demand queue
-                "station_queue": {s: {"sum": 0.0, "count": 0} for s in self.stations},
+                "station_queue": {s: sim.Monitor(level=True) for s in self.stations},
                 "route_queue": {r: {"sum": 0.0, "count": 0} for r in self.env.route_util_mon},
 
                 "route_waiting": {r: sim.Monitor() for r in self.env.route_util_mon},
@@ -139,17 +139,13 @@ class SimulationEngine:
 
         for slot_data in self.slots.values():
             for v in slot_data["station_queue"].values():
-                if v["count"] > 0:
-                    all_station_q.append(conditional_avg(v))
-
+                all_station_q.append(safe_mean(v))
         # =====================================================
         # SUMMARY (ทั้ง simulation)
         # =====================================================
         summary = ResultSummary(
             average_waiting_time=safe_mean(self.env.global_waiting_mon),
-            average_queue_length = (
-                sum(all_station_q) / max(1, len(all_station_q))
-            ),
+            average_queue_length=sum(all_station_q) / max(1, len(all_station_q)),
             average_utilization=safe_mean(self.env.global_utilization_mon),
             average_travel_time=safe_mean(self.env.global_travel_time_mon),
             average_travel_distance=safe_mean(self.env.global_travel_dist_mon),
@@ -174,15 +170,11 @@ class SimulationEngine:
                         average_waiting_time=
                             sum(safe_mean(m) for m in slot_data["station_waiting"].values())
                             / max(1, len(slot_data["station_waiting"])),
-                        average_queue_length=
+                        average_queue_length =
                             sum(
-                                conditional_avg(v)
-                                for v in slot_data["station_queue"].values()
-                                if v["count"] > 0
-                            ) / max(
-                                1,
-                                sum(1 for v in slot_data["station_queue"].values() if v["count"] > 0)
-                            )
+                                safe_mean(m)
+                                for m in slot_data["station_queue"].values()
+                            ) / max(1, len(slot_data["station_queue"]))
                     ),
 
                     # ---------- PER STATION ----------
@@ -190,7 +182,7 @@ class SimulationEngine:
                         ResultStation(
                             station_name=s,
                             average_waiting_time=safe_mean(slot_data["station_waiting"][s]),
-                            average_queue_length=conditional_avg(slot_data["station_queue"][s])
+                            average_queue_length=safe_mean(slot_data["station_queue"][s])
                         )
                         for s in slot_data["station_waiting"]
                     ],
@@ -237,14 +229,6 @@ class SlotTicker(sim.Component):
             slot = self.time_ctx.slot_index(now)
             engine._ensure_slot(slot)
 
-            slots = engine.slots[slot]
-
-            # ---- station queue baseline ----
-            for s, st in engine.stations.items():
-                q = st.wait_store.length()
-                if q > 0:
-                    slots["station_queue"][s]["sum"] += q
-                    slots["station_queue"][s]["count"] += 1
 
             yield self.hold(self.time_ctx.slot_length)
 
@@ -278,6 +262,13 @@ class Passenger(sim.Component):
     def process(self):
         add_log(self.env, component="Passenger", message=f"Passenger arrives at {self.station.name}")
         yield self.to_store(self.station.wait_store, self)
+        engine = self.env.sim_engine
+        slot = engine.config["TIME_CTX"].slot_index(self.env.now())
+        engine._ensure_slot(slot)
+
+        engine.slots[slot]["station_queue"][self.station.name].tally(
+            self.station.wait_store.length()
+        )
         yield self.passivate()
         add_log(self.env, component="Passenger", message=f"Passenger leaves system at {self.station.name}")
 
@@ -376,9 +367,6 @@ class Bus(sim.Component):
 
             slots = self.env.sim_engine.slots
             if queue_len > 0:
-                sq = slots[slot]["station_queue"][station.name]
-                sq["sum"] += queue_len
-                sq["count"] += 1
 
                 rq = slots[slot]["route_queue"][self.route_id]
                 rq["sum"] += queue_len
@@ -392,6 +380,13 @@ class Bus(sim.Component):
                     if p is None:
                         break
 
+                    engine = self.env.sim_engine
+                    slot = engine.config["TIME_CTX"].slot_index(self.env.now())
+                    engine._ensure_slot(slot)
+
+                    engine.slots[slot]["station_queue"][station.name].tally(
+                        station.wait_store.length()
+                    )
                     waiting = self.env.now() - p.arrival_time
 
                     self.env.global_waiting_mon.tally(waiting)

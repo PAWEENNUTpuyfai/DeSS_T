@@ -249,12 +249,13 @@ export default function ScenarioMap({
             fillOpacity={0.9}
             eventHandlers={{
               click: () => {
-                // Only allow selection if not in editing mode, or if selecting for the current route
-                if (
-                  !isEditingMode ||
-                  route?.stations.includes(stationIdFor(st)) === false
-                ) {
-                  onSelectStation(stationIdFor(st));
+                // In editing mode: only prevent clicking if it's the last station (consecutive duplicate)
+                // Otherwise allow re-selection at different positions
+                const stId = stationIdFor(st);
+                const isLastStation = route?.stations[route.stations.length - 1] === stId;
+                
+                if (!isEditingMode || !isLastStation) {
+                  onSelectStation(stId);
                 }
               },
             }}

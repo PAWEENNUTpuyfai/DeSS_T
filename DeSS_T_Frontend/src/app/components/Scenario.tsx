@@ -241,6 +241,12 @@ export default function Scenario({
   const [originalStations, setOriginalStations] = useState<
     Record<string, string[]>
   >({});
+  const [originalSegments, setOriginalSegments] = useState<
+    Record<string, RouteSegment[]>
+  >({});
+  const [originalOrders, setOriginalOrders] = useState<
+    Record<string, Order[]>
+  >({});
   const [openColorPickerId, setOpenColorPickerId] = useState<string | null>(
     null,
   );
@@ -343,12 +349,20 @@ export default function Scenario({
         alert("Please unhide the route before editing (click the eye icon)");
         return;
       }
-      // Save original stations before editing
+      // Save original stations, segments, and orders before editing
       setOriginalStations((prev) => ({
         ...prev,
         [routeId]: [...route.stations],
       }));
-      // Clear stations to start from scratch
+      setOriginalSegments((prev) => ({
+        ...prev,
+        [routeId]: [...route.segments],
+      }));
+      setOriginalOrders((prev) => ({
+        ...prev,
+        [routeId]: [...route.orders],
+      }));
+      // Clear stations, segments, and orders to start from scratch
       setRoutes((prev) =>
         prev.map((r) =>
           r.id === routeId
@@ -507,15 +521,37 @@ export default function Scenario({
   };
 
   const cancelEdit = (routeId: string) => {
-    // Restore original stations
+    // Restore original stations, segments, and orders
     const original = originalStations[routeId];
+    const originalSegs = originalSegments[routeId];
+    const originalOrd = originalOrders[routeId];
+    
     if (original) {
       setRoutes((prev) =>
-        prev.map((r) => (r.id === routeId ? { ...r, stations: original } : r)),
+        prev.map((r) =>
+          r.id === routeId
+            ? {
+                ...r,
+                stations: original,
+                segments: originalSegs || [],
+                orders: originalOrd || [],
+              }
+            : r,
+        ),
       );
     }
     setSelectedRouteId(null);
     setOriginalStations((prev) => {
+      const newState = { ...prev };
+      delete newState[routeId];
+      return newState;
+    });
+    setOriginalSegments((prev) => {
+      const newState = { ...prev };
+      delete newState[routeId];
+      return newState;
+    });
+    setOriginalOrders((prev) => {
       const newState = { ...prev };
       delete newState[routeId];
       return newState;

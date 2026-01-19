@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Dashboard from "../components/Dashboard/Dashboard";
 import InteractiveMap from "../components/InteractiveMap";
-import type { SimulationResponse, ResultRoute } from "../models/SimulationModel";
+import type {
+  SimulationResponse,
+  ResultRoute,
+} from "../models/SimulationModel";
 import "../../style/Output.css";
 import Nav from "../components/NavBar";
 
@@ -13,9 +16,9 @@ export type PlaybackSeed = {
     color: string;
     segments: { coords: [number, number][] }[];
   }>;
-  routeStations?: Array<{ 
-    route_id: string; 
-    station_ids: string[] 
+  routeStations?: Array<{
+    route_id: string;
+    station_ids: string[];
   }>;
   simWindow?: string;
   timeSlotMinutes?: number;
@@ -33,7 +36,7 @@ export type PlaybackSeed = {
   }>;
 };
 
-export default function Outputpage ({
+export default function Outputpage({
   simulationResponse,
   playbackSeed,
   onBackClick,
@@ -45,6 +48,10 @@ export default function Outputpage ({
   usermode?: "guest" | "user";
 }) {
   const [mode, setMode] = useState<"dashboard" | "map">("map");
+
+  useEffect(() => {
+    console.log("simulationResponse:", simulationResponse);
+  }, [simulationResponse]);
 
   return (
     <main>
@@ -72,7 +79,9 @@ export default function Outputpage ({
               }`}
               onClick={() => setMode("dashboard")}
               disabled={!simulationResponse}
-              title={!simulationResponse ? "Run simulation to view dashboard" : ""}
+              title={
+                !simulationResponse ? "Run simulation to view dashboard" : ""
+              }
             >
               Dashboard
             </button>
@@ -95,11 +104,16 @@ export default function Outputpage ({
         </div>
 
         {mode === "dashboard" && simulationResponse ? (
-          <Dashboard simulationResponse={simulationResponse} playbackSeed={playbackSeed} />
+          <Dashboard
+            simulationResponse={simulationResponse}
+            playbackSeed={playbackSeed}
+          />
         ) : mode === "dashboard" && !simulationResponse ? (
           <div className="w-full flex justify-center items-center py-20">
             <div className="text-center text-gray-500">
-              <p className="text-lg">Please run a simulation to view the dashboard</p>
+              <p className="text-lg">
+                Please run a simulation to view the dashboard
+              </p>
             </div>
           </div>
         ) : (

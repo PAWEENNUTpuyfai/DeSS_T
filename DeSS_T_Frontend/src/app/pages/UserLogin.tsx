@@ -25,7 +25,10 @@ export default function UserLogin() {
     const storedToken = localStorage.getItem("googleToken");
 
     if (storedUser) {
-      setUserInfo(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      console.log("User Info:", parsedUser);
+      console.log("Picture URL:", parsedUser.picture);
+      setUserInfo(parsedUser);
     }
     if (storedToken) {
       setToken(storedToken);
@@ -74,7 +77,17 @@ export default function UserLogin() {
                 src={userInfo.picture}
                 alt="Profile"
                 className="w-20 h-20 rounded-full mx-auto border-2 border-blue-500"
+                onError={(e) => {
+                  console.error("Image failed to load:", userInfo.picture);
+                  e.currentTarget.style.display = "none";
+                }}
+                onLoad={() => console.log("Image loaded successfully")}
               />
+            </div>
+          )}
+          {!userInfo.picture && (
+            <div className="text-center mb-4 text-gray-500 text-sm">
+              No profile picture available
             </div>
           )}
 

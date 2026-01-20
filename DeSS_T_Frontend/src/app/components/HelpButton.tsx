@@ -77,17 +77,11 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
         };
       case "Map":
         return {
-          title: "Map Interaction Help",  
+          title: "Map Configuration Help",  
           content: (
             <>
               <p className="mb-3">
-                Use the map to visualize bus routes and station locations. You
-                can zoom in and out using the mouse wheel or the zoom controls  
-                on the map. Click and drag to pan around the map area.
-              </p>
-              <p>
-                The map provides an interactive way to explore the transit
-                system and analyze simulation results.  
+                .
               </p>
             </>
           ),

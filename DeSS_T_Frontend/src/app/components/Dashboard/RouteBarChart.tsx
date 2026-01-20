@@ -26,30 +26,42 @@ export default function RouteBarChart({
 
   // Build route map
   const routeMap = new Map(
-    route.map((r) => [r[0], { name: r[1], color: r[2] }])
+    route.map((r) => [r[0], { name: r[1], color: r[2] }]),
   );
 
   // Build data with route info
-  const chartData = dataset.map(([routeId, value], idx) => {
-    const routeInfo = routeMap.get(routeId);
-    
-    // Convert units based on mode
-    let displayValue = Number(value);
-    if (mode === "avg-traveling-time") {
-      // Already in minutes from backend
-      displayValue = Number(value);
-    } else if (mode === "avg-traveling-distance") {
-      // Convert meters to km
-      displayValue = Number(value) / 1000;
-    }
-    
-    return {
-      id: routeId,
-      name: routeInfo?.name || `สาย ${routeId}`,
-      color: routeInfo?.color || fallbackColors[idx % fallbackColors.length],
-      value: displayValue,
-    };
-  });
+  const chartData = dataset
+    .map(([routeId, value], idx) => {
+      const routeInfo = routeMap.get(routeId);
+
+      // Convert units based on mode
+      let displayValue = Number(value);
+      if (mode === "avg-traveling-time") {
+        // Already in minutes from backend
+        displayValue = Number(value);
+      } else if (mode === "avg-traveling-distance") {
+        // Convert meters to km
+        displayValue = Number(value) / 1000;
+      }
+
+      return {
+        id: routeId,
+        name: routeInfo?.name || `สาย ${routeId}`,
+        color: routeInfo?.color || fallbackColors[idx % fallbackColors.length],
+        value: displayValue,
+      };
+    })
+    .sort((a, b) => {
+      // Sort by route ID numerically or lexicographically
+      const aNum = parseInt(a.id, 10);
+      const bNum = parseInt(b.id, 10);
+      // If both are valid numbers, compare numerically
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+      // Otherwise compare as strings
+      return a.id.localeCompare(b.id);
+    });
 
   // Calculate max value for Y-axis
   const maxValue = chartData.length
@@ -67,7 +79,7 @@ export default function RouteBarChart({
   const chartHeight = 300;
   const contentWidth = Math.max(
     baseContentWidth,
-    chartData.length * baseBarWidth + paddingRight
+    chartData.length * baseBarWidth + paddingRight,
   );
   const innerWidth = contentWidth - paddingRight;
   const innerHeight = chartHeight - paddingTop - paddingBottom;
@@ -82,7 +94,7 @@ export default function RouteBarChart({
   // Y-axis ticks (5 levels)
   const yTicks = 5;
   const yTickValues = Array.from({ length: yTicks + 1 }, (_, i) =>
-    Math.round((yMax / yTicks) * i)
+    Math.round((yMax / yTicks) * i),
   );
 
   // Unit label

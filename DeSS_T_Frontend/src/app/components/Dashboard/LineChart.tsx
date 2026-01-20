@@ -82,7 +82,7 @@ export default function LineChart({
   const yMaxRaw = allValues.length ? Math.max(...allValues) : 1;
   const yMax = yMaxRaw === yMin ? yMin + 1 : yMaxRaw;
 
-  const chartHeight = 160;
+  const chartHeight = 200;
   const paddingLeft = 50;
   const paddingRight = 16;
   const paddingTop = 40;
@@ -140,7 +140,7 @@ export default function LineChart({
   return (
     <div className="w-full">
       {/* Legend */}
-      <div className="flex gap-3 items-center mb-2 text-sm">
+      {/* <div className="flex gap-3 items-center mb-2 text-sm">
         {routes.map(([id, name, color]) => (
           <div key={id} className="flex items-center gap-1">
             <span
@@ -150,7 +150,7 @@ export default function LineChart({
             <span>{name}</span>
           </div>
         ))}
-      </div>
+      </div> */}
 
       <div className="relative w-full">
         {/* Fixed Y-axis */}

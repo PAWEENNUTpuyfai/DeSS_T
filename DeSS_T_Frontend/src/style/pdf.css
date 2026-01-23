@@ -1,0 +1,125 @@
+/* =========================
+   Page setup
+========================= */
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+/* =========================
+   Print / Screen separation
+========================= */
+.pdf-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+}
+
+.pdf-wrapper * {
+  margin-top: 0 !important;
+}
+
+@media print {
+  .pdf-wrapper {
+    position: static;
+    overflow: visible;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+    margin: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* =========================
+   Page container
+========================= */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 0 15mm 15mm 15mm; /* top right bottom left - no top padding */
+  box-sizing: border-box;
+  page-break-after: always;
+}
+
+@media print {
+  .page {
+    padding: 0 15mm 15mm 15mm;
+  }
+}
+
+/* =========================
+   Page break helpers
+========================= */
+.page-break {
+  break-before: page;
+  page-break-before: always;
+}
+
+.no-break {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* =========================
+   Typography
+========================= */
+h1 {
+  font-size: 20pt;
+  margin: 0 0 10mm 0;
+}
+
+h2 {
+  font-size: 14pt;
+  margin: 6mm 0;
+}
+
+p {
+  font-size: 11pt;
+  line-height: 1.4;
+}
+
+/* =========================
+   Table (PDF-friendly)
+========================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+th,
+td {
+  border: 1px solid #333;
+  padding: 4mm;
+  text-align: left;
+}
+
+thead {
+  display: table-header-group;
+}
+
+tfoot {
+  display: table-footer-group;
+}

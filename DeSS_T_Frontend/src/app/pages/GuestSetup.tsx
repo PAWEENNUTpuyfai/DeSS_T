@@ -3,7 +3,7 @@ import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 export default function GuestSetup() {
   return (
     <main>
-      <ConfigurationMap mode="guest"></ConfigurationMap>{" "}
+      <ConfigurationMap usermode="guest"></ConfigurationMap>{" "}
     </main>
   );
 }

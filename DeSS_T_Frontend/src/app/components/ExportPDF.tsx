@@ -1,32 +1,20 @@
-import "../../../style/Output.css";
-import { useEffect, useMemo, useState } from "react";
-import type { SimulationResponse } from "../../models/SimulationModel";
-import type { PlaybackSeed } from "../../pages/Outputpage";
+import "../../style/pdf.css";
+import "../../style/Output.css";
+import type { SimulationResponse } from "../models/SimulationModel";
+import type { PlaybackSeed } from "../pages/Outputpage";
 import {
   analyzeSimulationResponse,
   compareWithScenario,
-} from "../../utility/simulationDebug";
-import LineChart from "./LineChart";
-import TopRoutesChart from "./TopRoutesChart";
-import RouteBarChart from "./RouteBarChart";
-import PassengerWaitingHeatmap from "./PassengerWaitingHeatmap";
-import HelpButton from "../HelpButton";
+} from "../utility/simulationDebug";
+import { useEffect, useMemo, useState } from "react";
 
-export default function Dashboard({
+export default function ExportPDF({
   simulationResponse,
   playbackSeed,
 }: {
   simulationResponse: SimulationResponse;
   playbackSeed?: PlaybackSeed;
 }) {
-  const [moded1, setModed1] = useState<
-    "avg-waiting-time" | "avg-queue-length" | "avg-utilization"
-  >("avg-waiting-time");
-
-  const [moded4, setModed4] = useState<
-    "avg-traveling-time" | "avg-traveling-distance"
-  >("avg-traveling-time");
-
   // Validate that simulation routes match what user configured in Scenario
   useEffect(() => {
     // Analyze simulation response structure
@@ -229,57 +217,81 @@ export default function Dashboard({
     return result;
   }, [simulationResponse]);
 
-  // Debug: Log the dataset used by moded4 (time/distance) in readable units
-  useEffect(() => {
-    const dataset =
-      moded4 === "avg-traveling-time"
-        ? travelingTimeData
-        : travelingDistanceData;
-
-    const routeNames: Record<string, string> = {};
-    allRoutes.forEach(([id, name]) => {
-      routeNames[id] = name;
-    });
-  }, [moded4, travelingTimeData, travelingDistanceData, allRoutes]);
-
-  // Build dataset from slot results based on selected mode
-  const fullDataset = useMemo(() => {
+  // Build separate datasets for each metric
+  const avgWaitingTimeDataset = useMemo(() => {
     const data: [string, string, number][] = [];
 
     simulationResponse.simulation_result.slot_results.forEach((slot) => {
       slot.result_route.forEach((route) => {
-        let value: number;
-        switch (moded1) {
-          case "avg-waiting-time":
-            // Convert seconds to minutes
-            value = route.average_waiting_time / 60;
-            break;
-          case "avg-queue-length":
-            value = route.average_queue_length;
-            break;
-          case "avg-utilization":
-            // Convert to percentage
-            value = route.average_utilization * 100;
-            break;
-          default:
-            value = route.average_queue_length;
-        }
-
-        // Extract start time from range format (e.g., "08:00-08:15" -> "08:00")
+        // Convert seconds to minutes
+        const value = route.average_waiting_time / 60;
         const timeStr = slot.slot_name.split("-")[0].trim();
         data.push([timeStr, route.route_id, value]);
       });
     });
 
     return data;
-  }, [simulationResponse, moded1]);
+  }, [simulationResponse]);
 
-  // Filter dataset by selected routes
-  const dataset = useMemo(() => {
-    return fullDataset.filter(([, routeId]) =>
+  const avgQueueLengthDataset = useMemo(() => {
+    const data: [string, string, number][] = [];
+
+    simulationResponse.simulation_result.slot_results.forEach((slot) => {
+      slot.result_route.forEach((route) => {
+        const value = route.average_queue_length;
+        const timeStr = slot.slot_name.split("-")[0].trim();
+        data.push([timeStr, route.route_id, value]);
+      });
+    });
+
+    return data;
+  }, [simulationResponse]);
+
+  const avgUtilizationDataset = useMemo(() => {
+    const data: [string, string, number][] = [];
+
+    simulationResponse.simulation_result.slot_results.forEach((slot) => {
+      slot.result_route.forEach((route) => {
+        // Convert to percentage
+        const value = route.average_utilization * 100;
+        const timeStr = slot.slot_name.split("-")[0].trim();
+        data.push([timeStr, route.route_id, value]);
+      });
+    });
+
+    return data;
+  }, [simulationResponse]);
+
+  // Filter datasets by selected routes
+  const filteredAvgWaitingTimeDataset = useMemo(() => {
+    return avgWaitingTimeDataset.filter(([, routeId]) =>
       selectedRoutes.includes(routeId),
     );
-  }, [fullDataset, selectedRoutes]);
+  }, [avgWaitingTimeDataset, selectedRoutes]);
+
+  const filteredAvgQueueLengthDataset = useMemo(() => {
+    return avgQueueLengthDataset.filter(([, routeId]) =>
+      selectedRoutes.includes(routeId),
+    );
+  }, [avgQueueLengthDataset, selectedRoutes]);
+
+  const filteredAvgUtilizationDataset = useMemo(() => {
+    return avgUtilizationDataset.filter(([, routeId]) =>
+      selectedRoutes.includes(routeId),
+    );
+  }, [avgUtilizationDataset, selectedRoutes]);
+
+  const filteredTravelingTimeData = useMemo(() => {
+    return travelingTimeData.filter(([routeId]) =>
+      selectedRoutes.includes(routeId),
+    );
+  }, [travelingTimeData, selectedRoutes]);
+
+  const filteredTravelingDistanceData = useMemo(() => {
+    return travelingDistanceData.filter(([routeId]) =>
+      selectedRoutes.includes(routeId),
+    );
+  }, [travelingDistanceData, selectedRoutes]);
 
   // Extract timeslot from simulation data (assume consistent intervals)
   const timeslot = useMemo(() => {
@@ -334,145 +346,12 @@ export default function Dashboard({
       avgTravelingDistance: travelingDistanceDisplay,
     };
   }, [simulationResponse]);
-
   return (
-    <div className="w-[100vw] flex flex-col ">
-      <div className="flex gap-3 w-full justify-center items-stretch">
-        <div className="w-[50%] dashboard-block flex">
-          <div className="w-[85%]">
-            <div className="flex flex-wrap mx-auto gap-4">
-              <button
-                type="button"
-                className={`whitespace-nowrap ${
-                  moded1 === "avg-waiting-time"
-                    ? "dashboard-btn_selected"
-                    : "dashboard-btn_unselected"
-                }`}
-                onClick={() => setModed1("avg-waiting-time")}
-              >
-                Avg. Waiting Time
-              </button>
-              <button
-                type="button"
-                className={`whitespace-nowrap ${
-                  moded1 === "avg-queue-length"
-                    ? "dashboard-btn_selected"
-                    : "dashboard-btn_unselected"
-                }`}
-                onClick={() => setModed1("avg-queue-length")}
-              >
-                Avg. Queue Length
-              </button>
-              <button
-                type="button"
-                className={`whitespace-nowrap ${
-                  moded1 === "avg-utilization"
-                    ? "dashboard-btn_selected"
-                    : "dashboard-btn_unselected"
-                }`}
-                onClick={() => setModed1("avg-utilization")}
-              >
-                Avg. Utilization
-              </button>
-            </div>
-            <div className="m-3 items-end h-full">
-              <LineChart
-                timeslot={timeslot}
-                route={routes}
-                dataset={dataset}
-                mode={moded1}
-              />
-            </div>
-          </div>
-          <div className="flex flex-col items-center justify-center w-[15%]">
-            <div className="legend-container p-3 flex-col justify-center items-center mx-auto overflow-y-auto max-h-[600px]">
-              {allRoutes.map(([id, name, color]) => (
-                <label
-                  key={id}
-                  className="flex items-center gap-1 p-1 rounded hover:bg-gray-100 cursor-pointer"
-                >
-                  <span
-                    onClick={() => toggleRoute(id)}
-                    className={`inline-block w-4 h-4 rounded cursor-pointer transition-all ${
-                      selectedRoutes.includes(id) ? "" : "bg-white"
-                    }`}
-                    style={
-                      selectedRoutes.includes(id)
-                        ? { backgroundColor: color }
-                        : { border: `2px solid ${color}` }
-                    }
-                  ></span>
-                  <span className="text-sm">{name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="w-[45%] dashboard-block flex flex-col">
-          <p className="chart-header mb-2">
-            Top 3 : Most popular line by customer
-          </p>
-          <TopRoutesChart
-            route={allRoutes}
-            customerData={aggregatedCustomerData}
-            limit={3}
-          />
-        </div>
-      </div>
-
-      {/* Route Bar Charts Section */}
-      <div className="flex gap-3 w-full mt-3 justify-center items-stretch">
-        <div className="w-[40%] dashboard-block">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-2 ">
-            <div></div>
-            <p className="chart-header text-center">
-              Passenger Waiting Density
-            </p>
-            <div className="justify-self-end">
-              <HelpButton helpType="Heatmap" />
-            </div>
-          </div>
-          <PassengerWaitingHeatmap
-            simulationResponse={simulationResponse}
-            stations={playbackSeed?.stations ?? []}
-          />
-        </div>
-        <div className="w-[40%] dashboard-block">
-          <div className="flex flex-wrap mb-4 mx-auto gap-4">
-            <button
-              type="button"
-              className={`whitespace-nowrap ${
-                moded4 === "avg-traveling-time"
-                  ? "dashboard-btn_selected"
-                  : "dashboard-btn_unselected"
-              }`}
-              onClick={() => setModed4("avg-traveling-time")}
-            >
-              Avg. Traveling Time
-            </button>
-            <button
-              type="button"
-              className={`whitespace-nowrap ${
-                moded4 === "avg-traveling-distance"
-                  ? "dashboard-btn_selected"
-                  : "dashboard-btn_unselected"
-              }`}
-              onClick={() => setModed4("avg-traveling-distance")}
-            >
-              Avg. Traveling Distance
-            </button>
-          </div>
-          <RouteBarChart
-            route={allRoutes}
-            dataset={
-              moded4 === "avg-traveling-time"
-                ? travelingTimeData
-                : travelingDistanceData
-            }
-            mode={moded4}
-          />
-        </div>
-        <div className="w-[14%] flex flex-col justify-between">
+    <div className="pdf-wrapper">
+      <div className="page">
+        <h1 className="text-bold">Simulation Report</h1>
+        <h2 className="text-[#81069e]">Overall Statistics</h2>
+        <div className="w-full flex justify-center gap-2 mb-4">
           <div className="dashboard-card flex flex-col items-center justify-center">
             <p className="chart-header">{summaryStats.avgWaitingTime}</p>
             <p className="chart-context">Avg. Waiting Time</p>
@@ -483,6 +362,8 @@ export default function Dashboard({
             </p>
             <p className="chart-context">Avg. Queue Length</p>
           </div>
+        </div>
+        <div className="w-full flex justify-center gap-2 mb-4">
           <div className="dashboard-card flex flex-col items-center justify-center">
             <p className="chart-header">{summaryStats.avgUtilization}%</p>
             <p className="chart-context">Avg. Utilization</p>
@@ -496,6 +377,42 @@ export default function Dashboard({
             <p className="chart-context">Avg. Traveling Distance</p>
           </div>
         </div>
+
+        <div className="no-break">
+          <h2>Summary</h2>
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        </div>
+
+        <div className="no-break">
+          <h2>Statistics</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 15 }).map((_, i) => (
+                <tr key={i}>
+                  <td>Item {i + 1}</td>
+                  <td>{Math.floor(Math.random() * 100)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Page 2 */}
+      <div className="page">
+        <h2>Detail</h2>
+        <p>This content will always start on a new A4 page.</p>
+      </div>
+
+      {/* Print button (hidden when printing) */}
+      <div className="no-print" style={{ padding: 20 }}>
+        <button onClick={() => window.print()}>Export PDF</button>
       </div>
     </div>
   );

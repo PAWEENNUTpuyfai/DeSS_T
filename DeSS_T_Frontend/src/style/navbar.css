@@ -92,3 +92,10 @@
   justify-content: center;
   gap: 12px;
 }
+
+/* Hide navbar when printing */
+@media print {
+  .nav {
+    display: none !important;
+  }
+}

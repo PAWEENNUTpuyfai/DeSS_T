@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Dashboard from "../components/Dashboard/Dashboard";
 import InteractiveMap from "../components/InteractiveMap";
+import ExportPDF from "../components/ExportPDF";
 import type {
   SimulationResponse,
   ResultRoute,
@@ -48,17 +49,27 @@ export default function Outputpage({
   usermode?: "guest" | "user";
 }) {
   const [mode, setMode] = useState<"dashboard" | "map">("map");
+  const [showExportPDF, setShowExportPDF] = useState(false);
 
   useEffect(() => {
     console.log("simulationResponse:", simulationResponse);
   }, [simulationResponse]);
 
+  if (showExportPDF && simulationResponse) {
+    return (
+      <ExportPDF
+        simulationResponse={simulationResponse}
+        playbackSeed={playbackSeed}
+      />
+    );
+  }
+
   return (
     <main>
       <Nav usermode={usermode} inpage="Output" onBackClick={onBackClick} />
       <div className="dashboard-bg flex flex-col items-center min-h-screen overflow-x-hidden">
-        <div className="flex justify-between w-full items-center">
-          <div className="flex gap-3 mb-4 w-full justify-start items-center">
+        <div className="flex justify-between w-full items-center mb-6">
+          <div className="flex gap-3  w-full justify-start items-center">
             <button
               type="button"
               className={`px-8 ${
@@ -86,7 +97,11 @@ export default function Outputpage({
               Dashboard
             </button>
           </div>
-          <div className="btn-export-pdf px-8 inline-flex items-center justify-center gap-2">
+          <button
+            type="button"
+            className="btn-export-pdf px-8 inline-flex items-center justify-center gap-2"
+            onClick={() => setShowExportPDF(true)}
+          >
             <svg
               width="24"
               height="24"
@@ -100,7 +115,7 @@ export default function Outputpage({
               />
             </svg>
             <p className="whitespace-nowrap">Export PDF</p>
-          </div>
+          </button>
         </div>
 
         {mode === "dashboard" && simulationResponse ? (

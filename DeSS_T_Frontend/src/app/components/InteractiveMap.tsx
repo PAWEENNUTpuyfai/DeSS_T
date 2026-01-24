@@ -6,7 +6,9 @@ import {
   Polyline,
   Popup,
   Tooltip,
+  Marker,
 } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../../style/Output.css";
 import type { SimulationResponse, SimulationSlotResult } from "../models/SimulationModel";
@@ -17,6 +19,21 @@ type MockRoute = {
   name: string;
   color: string;
   coords: [number, number][]; // [lat, lon]
+};
+
+// Helper function to create bus icon with dynamic color
+const createBusIcon = (color: string) => {
+  return L.divIcon({
+    html: `
+      <svg width="32" height="38" viewBox="0 0 32 38" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+        <path d="M0 28C0 29.77 0.78 31.34 2 32.44V36C2 37.1 2.9 38 4 38H6C6.53043 38 7.03914 37.7893 7.41421 37.4142C7.78929 37.0391 8 36.5304 8 36V34H24V36C24 36.5304 24.2107 37.0391 24.5858 37.4142C24.9609 37.7893 25.4696 38 26 38H28C29.1 38 30 37.1 30 36V32.44C31.22 31.34 32 29.77 32 28V8C32 1 24.84 0 16 0C7.16 0 0 1 0 8V28ZM7 30C5.34 30 4 28.66 4 27C4 25.34 5.34 24 7 24C8.66 24 10 25.34 10 27C10 28.66 8.66 30 7 30ZM25 30C23.34 30 22 28.66 22 27C22 25.34 23.34 24 25 24C26.66 24 28 25.34 28 27C28 28.66 26.66 30 25 30ZM28 18H4V8H28V18Z" fill="${color}"/>
+      </svg>
+    `,
+    iconSize: [32, 38],
+    iconAnchor: [16, 38],
+    popupAnchor: [0, -38],
+    className: 'bus-icon',
+  });
 };
 
 export default function InteractiveMap({
@@ -107,13 +124,14 @@ export default function InteractiveMap({
   const [playbackState, setPlaybackState] = useState({ idx: 0, progress: 0 }); // progress: 0..1 within slot
   const { idx: frameIdx, progress: frameProgress } = playbackState;
   const [playing, setPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1); // 1x, 2x, 4x, etc.
 
   // Smooth playback using requestAnimationFrame and interpolation within each time slot
   useEffect(() => {
     if (!playing || timeLabels.length <= 1) return;
     let rafId: number;
     let last = performance.now();
-    const slotDurationMs = 1000; // real-time duration per slot
+    const slotDurationMs = 1000 / playbackSpeed; // Adjust speed: higher speed = shorter duration
 
     const step = (now: number) => {
       const delta = now - last;
@@ -132,7 +150,7 @@ export default function InteractiveMap({
 
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
-  }, [playing, timeLabels.length]);
+  }, [playing, timeLabels.length, playbackSpeed]);
 
   const timeSlotMinutes = activePlaybackData?.timeSlotMinutes ?? 5;
   const simWindow = activePlaybackData?.simWindow ?? "08:00-12:00";
@@ -156,7 +174,7 @@ export default function InteractiveMap({
   // Calculate bus positions at an arbitrary time (supports intra-slot interpolation)
   const computeBusesAtTime = useCallback(
     (currentMinutes: number, logDebug = false) => {
-      const buses: { id: string; coord: [number, number] }[] = [];
+      const buses: { id: string; coord: [number, number]; color: string }[] = [];
 
       mockRoutes.forEach((r) => {
         if (r.coords.length < 2) return;
@@ -223,6 +241,7 @@ export default function InteractiveMap({
             buses.push({
               id: `${r.name || "route"}-bus${busIdx + 1}`,
               coord: [coord[0], coord[1]] as [number, number],
+              color: r.color,
             });
           }
         });
@@ -381,19 +400,15 @@ export default function InteractiveMap({
               )}
 
               {currentBuses.map((b) => (
-                <CircleMarker
+                <Marker
                   key={b.id}
-                  center={[b.coord[0], b.coord[1]]}
-                  radius={8}
-                  weight={2}
-                  color="#2563eb"
-                  fillColor="#2563eb"
-                  fillOpacity={0.95}
+                  position={[b.coord[0], b.coord[1]]}
+                  icon={createBusIcon(b.color)}
                 >
-                  <Tooltip direction="top" offset={[0, -4]} opacity={0.95} permanent>
-                    {b.id} @ {currentTimeLabel}
+                  <Tooltip direction="top" offset={[0, -38]} opacity={0.95} permanent>
+                    <span className="text-xs font-semibold">{b.id} @ {currentTimeLabel}</span>
                   </Tooltip>
-                </CircleMarker>
+                </Marker>
               ))}
             </MapContainer>
 
@@ -475,6 +490,24 @@ export default function InteractiveMap({
                     cursor: 'pointer',
                   }}
                 />
+              </div>
+              {/* Playback Speed Controls */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0.1"
+                  max="10"
+                  step="0.1"
+                  value={playbackSpeed}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    if (!isNaN(value) && value > 0 && value <= 10) {
+                      setPlaybackSpeed(value);
+                    }
+                  }}
+                  className="w-16 px-2 py-1 text-xs border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-purple-300"
+                />
+                <span className="text-xs text-gray-600">x</span>
               </div>
             </div>
             {/* Time labels */}

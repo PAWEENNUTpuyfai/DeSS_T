@@ -5,6 +5,7 @@ interface LineChartProps {
   route?: [string, string, string][]; // [route_id, route_name, color]
   dataset?: [string, string, number][]; // [time(HH:mm), route_id, value]
   mode?: "avg-waiting-time" | "avg-queue-length" | "avg-utilization";
+  compactMode?: boolean; // true for PDF fit A4
 }
 
 // Convert HH:mm string to minutes since 00:00
@@ -27,6 +28,7 @@ export default function LineChart({
   route = [],
   dataset = [],
   mode = "avg-waiting-time",
+  compactMode = false,
 }: LineChartProps = {}) {
   const slot = timeslot > 0 ? timeslot : 15;
   // Build route meta (id, name, color)
@@ -82,24 +84,32 @@ export default function LineChart({
   const yMaxRaw = allValues.length ? Math.max(...allValues) : 1;
   const yMax = yMaxRaw === yMin ? yMin + 1 : yMaxRaw;
 
-  const chartHeight = 200;
-  const paddingLeft = 50;
-  const paddingRight = 16;
-  const paddingTop = 40;
-  const paddingBottom = 28;
-  const dataOffsetLeft = 30; // extra space for first data point
-  const minWidthPerTick = 60; // prevent label overlap
-  const chartWidth = Math.max(
-    400,
-    paddingLeft +
-      paddingRight +
-      dataOffsetLeft +
-      Math.max(0, xTicks.length - 1) * minWidthPerTick
+  // Responsive sizing: compact mode for PDF (fit A4 ~750px width)
+  const chartHeight = compactMode ? 160 : 200;
+  const paddingLeft = compactMode ? 40 : 50;
+  const paddingRight = compactMode ? 12 : 16;
+  const paddingTop = compactMode ? 30 : 40;
+  const paddingBottom = compactMode ? 24 : 28;
+  const dataOffsetLeft = compactMode ? 20 : 30; // extra space for first data point
+  
+  // In compact mode: reduce minWidthPerTick and maxWidth to fit A4
+  const minWidthPerTick = compactMode ? 35 : 60; // tighter spacing
+  const maxChartWidth = compactMode ? 720 : 1200; // A4 page width constraint
+  
+  const chartWidth = Math.min(
+    maxChartWidth,
+    Math.max(
+      compactMode ? 320 : 400,
+      paddingLeft +
+        paddingRight +
+        dataOffsetLeft +
+        Math.max(0, xTicks.length - 1) * minWidthPerTick
+    )
   );
   const innerWidth = chartWidth - paddingLeft - paddingRight - dataOffsetLeft;
   const innerHeight = chartHeight - paddingTop - paddingBottom;
 
-  const lineSpacing = 30;
+  const lineSpacing = compactMode ? 25 : 30;
   const yTicks = Math.max(1, Math.floor(innerHeight / lineSpacing));
   const yUnit =
     mode === "avg-queue-length"
@@ -138,21 +148,23 @@ export default function LineChart({
   };
 
   return (
-    <div className="w-full">
-      {/* Legend */}
-      {/* <div className="flex gap-3 items-center mb-2 text-sm">
-        {routes.map(([id, name, color]) => (
-          <div key={id} className="flex items-center gap-1">
-            <span
-              className="inline-block w-3 h-3 rounded-full"
-              style={{ backgroundColor: color }}
-            ></span>
-            <span>{name}</span>
-          </div>
-        ))}
-      </div> */}
+    <div className={compactMode ? "w-full overflow-hidden" : "w-full"}>
+      {/* Legend - hidden in compact mode */}
+      {!compactMode && (
+        <div className="flex gap-3 items-center mb-2 text-sm">
+          {routes.map(([id, name, color]) => (
+            <div key={id} className="flex items-center gap-1">
+              <span
+                className="inline-block w-3 h-3 rounded-full"
+                style={{ backgroundColor: color }}
+              ></span>
+              <span>{name}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
-      <div className="relative w-full">
+      <div className={compactMode ? "relative w-full overflow-hidden" : "relative w-full"}>
         {/* Fixed Y-axis */}
         <svg
           width={paddingLeft}
@@ -170,7 +182,7 @@ export default function LineChart({
                 <text
                   x={paddingLeft - 6}
                   y={y + 4}
-                  fontSize={10}
+                  fontSize={compactMode ? 9 : 10}
                   textAnchor="end"
                   fill="#6b7280"
                 >
@@ -180,7 +192,7 @@ export default function LineChart({
                   <text
                     x={paddingLeft / 2}
                     y={paddingTop - 25}
-                    fontSize={10}
+                    fontSize={compactMode ? 9 : 10}
                     textAnchor="middle"
                     fill="#6b7280"
                     fontWeight="bold"
@@ -193,9 +205,9 @@ export default function LineChart({
           })}
         </svg>
 
-        {/* Scrollable chart area */}
+        {/* Scrollable chart area - no scroll in compact mode */}
         <div
-          className="overflow-x-auto pb-2 bg-white"
+          className={compactMode ? "pb-2 bg-white overflow-hidden" : "overflow-x-auto pb-2 bg-white"}
           style={{ 
             marginLeft: `${paddingLeft}px`,
             scrollbarColor: '#d1d5db white',
@@ -206,7 +218,7 @@ export default function LineChart({
             width={chartWidth}
             height={chartHeight}
             className="bg-white"
-            style={{ minWidth: `calc(100% - ${paddingLeft}px)` }}
+            style={{ minWidth: compactMode ? `${chartWidth}px` : `calc(100% - ${paddingLeft}px)` }}
           >
             {/* Y grid lines only */}
             {Array.from({ length: yTicks + 1 }).map((_, i) => {
@@ -225,15 +237,18 @@ export default function LineChart({
               );
             })}
 
-            {/* X labels */}
+            {/* X labels - reduce density in compact mode */}
             {xTicks.map((t, idx) => {
+              // In compact mode, skip every other tick if too many
+              if (compactMode && xTicks.length > 6 && idx % 2 === 1) return null;
+              
               const x = xPos(t) - paddingLeft;
               return (
                 <text
                   key={idx}
                   x={x}
                   y={chartHeight - 8}
-                  fontSize={10}
+                  fontSize={compactMode ? 8 : 10}
                   textAnchor="middle"
                   fill="#6b7280"
                 >

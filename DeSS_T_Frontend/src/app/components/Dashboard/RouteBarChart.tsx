@@ -4,12 +4,14 @@ interface RouteBarChartProps {
   route?: [string, string, string][]; // [route_id, route_name, color]
   dataset?: [string, number][]; // [route_id, value]
   mode?: "avg-traveling-time" | "avg-traveling-distance";
+  compactMode?: boolean; // true for PDF fit A4
 }
 
 export default function RouteBarChart({
   route = [],
   dataset = [],
   mode = "avg-traveling-time",
+  compactMode = false,
 }: RouteBarChartProps = {}) {
   // Fallback colors if route colors not provided
   const fallbackColors = [
@@ -69,17 +71,22 @@ export default function RouteBarChart({
     : 20;
   const yMax = Math.ceil(maxValue * 1.1); // Add 10% padding
 
-  // Chart dimensions
-  const axisWidth = 70; // fixed y-axis area (labels stay put)
-  const baseContentWidth = 300; // minimum scrollable width
-  const baseBarWidth = 50; // desired bar width before scaling
-  const paddingRight = 20;
-  const paddingTop = 20;
-  const paddingBottom = 50;
-  const chartHeight = 300;
-  const contentWidth = Math.max(
-    baseContentWidth,
-    chartData.length * baseBarWidth + paddingRight,
+  // Chart dimensions - responsive for PDF
+  const axisWidth = compactMode ? 55 : 70; // fixed y-axis area (labels stay put)
+  const baseBarWidth = compactMode ? 30 : 50; // desired bar width before scaling
+  const paddingRight = compactMode ? 12 : 20;
+  const paddingTop = compactMode ? 15 : 20;
+  const paddingBottom = compactMode ? 35 : 50;
+  const chartHeight = compactMode ? 200 : 300;
+  
+  // Fit A4 width (~720px available, minus axis)
+  const maxAvailableWidth = compactMode ? 720 : 1000;
+  const contentWidth = Math.min(
+    maxAvailableWidth,
+    Math.max(
+      compactMode ? 280 : 300,
+      chartData.length * baseBarWidth + paddingRight,
+    )
   );
   const innerWidth = contentWidth - paddingRight;
   const innerHeight = chartHeight - paddingTop - paddingBottom;
@@ -107,7 +114,7 @@ export default function RouteBarChart({
   };
 
   return (
-    <div className="w-full flex">
+    <div className={compactMode ? "w-full flex overflow-hidden" : "w-full flex"}>
       {/* Fixed Y-axis */}
       <div className="shrink-0" style={{ width: axisWidth }}>
         <svg width={axisWidth} height={chartHeight} className="bg-white">
@@ -118,7 +125,7 @@ export default function RouteBarChart({
                 <text
                   x={axisWidth - 12}
                   y={y + 4}
-                  fontSize={11}
+                  fontSize={compactMode ? 9 : 11}
                   textAnchor="end"
                   fill="#6b7280"
                 >
@@ -131,7 +138,7 @@ export default function RouteBarChart({
           <text
             x={axisWidth - 12}
             y={paddingTop - 8}
-            fontSize={11}
+            fontSize={compactMode ? 9 : 11}
             textAnchor="end"
             fill="#6b7280"
           >
@@ -148,8 +155,8 @@ export default function RouteBarChart({
         </svg>
       </div>
 
-      {/* Scrollable chart area */}
-      <div className="w-full overflow-x-auto">
+      {/* Scrollable chart area - no scroll in compact mode */}
+      <div className={compactMode ? "w-full overflow-hidden" : "w-full overflow-x-auto"}>
         <svg width={contentWidth} height={chartHeight} className="bg-white">
           {yTickValues.map((tick, idx) => {
             const y = paddingTop + yScale(tick);
@@ -197,7 +204,7 @@ export default function RouteBarChart({
                 <text
                   x={x + actualBarWidth / 2}
                   y={y - 20}
-                  fontSize={12}
+                  fontSize={compactMode ? 9 : 12}
                   textAnchor="middle"
                   fill={data.color}
                   fontWeight="600"
@@ -207,7 +214,7 @@ export default function RouteBarChart({
                 <text
                   x={x + actualBarWidth / 2}
                   y={chartHeight - paddingBottom + 20}
-                  fontSize={12}
+                  fontSize={compactMode ? 9 : 12}
                   textAnchor="middle"
                   fill="#374151"
                   fontWeight="500"

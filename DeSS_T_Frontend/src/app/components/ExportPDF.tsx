@@ -7,6 +7,10 @@ import {
   compareWithScenario,
 } from "../utility/simulationDebug";
 import { useEffect, useMemo, useState } from "react";
+import LineChart from "./Dashboard/LineChart";
+import RouteBarChart from "./Dashboard/RouteBarChart";
+import PassengerWaitingHeatmap from "./Dashboard/PassengerWaitingHeatmap";
+import TopRoutesChart from "./Dashboard/TopRoutesChart";
 
 export default function ExportPDF({
   simulationResponse,
@@ -404,10 +408,98 @@ export default function ExportPDF({
         </div>
       </div>
 
-      {/* Page 2 */}
+      {/* Page 2 - Dashboard Charts */}
       <div className="page">
-        <h2>Detail</h2>
-        <p>This content will always start on a new A4 page.</p>
+        <h2>Performance Analysis</h2>
+        
+        {/* Average Waiting Time */}
+        <div className="no-break" style={{ marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "14px", marginBottom: "10px" }}>Average Waiting Time</h3>
+          <LineChart
+            dataset={filteredAvgWaitingTimeDataset}
+            route={routes}
+            timeslot={timeslot}
+            mode="avg-waiting-time"
+            compactMode={true}
+          />
+        </div>
+
+        {/* Average Queue Length */}
+        <div className="no-break" style={{ marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "14px", marginBottom: "10px" }}>Average Queue Length</h3>
+          <LineChart
+            dataset={filteredAvgQueueLengthDataset}
+            route={routes}
+            timeslot={timeslot}
+            mode="avg-queue-length"
+            compactMode={true}
+          />
+        </div>
+
+        {/* Average Utilization */}
+        <div className="no-break" style={{ marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "14px", marginBottom: "10px" }}>Average Utilization</h3>
+          <LineChart
+            dataset={filteredAvgUtilizationDataset}
+            route={routes}
+            timeslot={timeslot}
+            mode="avg-utilization"
+            compactMode={true}
+          />
+        </div>
+      </div>
+
+      {/* Page 3 - Route Analytics */}
+      <div className="page">
+        <h2>Route Analytics</h2>
+
+        {/* Average Travel Time */}
+        <div className="no-break" style={{ marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "14px", marginBottom: "10px" }}>Average Travel Time</h3>
+          <RouteBarChart
+            dataset={filteredTravelingTimeData}
+            route={routes}
+            mode="avg-traveling-time"
+            compactMode={true}
+          />
+        </div>
+
+        {/* Average Travel Distance */}
+        <div className="no-break" style={{ marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "14px", marginBottom: "10px" }}>Average Travel Distance</h3>
+          <RouteBarChart
+            dataset={filteredTravelingDistanceData}
+            route={routes}
+            mode="avg-traveling-distance"
+            compactMode={true}
+          />
+        </div>
+      </div>
+
+      {/* Page 4 - Heatmap & Top Routes */}
+      <div className="page">
+        <h2>Network Insights</h2>
+
+        {/* Passenger Waiting Heatmap */}
+        <div className="no-break" style={{ marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "14px", marginBottom: "10px" }}>Passenger Waiting Heatmap</h3>
+          <div style={{ width: "100%", height: 360 }}>
+            <PassengerWaitingHeatmap
+              simulationResponse={simulationResponse}
+              stations={playbackSeed?.stations ?? []}
+            />
+          </div>
+        </div>
+
+        {/* Top Routes by Customers */}
+        <div className="no-break" style={{ marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "14px", marginBottom: "10px" }}>Top Routes by Customers</h3>
+          <TopRoutesChart
+            route={routes}
+            customerData={aggregatedCustomerData}
+            limit={3}
+          />
+        </div>
       </div>
 
       {/* Print button (hidden when printing) */}

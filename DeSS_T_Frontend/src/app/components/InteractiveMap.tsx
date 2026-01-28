@@ -218,7 +218,7 @@ export default function InteractiveMap({
 
         if (validDepartureTimes.length === 0) return;
 
-        validDepartureTimes.forEach((departureTime, busIdx) => {
+        validDepartureTimes.forEach((departureTime, busIdxInSchedule) => {
           const departureTimeMinutes = timeToMinutes(departureTime);
 
           if (departureTimeMinutes <= currentMinutes && currentMinutes >= simStartMinutes) {
@@ -229,8 +229,11 @@ export default function InteractiveMap({
             if (totalTravelTimeSeconds > 0) {
               progress = Math.min(timeSinceDepartureSeconds / totalTravelTimeSeconds, 0.95);
             } else {
-              progress = Math.min((busIdx + 1) / (validDepartureTimes.length + 1), 0.95);
+              progress = Math.min((busIdxInSchedule + 1) / (validDepartureTimes.length + 1), 0.95);
             }
+
+            // Cycling: ถ้าผ่าน maxBuses แล้ว ให้หมุนเวียน (reuse บัสคนแรกที่จบเที่ยว)
+            const displayBusIdx = busIdxInSchedule % maxBuses;
 
             const coordIdx = Math.min(
               Math.floor(progress * r.coords.length),
@@ -239,7 +242,7 @@ export default function InteractiveMap({
 
             const coord = r.coords[coordIdx];
             buses.push({
-              id: `${r.name || "route"}-bus${busIdx + 1}`,
+              id: `${r.name || "route"}-bus${displayBusIdx + 1}`,
               coord: [coord[0], coord[1]] as [number, number],
               color: r.color,
             });

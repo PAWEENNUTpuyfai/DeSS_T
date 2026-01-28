@@ -120,7 +120,7 @@ export default function ExportPDF({
   }, [simulationResponse, playbackSeed?.routes]);
 
   // Track selected routes
-  const [selectedRoutes, setSelectedRoutes] = useState<string[]>(() =>
+  const [selectedRoutes] = useState<string[]>(() =>
     allRoutes.map((r) => r[0]),
   );
 
@@ -129,15 +129,6 @@ export default function ExportPDF({
     () => allRoutes.filter((r) => selectedRoutes.includes(r[0])),
     [selectedRoutes, allRoutes],
   );
-
-  // Toggle route selection
-  const toggleRoute = (routeId: string) => {
-    setSelectedRoutes((prev) =>
-      prev.includes(routeId)
-        ? prev.filter((id) => id !== routeId)
-        : [...prev, routeId],
-    );
-  };
 
   // Extract customer data from simulationResponse
   const customerData: [string, number][] = useMemo(() => {

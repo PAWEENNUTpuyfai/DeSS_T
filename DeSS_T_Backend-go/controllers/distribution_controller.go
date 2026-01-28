@@ -4,9 +4,9 @@ import (
 	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
 	"encoding/json"
+	"os"
 
-	// "fmt"
-	// "os"
+	"fmt"
 	// "path/filepath"
 	// "time"
 
@@ -19,6 +19,7 @@ func UploadGuestAlightingFit(c *fiber.Ctx) error {
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "file missing"})
     }
+
 
     stationMapStr := c.FormValue("station_map")
     if stationMapStr == "" {
@@ -36,6 +37,7 @@ func UploadGuestAlightingFit(c *fiber.Ctx) error {
     }
     defer reader.Close()
 
+
     // อ่าน Excel → JSON (แก้ฟังก์ชันให้รับ io.Reader)
     jsonData, err := models.DistributionExcelToJSONReader(
         reader,
@@ -46,6 +48,14 @@ func UploadGuestAlightingFit(c *fiber.Ctx) error {
         return c.Status(500).JSON(fiber.Map{"error": err.Error()})
     }
 
+    jsonBytes, _ := json.Marshal(jsonData)
+    
+    // Save JSON data to file
+    err = os.WriteFile("distribution_output.txt", jsonBytes, 0644)
+    if err != nil {
+        fmt.Printf("Error saving file: %v\n", err)
+    }
+    
     // ส่ง JSON ไป Python
     result, err := services.CallPythonDistributionFit(jsonData)
     if err != nil {
@@ -76,7 +86,6 @@ func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
         return c.Status(500).JSON(fiber.Map{"error": "cannot open file", "detail": err.Error()})
     }
     defer reader.Close()
-
     // อ่าน Excel → JSON (แก้ฟังก์ชันให้รับ io.Reader)
     jsonData, err := models.DistributionExcelToJSONReader(
         reader,

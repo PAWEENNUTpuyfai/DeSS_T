@@ -40,6 +40,9 @@ class SimulationEngine:
         self.env.route_waiting_mon = {}        # route_id -> Monitor
 
         self.stations = {}
+        self.env.route_active_bus = {}   # route_id -> int
+        self.env.route_max_bus = {}      # route_id -> int
+        self.env.route_bus_seq = {}   # route_id -> running bus number
 
 
     def build(self):
@@ -68,7 +71,7 @@ class SimulationEngine:
         for route_id, route_stations in self.config["BUS_ROUTES"].items():
             info = self.config["BUS_INFO"][route_id]
             route_objs = [self.stations[s] for s in route_stations]
-            max_bus = info["max_bus"]
+
             rid = route_id
             self.env.route_util_mon.setdefault(rid, sim.Monitor())
             self.env.route_travel_time_mon.setdefault(rid, sim.Monitor())
@@ -78,12 +81,19 @@ class SimulationEngine:
             self.env.route_customer_count.setdefault(rid, 0)
             self.env.route_waiting_mon.setdefault(rid, sim.Monitor())
 
+            max_bus = info["max_bus"]
+
+            self.env.route_active_bus.setdefault(rid, 0)
+            self.env.route_bus_seq.setdefault(rid, 0)
+            self.env.route_max_bus[rid] = max_bus
+
             for depart_time in self.config["BUS_SCHEDULES"][route_id]:
             
                 Bus(
                     route_id=route_id,
                     route=route_objs,
                     capacity=info["capacity"],
+                    max_distance=info["max_distance"],
                     depart_time=depart_time,
                     alighting_rules=self.config["ALIGHTING_RULES"],
                     time_ctx=self.config["TIME_CTX"],
@@ -93,6 +103,7 @@ class SimulationEngine:
                     travel_distances=self.config["TRAVEL_DISTANCES"],
                     env=self.env
                 )
+
         # Slot ticker
         SlotTicker(
             time_ctx=self.config["TIME_CTX"],
@@ -306,15 +317,22 @@ class Bus(sim.Component):
         route_id,
         route,
         capacity,
+        max_distance,    # 👈 เพิ่ม
         depart_time,
         alighting_rules,
         time_ctx,
         travel_times,
-        travel_distances,   # 👈 เพิ่ม
+        travel_distances,   # 👈 เพิ่ม          
         env
     ):
         super().__init__(env=env)
         self.route_id = route_id
+        # 👇 assign bus number at creation time
+        self.env.route_bus_seq[self.route_id] += 1
+        self.bus_no = self.env.route_bus_seq[self.route_id]
+
+        self.bus_id = f"{self.route_id}-#{self.bus_no}"
+
         self.route = route
         self.capacity = capacity
         self.depart_time = depart_time
@@ -325,26 +343,59 @@ class Bus(sim.Component):
         self.total_travel_time = 0.0
         self.total_travel_dist = 0.0
         self.passengers = []
+        self.max_distance_init = max_distance
+        self.remaining_distance = max_distance
 
     def process(self):
         delay = self.depart_time - self.env.now()
         if delay > 0:
             yield self.hold(delay)
+            
+        # ===== CHECK MAX BUS =====
+        active = self.env.route_active_bus[self.route_id]
+        max_bus = self.env.route_max_bus[self.route_id]
 
-        add_log(self.env, "Bus", f"Bus {self.route_id} departed")
+        if active >= max_bus:
+            add_log(
+                self.env,
+                component="Bus",
+                message=(
+                    f"Bus {self.route_id} NOT departed "
+                    f"(active={active}, max={max_bus})"
+                )
+            )
+            return   # ❗ จบ component แต่ simulation เดินต่อ
+        
+        # ===== ALLOW DEPART =====
+        self.env.route_active_bus[self.route_id] += 1
+
+
+        add_log(
+            self.env,
+            component="Bus",
+            message=(
+                f"Bus {self.bus_id} departed "
+                f"(active={self.env.route_active_bus[self.route_id]}/"
+                f"{self.env.route_max_bus[self.route_id]})"
+            )
+        )
 
         for i, station in enumerate(self.route):
+            is_first_station = (i == 0)
             is_last_station = (i == len(self.route) - 1)
-
             add_log(
                 self.env,
                 "Bus",
-                f"Bus {self.route_id} arrives at {station.name}"
+                f"Bus {self.bus_id} arrives at {station.name}"
             )
 
             # ---------- ALIGHTING ----------
-            if is_last_station:
+            if is_first_station:
+                alight_count = 0
+
+            elif is_last_station:
                 alight_count = len(self.passengers)
+
             else:
                 alight_count = 0
                 sim_now = self.env.now()
@@ -358,7 +409,12 @@ class Bus(sim.Component):
                 p = self.passengers.pop(0)
                 p.activate()
 
-            add_log(self.env, "Bus", f"Bus {self.route_id} alight {alight_count}")
+            if is_first_station:
+                add_log(self.env, "Bus", f"Bus {self.bus_id} first station, no alighting")
+            else:
+                add_log(self.env, "Bus", f"Bus {self.bus_id} alight {alight_count}")
+
+
             # ---------- QUEUE LENGTH (per route) ----------
             queue_len = station.wait_store.length()
 
@@ -379,7 +435,17 @@ class Bus(sim.Component):
                     p = self.from_store(station.wait_store)
                     if p is None:
                         break
-
+                    
+                    # ✅ LOG: Passenger boards bus
+                    add_log(
+                        self.env,
+                        component="Passenger",
+                        message=(
+                            f"Passenger boards Bus {self.bus_id} "
+                            f"at {station.name}"
+                        )
+                    )
+                    
                     engine = self.env.sim_engine
                     slot = engine.config["TIME_CTX"].slot_index(self.env.now())
                     engine._ensure_slot(slot)
@@ -387,20 +453,14 @@ class Bus(sim.Component):
                     engine.slots[slot]["station_queue"][station.name].tally(
                         station.wait_store.length()
                     )
-                    waiting = self.env.now() - p.arrival_time
 
+                    waiting = self.env.now() - p.arrival_time
                     self.env.global_waiting_mon.tally(waiting)
 
-                    slot = self.time_ctx.slot_index(self.env.now())
-                    self.env.sim_engine._ensure_slot(slot)
-
-                    slots = self.env.sim_engine.slots
-
+                    slots = engine.slots
                     slots[slot]["station_waiting"][station.name].tally(waiting)
                     slots[slot]["route_waiting"][self.route_id].tally(waiting)
-                    # customer count per route
                     slots[slot]["route_customer_count"][self.route_id] += 1
-
 
                     self.passengers.append(p)
 
@@ -414,6 +474,49 @@ class Bus(sim.Component):
 
                 travel_time = self.travel_times[key]
                 travel_dist = self.travel_distances[key]
+                # ===== DISTANCE CHECK =====
+                self.remaining_distance -= travel_dist
+
+                if self.remaining_distance < 0:
+                    # 🚨 รถหมดระยะกลางทาง
+                    add_log(
+                        self.env,
+                        component="Bus",
+                        message=(
+                            f"Bus {self.bus_id} STOPPED mid-route "
+                            f"before reaching {to_station} "
+                            f"(distance exhausted)"
+                        )
+                    )
+
+                    # 🚨 ผู้โดยสารลงทั้งหมด (ก่อนถึงจุดหมาย)
+                    while self.passengers:
+                        p = self.passengers.pop(0)
+
+                        add_log(
+                            self.env,
+                            component="Passenger",
+                            message=(
+                                f"Passenger forced to alight from Bus {self.bus_id} "
+                                f"before reaching destination"
+                            )
+                        )
+                        p.activate()
+                    # 🔴 สำคัญที่สุด
+                    self.env.route_active_bus[self.route_id] -= 1
+                    self.remaining_distance = self.max_distance_init
+
+                    add_log(
+                        self.env,
+                        component="Bus",
+                        message=(
+                            f"Bus {self.bus_id} returned to depot (forced stop) "
+                            f"(active={self.env.route_active_bus[self.route_id]}/"
+                            f"{self.env.route_max_bus[self.route_id]})"
+                        )
+                    )
+
+                    return
 
                 # ✅ สะสมต่อ route
                 self.total_travel_time += travel_time
@@ -465,4 +568,21 @@ class Bus(sim.Component):
 
 
         add_log(self.env, "Bus", f"Bus {self.route_id} finished route")
+
+        # คืนจำนวนรถ
+        self.env.route_active_bus[self.route_id] -= 1
+
+        # reset distance เมื่อกลับ depot
+        self.remaining_distance = self.max_distance_init
+
+        add_log(
+            self.env,
+            component="Bus",
+            message=(
+                f"Bus {self.bus_id} returned to depot "
+                f"(distance reset to {self.max_distance_init}) "
+                f"(active={self.env.route_active_bus[self.route_id]}/"
+                f"{self.env.route_max_bus[self.route_id]})"
+            )
+        )
 

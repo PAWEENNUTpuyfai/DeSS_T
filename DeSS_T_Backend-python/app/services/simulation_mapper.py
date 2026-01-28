@@ -113,26 +113,19 @@ def map_bus_routes(scenarios, route_pairs):
     return bus_routes
 
 
-# def build_distribution(name: str, args: str):
-#     params = dict(kv.split("=") for kv in args.split(","))
-#     params = {k: float(v) for k, v in params.items()}
-
-#     name = name.lower()
-
-#     if name == "poisson":
-#         return sim.Poisson(params["lambda"])
-
-#     if name == "exponential":
-#         return sim.Exponential(1 / params["rate"])
-
-#     raise ValueError(f"Unsupported distribution: {name}")
-
 def build_distribution(name: str, args: str):
-    # แปลง "k=v, k=v" -> dict
     params = dict(kv.strip().split("=") for kv in args.split(","))
     params = {k: float(v) for k, v in params.items()}
 
     name = name.strip().lower()
+
+    # =====================================================
+    # CONSTANT
+    # =====================================================
+    if name == "constant":
+        if "value" not in params:
+            raise ValueError("Constant requires value")
+        return sim.Constant(params["value"])
 
     if name == "poisson":
         return sim.Poisson(params["lambda"])
@@ -160,19 +153,10 @@ def build_distribution(name: str, args: str):
         dist = sim.Gamma(shape=shape, scale=scale)
         return dist + loc if loc != 0.0 else dist
 
-    # if name == "lognormal":
-    #     shape = params["shape"]
-    #     scale = params["scale"]
-    #     loc = params.get("loc", 0.0)
-
-    #     dist = sim.Lognormal(shape=shape, scale=scale)
-    #     return dist + loc if loc != 0.0 else dist
-
     # =====================================================
     # UNIFORM
     # =====================================================
     if name == "uniform":
-        # รองรับทั้ง low/high และ min/max
         low = params.get("low", params.get("min"))
         high = params.get("high", params.get("max"))
         loc = params.get("loc", 0.0)
@@ -180,17 +164,16 @@ def build_distribution(name: str, args: str):
         if low is None or high is None:
             raise ValueError("Uniform requires low/high or min/max")
 
-        # ⭐ กรณีค่าคงที่
-        if high == low:
-            value = low + loc
-            return sim.Constant(value)
-
         if high < low:
             raise ValueError("Uniform requires high >= low")
 
+        # (ยังคงไว้เพื่อ backward compatibility)
+        if high == low:
+            return sim.Constant(low + loc)
+
         dist = sim.Uniform(low, high)
         return dist + loc if loc != 0.0 else dist
-    
+
     raise ValueError(f"Unsupported distribution: {name}")
 
 

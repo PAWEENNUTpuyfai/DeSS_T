@@ -79,6 +79,7 @@ func DistributionExcelToJSON(path string) (Data, error) {
 
     return output, nil
 }
+
 func DistributionExcelToJSONReader(
     r io.Reader,
     stationNameToID map[string]string,
@@ -103,28 +104,28 @@ func DistributionExcelToJSONReader(
         }
 
         rows, err := f.GetRows(sheet)
-        if err != nil {
-            continue
-        }
-        if len(rows) < 2 {
+        if err != nil || len(rows) == 0 {
             continue
         }
 
         headers := rows[0]
+        if len(headers) == 0 {
+            continue
+        }
 
         for colIndex, header := range headers {
-            if header == "" {
+            if strings.TrimSpace(header) == "" {
                 continue
             }
 
-            var recs []Record
+            recs := []Record{}
 
             for rowIndex := 1; rowIndex < len(rows); rowIndex++ {
                 if colIndex >= len(rows[rowIndex]) {
                     continue
                 }
 
-                val := rows[rowIndex][colIndex]
+                val := strings.TrimSpace(rows[rowIndex][colIndex])
                 if val == "" {
                     continue
                 }
@@ -141,6 +142,14 @@ func DistributionExcelToJSONReader(
                 recordID++
             }
 
+            // ⭐ กรณี sheet ว่าง → เติมค่า 0
+            if len(recs) == 0 {
+                recs = append(recs, Record{
+                    RecordID:     recordID,
+                    NumericValue: 0,
+                })
+                recordID++
+            }
 
             output.Data = append(output.Data, Item{
                 Station:   stationID,

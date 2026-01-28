@@ -9,32 +9,27 @@ def power_number(n: int) -> int:
     return (n * n)  # ยกกำลัง 2
 
 
-# # Mockup data for distribution fitting endpoint
-# def distribution_fitting() -> DataFitResponse:
-#     mock_items: List[FitItem] = [
-#         FitItem(Station="StationA", Time_Range="00:00-01:00", Distribution="Normal", ArgumentList="mu=0,sigma=1"),
-#         FitItem(Station="StationB", Time_Range="01:00-02:00", Distribution="Exponential", ArgumentList="lambda=1.5"),
-#     ]
-
-#     return DataFitResponse(DataFitResponse=mock_items)
-
-
 
 # ------------------------------
 # Distribution fitting function
 # ------------------------------
-
 def fit_best_distribution(values: List[float]) -> Dict:
     """
-    Fit multiple distributions and choose the best by lowest SSE.
+    Fit multiple distributions and choose the best by lowest AIC.
     """
+
+    # ---------- Guard: all values are zero ----------
+    if values and all(v == 0 for v in values):
+        return {
+            "name": "Constant",
+            "params": (0.0,)
+        }
 
     distributions = {
         "Exponential": stats.expon,
         "Weibull": stats.weibull_min,
         "Gamma": stats.gamma,
         "Uniform": stats.uniform,
-        # "Lognormal": stats.lognorm,
     }
 
     best_name = None
@@ -45,7 +40,6 @@ def fit_best_distribution(values: List[float]) -> Dict:
         try:
             params = dist.fit(values)
 
-            # AIC
             logL = np.sum(dist.logpdf(values, *params))
             k = len(params)
             aic = 2 * k - 2 * logL
@@ -57,14 +51,14 @@ def fit_best_distribution(values: List[float]) -> Dict:
 
         except Exception:
             continue
-    # ----- Poisson (Discrete) -----
+
+    # ---------- Poisson ----------
     try:
         lam = np.mean(values)
         logL = np.sum(stats.poisson.logpmf(values, mu=lam))
-        aic = 2 * 1 - 2 * logL  # k = 1
+        aic = 2 * 1 - 2 * logL
 
         if aic < best_aic:
-            best_aic = aic
             best_name = "Poisson"
             best_params = (lam,)
 
@@ -77,11 +71,15 @@ def fit_best_distribution(values: List[float]) -> Dict:
     }
 
 
+
 # ------------------------------
 # Convert params to text
 # ------------------------------
 def params_to_string(dist_name: str, params) -> str:
     params = list(params)
+
+    if dist_name == "Constant":
+        return f"value={params[0]:.4f}"
 
     if dist_name == "Exponential":
         loc, scale = params
@@ -95,6 +93,7 @@ def params_to_string(dist_name: str, params) -> str:
     if dist_name == "Gamma":
         shape, loc, scale = params
         return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
+
     if dist_name == "Uniform":
         loc, scale = params
         return f"min={loc:.4f}, max={(loc + scale):.4f}"
@@ -102,12 +101,9 @@ def params_to_string(dist_name: str, params) -> str:
     if dist_name == "Poisson":
         (lam,) = params
         return f"lambda={lam:.4f}"
-    
-    # if dist_name == "Lognormal":
-    #     shape, loc, scale = params
-    #     return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f }"
 
     return str(params)
+
 
 
 # ------------------------------

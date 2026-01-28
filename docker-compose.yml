@@ -1,13 +1,13 @@
 services:
   frontend:
-    image: paweennutpuyfai/dess-t-frontend:1.0
+    image: paweennutpuyfai/dess-t-frontend:3.0
     ports:
       - "3000:80"
     depends_on:
       - backend-go
 
   backend-go:
-    image: paweennutpuyfai/dess-t-go:2.1
+    image: paweennutpuyfai/dess-t-go:3.0
     env_file:
       - .env
     ports:
@@ -22,7 +22,7 @@ services:
       POSTGRES_DB: dess_db
 
   backend-python:
-    image: paweennutpuyfai/dess-t-python:2.0
+    image: paweennutpuyfai/dess-t-python:3.0
     ports:
       - "5000:5000"
 

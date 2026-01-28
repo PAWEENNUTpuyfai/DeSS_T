@@ -13,7 +13,7 @@ import type {
 } from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
-import { isDataFitResponse } from "../../models/DistributionFitModel";
+import { isDataFitResponse } from "../../models/DistriButionFitModel";
 import HelpButton from "../HelpButton";
 interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];

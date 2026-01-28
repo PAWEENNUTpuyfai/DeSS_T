@@ -4,9 +4,7 @@ import (
 	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
 	"encoding/json"
-	"os"
 
-	"fmt"
 	// "path/filepath"
 	// "time"
 
@@ -48,14 +46,6 @@ func UploadGuestAlightingFit(c *fiber.Ctx) error {
         return c.Status(500).JSON(fiber.Map{"error": err.Error()})
     }
 
-    jsonBytes, _ := json.Marshal(jsonData)
-    
-    // Save JSON data to file
-    err = os.WriteFile("distribution_output.txt", jsonBytes, 0644)
-    if err != nil {
-        fmt.Printf("Error saving file: %v\n", err)
-    }
-    
     // ส่ง JSON ไป Python
     result, err := services.CallPythonDistributionFit(jsonData)
     if err != nil {

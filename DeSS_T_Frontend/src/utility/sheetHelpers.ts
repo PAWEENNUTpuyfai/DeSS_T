@@ -26,9 +26,7 @@ export function buildStationNameToIdMap(
 
     [
       s.name,
-      s.station_name,
       s.StationName,
-      s.name_th,
     ].forEach((rawName) => {
       if (!rawName) return;
 

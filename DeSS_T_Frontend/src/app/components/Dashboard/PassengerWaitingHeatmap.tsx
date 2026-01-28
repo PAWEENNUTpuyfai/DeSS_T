@@ -30,7 +30,7 @@ function HeatmapLayer({ data }: { data: HeatmapDataPoint[] }) {
     // Get min/max for scaling
     const queueLengths = data.map((d) => d.avg_queue_length);
     const waitingTimes = data.map((d) => d.avg_waiting_time);
-    const minQueue = Math.min(...queueLengths);
+    // const minQueue = Math.min(...queueLengths);
     const maxQueue = Math.max(...queueLengths);
     const minWait = Math.min(...waitingTimes);
     const maxWait = Math.max(...waitingTimes);

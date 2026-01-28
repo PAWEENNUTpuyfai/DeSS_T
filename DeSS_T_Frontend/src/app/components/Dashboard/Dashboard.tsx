@@ -231,10 +231,6 @@ export default function Dashboard({
 
   // Debug: Log the dataset used by moded4 (time/distance) in readable units
   useEffect(() => {
-    const dataset =
-      moded4 === "avg-traveling-time"
-        ? travelingTimeData
-        : travelingDistanceData;
 
     const routeNames: Record<string, string> = {};
     allRoutes.forEach(([id, name]) => {

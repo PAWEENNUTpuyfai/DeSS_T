@@ -7,27 +7,32 @@ services:
       - backend-go
 
   backend-go:
-    image: paweennutpuyfai/dess-t-go:3.0
+    image: paweennutpuyfai/dess-t-go:4.3
     env_file:
       - .env
     ports:
       - "8080:8080"
     depends_on:
-      - backend-python
-      - postgres
+      postgres:
+        condition: service_healthy
+      backend-python:
+        condition: service_started
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: DeSS_T
-      POSTGRES_PASSWORD: DeSS_T_491
-      POSTGRES_DB: dess_db
+      DB_HOST: postgres        # 👈 override localhost
+
 
   backend-python:
-    image: paweennutpuyfai/dess-t-python:3.0
+    image: paweennutpuyfai/dess-t-python:4.3
     ports:
       - "5000:5000"
 
   postgres:
     image: postgis/postgis:15-3.4
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U DeSS_T"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     container_name: DeSS_T_postgres
     restart: always
     env_file:

@@ -20,6 +20,8 @@ func getPythonServiceBaseURL() string {
 		// base = "http://localhost:5000"
 		// base = "http://127.0.0.1:5000"
 		base = "http://40.81.22.119:5000"
+		// base = "http://backend-python:5000"
+
 	}
 	return strings.TrimRight(base, "/")
 }

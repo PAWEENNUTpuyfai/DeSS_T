@@ -431,7 +431,7 @@ class Bus(sim.Component):
             # ---------- LOADING ----------
             if not is_last_station:
                 while len(self.passengers) < self.capacity:
-                    p = self.from_store(station.wait_store)
+                    p = yield self.from_store(station.wait_store)
                     if p is None:
                         break
                     

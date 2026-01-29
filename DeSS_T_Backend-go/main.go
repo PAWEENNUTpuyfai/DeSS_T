@@ -44,7 +44,6 @@ func main() {
 	// seed.SeedMongo()
 
 	// Setup routes
-	routes.SetupLogRoutes(app)
 	routes.SetupRoutes(app)
 	routes.SetupComputeRoutes(app)
 	routes.SetupDistributionRoutes(app)

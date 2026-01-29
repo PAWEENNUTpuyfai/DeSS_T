@@ -18,7 +18,8 @@ func getPythonServiceBaseURL() string {
 	base := os.Getenv("PYTHON_SERVICE_URL")
 	if base == "" {
 		// base = "http://localhost:5000"
-		base = "http://127.0.0.1:5000"
+		// base = "http://127.0.0.1:5000"
+		base = "http://40.81.22.119:5000"
 	}
 	return strings.TrimRight(base, "/")
 }

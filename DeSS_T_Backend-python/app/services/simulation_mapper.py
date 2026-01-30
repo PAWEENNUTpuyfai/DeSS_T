@@ -203,14 +203,20 @@ def map_bus_information(scenarios):
 
     for sc in scenarios:
         info = sc.bus_information
+
         bus_info[sc.route_id] = {
-            "speed": info.bus_speed,
-            "max_distance": info.max_distance,
+            # km/h → m/s
+            "speed": info.bus_speed * 1000 / 3600,
+
+            # km → m
+            "max_distance": info.max_distance * 1000,
+
             "max_bus": info.max_bus,
             "capacity": info.bus_capacity
         }
 
     return bus_info
+
 
 def map_bus_schedules(scenarios, time_ctx):
     schedules = {}

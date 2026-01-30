@@ -39,9 +39,9 @@ class SimulationEngine:
         self.env.route_waiting_mon = {}        # route_id -> Monitor
 
         self.stations = {}
-        # self.env.route_active_bus = {}   # route_id -> int
-        # self.env.route_max_bus = {}      # route_id -> int
-        # self.env.route_bus_seq = {}   # route_id -> running bus number
+        self.env.route_active_bus = {}   # route_id -> int
+        self.env.route_max_bus = {}      # route_id -> int
+        self.env.route_bus_seq = {}   # route_id -> running bus number
 
 
     def build(self):
@@ -80,11 +80,11 @@ class SimulationEngine:
             self.env.route_customer_count.setdefault(rid, 0)
             self.env.route_waiting_mon.setdefault(rid, sim.Monitor())
 
-            # max_bus = info["max_bus"]
+            max_bus = info["max_bus"]
 
             self.env.route_active_bus.setdefault(rid, 0)
-            # self.env.route_bus_seq.setdefault(rid, 0)
-            # self.env.route_max_bus[rid] = max_bus
+            self.env.route_bus_seq.setdefault(rid, 0)
+            self.env.route_max_bus[rid] = max_bus
 
             for depart_time in self.config["BUS_SCHEDULES"][route_id]:
             
@@ -92,14 +92,14 @@ class SimulationEngine:
                     route_id=route_id,
                     route=route_objs,
                     capacity=info["capacity"],
-                    # max_distance=info["max_distance"],
+                    max_distance=info["max_distance"],
                     depart_time=depart_time,
                     alighting_rules=self.config["ALIGHTING_RULES"],
                     time_ctx=self.config["TIME_CTX"],
                     travel_times={
                         k: v / 60 for k, v in self.config["TRAVEL_TIMES"].items()
                     },
-                    # travel_distances=self.config["TRAVEL_DISTANCES"],
+                    travel_distances=self.config["TRAVEL_DISTANCES"],
                     env=self.env
                 )
 
@@ -316,21 +316,21 @@ class Bus(sim.Component):
         route_id,
         route,
         capacity,
-        # max_distance,    # 👈 เพิ่ม
+        max_distance,    # 👈 เพิ่ม
         depart_time,
         alighting_rules,
         time_ctx,
         travel_times,
-        # travel_distances,   # 👈 เพิ่ม          
+        travel_distances,   # 👈 เพิ่ม          
         env
     ):
         super().__init__(env=env)
         self.route_id = route_id
-        # # 👇 assign bus number at creation time
-        # self.env.route_bus_seq[self.route_id] += 1
-        # self.bus_no = self.env.route_bus_seq[self.route_id]
+        # 👇 assign bus number at creation time
+        self.env.route_bus_seq[self.route_id] += 1
+        self.bus_no = self.env.route_bus_seq[self.route_id]
 
-        # self.bus_id = f"{self.route_id}-#{self.bus_no}"
+        self.bus_id = f"{self.route_id}-#{self.bus_no}"
 
         self.route = route
         self.capacity = capacity
@@ -338,32 +338,32 @@ class Bus(sim.Component):
         self.alighting_rules = alighting_rules
         self.time_ctx = time_ctx
         self.travel_times = travel_times
-        # self.travel_distances = travel_distances
+        self.travel_distances = travel_distances
         self.total_travel_time = 0.0
         self.total_travel_dist = 0.0
         self.passengers = []
-        # self.max_distance_init = max_distance
-        # self.remaining_distance = max_distance
+        self.max_distance_init = max_distance
+        self.remaining_distance = max_distance
 
     def process(self):
         delay = self.depart_time - self.env.now()
         if delay > 0:
             yield self.hold(delay)
             
-        # # ===== CHECK MAX BUS =====
-        # active = self.env.route_active_bus[self.route_id]
-        # max_bus = self.env.route_max_bus[self.route_id]
+        # ===== CHECK MAX BUS =====
+        active = self.env.route_active_bus[self.route_id]
+        max_bus = self.env.route_max_bus[self.route_id]
 
-        # if active >= max_bus:
-        #     add_log(
-        #         self.env,
-        #         component="Bus",
-        #         message=(
-        #             f"Bus {self.route_id} NOT departed "
-        #             f"(active={active}, max={max_bus})"
-        #         )
-        #     )
-        #     return   # ❗ จบ component แต่ simulation เดินต่อ
+        if active >= max_bus:
+            add_log(
+                self.env,
+                component="Bus",
+                message=(
+                    f"Bus {self.route_id} NOT departed "
+                    f"(active={active}, max={max_bus})"
+                )
+            )
+            return   # ❗ จบ component แต่ simulation เดินต่อ
         
         # ===== ALLOW DEPART =====
         self.env.route_active_bus[self.route_id] += 1

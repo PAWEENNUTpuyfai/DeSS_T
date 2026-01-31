@@ -49,10 +49,20 @@ export default function InteractiveMap({
   // Use single-shot data from props only (no realtime playback)
   const activePlaybackData = playbackSeed;
 
-  const stations = useMemo(
-    () => activePlaybackData?.stations ?? [],
-    [activePlaybackData?.stations],
-  );
+  const stations = useMemo(() => {
+    const allStations = activePlaybackData?.stations ?? [];
+    const routeStationIds = new Set(
+      activePlaybackData?.routeStations
+        ?.flatMap((rs) => rs.station_ids ?? [])
+        .filter(Boolean) ?? [],
+    );
+
+    if (routeStationIds.size === 0) {
+      return allStations;
+    }
+
+    return allStations.filter((st) => routeStationIds.has(st.id));
+  }, [activePlaybackData?.stations, activePlaybackData?.routeStations]);
 
   const mockRoutes: MockRoute[] = useMemo(
     () =>
@@ -69,9 +79,14 @@ export default function InteractiveMap({
     [activePlaybackData?.routes],
   );
 
-  const [selectedStationId, setSelectedStationId] = useState<string>(
-    stations[0]?.id ?? "",
-  );
+  const defaultStationId = useMemo(() => {
+    const firstRouteStationId =
+      activePlaybackData?.routeStations?.[0]?.station_ids?.[0];
+    return firstRouteStationId ?? stations[0]?.id ?? "";
+  }, [activePlaybackData?.routeStations, stations]);
+
+  const [selectedStationId, setSelectedStationId] =
+    useState<string>(defaultStationId);
   const [visibleRoutes, setVisibleRoutes] = useState<Set<string>>(
     new Set(mockRoutes.map((r) => r.id)),
   );
@@ -87,9 +102,9 @@ export default function InteractiveMap({
       stations.length > 0 &&
       !stations.find((st) => st.id === selectedStationId)
     ) {
-      setSelectedStationId(stations[0].id);
+      setSelectedStationId(defaultStationId);
     }
-  }, [stations, selectedStationId]);
+  }, [stations, selectedStationId, defaultStationId]);
 
   const toggleRoute = (routeId: string) => {
     setVisibleRoutes((prev) => {
@@ -143,6 +158,7 @@ export default function InteractiveMap({
   const { idx: frameIdx, progress: frameProgress } = playbackState;
   const [playing, setPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1); // 1x, 2x, 4x, etc.
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
   // Smooth playback using requestAnimationFrame and interpolation within each time slot
   useEffect(() => {
@@ -650,22 +666,42 @@ export default function InteractiveMap({
               </div>
 
               {/* Playback Speed Controls */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0.1"
-                  max="10"
-                  step="0.1"
-                  value={playbackSpeed}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (!isNaN(value) && value > 0 && value <= 10) {
-                      setPlaybackSpeed(value);
-                    }
-                  }}
-                  className="w-16 px-2 py-1 text-xs border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-purple-300"
-                />
-                <span className="text-xs text-gray-600">x</span>
+              <div className="relative mb-2">
+                <span
+                  onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                  className="px-4 py-3 text-sm text-[#81069E] rounded-[20px] hover:bg-gray-200 transition hover:boarder-none focus:outline-none"
+                >
+                  {playbackSpeed.toFixed(2)}x
+                </span>
+
+                {showSpeedMenu && (
+                  <>
+                    {/* Backdrop to close menu when clicking outside */}
+                    <div
+                      className="fixed inset-0 z-[1000] "
+                      onClick={() => setShowSpeedMenu(false)}
+                    />
+                    {/* Speed menu */}
+                    <div className="flex flex-col absolute rounded-[20px] bottom-full right-0 mb-2 bg-white border border-gray-200 shadow-lg py-1 z-[1001] min-w-[80px]">
+                      {[0.25, 0.5, 1.0, 1.5, 2.0].map((speed) => (
+                        <span
+                          key={speed}
+                          onClick={() => {
+                            setPlaybackSpeed(speed);
+                            setShowSpeedMenu(false);
+                          }}
+                          className={`w-full px-4 py-2 text-sm text-left hover:bg-gray-100 hover:rounded-[20px] transition ${
+                            playbackSpeed === speed
+                              ? "text-[#81069E]"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {speed.toFixed(2)}x
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -697,13 +733,13 @@ export default function InteractiveMap({
                   <li>
                     • Avg. Waiting Time{" "}
                     <span className=" text-[#81069E] text-[16px] font-bold ml-1">
-                      {(stationCard?.average_waiting_time ?? 0).toFixed(1)} mins
+                      {(stationCard?.average_waiting_time ?? 0).toFixed(2)} mins
                     </span>
                   </li>
                   <li>
                     • Avg. Queue Length{" "}
                     <span className="text-[#81069E] text-[16px] font-bold ml-1">
-                      {(stationCard?.average_queue_length ?? 0).toFixed(1)}{" "}
+                      {(stationCard?.average_queue_length ?? 0).toFixed(2)}{" "}
                       persons
                     </span>
                   </li>
@@ -728,13 +764,13 @@ export default function InteractiveMap({
                     <li>
                       • Avg. Waiting Time{" "}
                       <span className="text-[#81069E] text-[16px] font-bold ml-1">
-                        {summary.average_waiting_time.toFixed(1)} mins
+                        {summary.average_waiting_time.toFixed(2)} mins
                       </span>
                     </li>
                     <li>
                       • Avg. Queue Length{" "}
                       <span className="text-[#81069E] text-[16px] font-bold ml-1">
-                        {summary.average_queue_length.toFixed(1)} persons
+                        {summary.average_queue_length.toFixed(2)} persons
                       </span>
                     </li>
                   </ul>

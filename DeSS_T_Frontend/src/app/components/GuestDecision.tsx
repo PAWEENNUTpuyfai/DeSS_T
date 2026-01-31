@@ -15,17 +15,20 @@ export default function GuestDecision() {
           <img src="/DeSS-T_logo.png" alt="DeSS-T Logo" className="logo" />
         </div>
         <div className="decision_content mb-14">
-          <span className="header flex mb-6">
-            You are currently in{" "}
-            <p className="font-bold text-[#81069E] ml-2">Guest Mode.</p>
+          <span className="flex mb-6 items-center">
+            <p className="header text-[#323232]">You are currently in </p>
+            <p className="header font-bold text-[#81069E] ml-2">Guest Mode.</p>
           </span>
-          <span className="question flex">
-            Do you want to download a{" "}
-            <p className="text-[#81069E] mx-2">Configuration Data</p>
+          <span className="question flex items-center">
+            <p className="question text-[#323232]">
+              Do you want to download a{" "}
+            </p>
+            <p className="question text-[#81069E] mx-2">Configuration Data</p>
           </span>
-          <span className="question flex">
-            or <p className="text-[#81069E] mx-2">Project</p> from Community
-            workspace?
+          <span className="flex items-center">
+            <p className="question text-[#323232]">or </p>
+            <p className="question text-[#81069E] mx-2">Project</p>
+            <p className="question text-[#323232]">from Community workspace?</p>
           </span>
           <div className="btn_primary w-[50%] mt-6 flex justify-center items-center">
             <p>Yes, I want to go to community page.</p>

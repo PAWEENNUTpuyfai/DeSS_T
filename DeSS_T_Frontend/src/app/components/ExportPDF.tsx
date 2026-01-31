@@ -586,40 +586,69 @@ export default function ExportPDF({
         <h2 className="text-[#81069e] mb-4">Station Statistics (Time-based)</h2>
 
         <div className="space-y-6">
-          {stationTimeSlotData.map((slot, slotIdx) => (
-            <div key={`station-slot-${slotIdx}`} className="border-b border-gray-300 pb-4">
-              <h3
-                style={{
-                  fontSize: "15px",
-                  fontWeight: "bold",
-                  marginBottom: "10px",
-                  color: "#1e40af",
-                }}
-              >
-                {slot.slotName}
-              </h3>
-              <div className="overflow-hidden rounded border border-gray-200">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-3 py-2">Station Name</th>
-                      <th className="text-left px-3 py-2">Avg. Waiting Time</th>
-                      <th className="text-left px-3 py-2">Avg. Queue Length</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {slot.stations.map((station, stationIdx) => (
-                      <tr key={`station-${slotIdx}-${stationIdx}`} className="border-t">
-                        <td className="px-3 py-2">{station.stationName}</td>
-                        <td className="px-3 py-2">{station.avgWaitingTime} mins</td>
-                        <td className="px-3 py-2">{station.avgQueueLength} persons</td>
+          {stationTimeSlotData.map((slot, slotIdx) => {
+            // Calculate average of all stations for this time slot
+            const avgOfAllStations = slot.stations.length > 0 
+              ? {
+                  avgWaitingTime: (slot.stations.reduce((sum, s) => sum + parseFloat(s.avgWaitingTime), 0) / slot.stations.length).toFixed(1),
+                  avgQueueLength: (slot.stations.reduce((sum, s) => sum + parseFloat(s.avgQueueLength), 0) / slot.stations.length).toFixed(1),
+                }
+              : { avgWaitingTime: "0.0", avgQueueLength: "0.0" };
+
+            return (
+              <div key={`station-slot-${slotIdx}`} className="border-b border-gray-300 pb-4">
+                <h3
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: "bold",
+                    marginBottom: "10px",
+                    color: "#1e40af",
+                  }}
+                >
+                  {slot.slotName}
+                </h3>
+                
+                {/* Average of All Stations */}
+                <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-3">
+                  <div className="font-semibold text-blue-900 mb-2" style={{ fontSize: "13px" }}>
+                    Average of All Stations
+                  </div>
+                  <div className="grid grid-cols-2 gap-4" style={{ fontSize: "12px" }}>
+                    <div>
+                      <span className="text-gray-700">• Avg. Waiting Time:</span>{" "}
+                      <span className="font-medium text-blue-900">{avgOfAllStations.avgWaitingTime} mins</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-700">• Avg. Queue Length:</span>{" "}
+                      <span className="font-medium text-blue-900">{avgOfAllStations.avgQueueLength} persons</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Station Details Table */}
+                <div className="overflow-hidden rounded border border-gray-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-3 py-2">Station Name</th>
+                        <th className="text-left px-3 py-2">Avg. Waiting Time</th>
+                        <th className="text-left px-3 py-2">Avg. Queue Length</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {slot.stations.map((station, stationIdx) => (
+                        <tr key={`station-${slotIdx}-${stationIdx}`} className="border-t">
+                          <td className="px-3 py-2">{station.stationName}</td>
+                          <td className="px-3 py-2">{station.avgWaitingTime} mins</td>
+                          <td className="px-3 py-2">{station.avgQueueLength} persons</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

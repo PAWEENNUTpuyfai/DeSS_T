@@ -93,8 +93,8 @@ export default function LineChart({
   const dataOffsetLeft = compactMode ? 20 : 30; // extra space for first data point
   
   // In compact mode: reduce minWidthPerTick and maxWidth to fit A4
-  const minWidthPerTick = compactMode ? 35 : 60; // tighter spacing
-  const maxChartWidth = compactMode ? 720 : 1200; // A4 page width constraint
+  const minWidthPerTick = compactMode ? 100 : 150; // increased spacing between points
+  const maxChartWidth = compactMode ? 1500 : 2000; // A4 page width constraint
   
   const chartWidth = Math.min(
     maxChartWidth,
@@ -237,22 +237,26 @@ export default function LineChart({
               );
             })}
 
-            {/* X labels - reduce density in compact mode */}
+            {/* X labels - show time ranges based on timeslot */}
             {xTicks.map((t, idx) => {
               // In compact mode, skip every other tick if too many
               if (compactMode && xTicks.length > 6 && idx % 2 === 1) return null;
               
               const x = xPos(t) - paddingLeft;
+              const startTime = minutesToTime(t);
+              const endTime = minutesToTime(t + slot);
+              const label = `${startTime} - ${endTime}`;
+              
               return (
                 <text
                   key={idx}
                   x={x}
                   y={chartHeight - 8}
-                  fontSize={compactMode ? 8 : 10}
+                  fontSize={compactMode ? 7 : 9}
                   textAnchor="middle"
                   fill="#6b7280"
                 >
-                  {minutesToTime(t)}
+                  {label}
                 </text>
               );
             })}

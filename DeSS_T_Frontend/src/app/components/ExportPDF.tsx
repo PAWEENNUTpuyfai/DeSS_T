@@ -11,13 +11,18 @@ import LineChart from "./Dashboard/LineChart";
 import RouteBarChart from "./Dashboard/RouteBarChart";
 import PassengerWaitingHeatmap from "./Dashboard/PassengerWaitingHeatmap";
 import TopRoutesChart from "./Dashboard/TopRoutesChart";
+import Nav from "./NavBar";
 
 export default function ExportPDF({
   simulationResponse,
   playbackSeed,
+  onBackClick,
+  usermode = "user",
 }: {
   simulationResponse: SimulationResponse;
   playbackSeed?: PlaybackSeed;
+  onBackClick?: () => void;
+  usermode?: "guest" | "user";
 }) {
   // Validate that simulation routes match what user configured in Scenario
   useEffect(() => {
@@ -395,7 +400,9 @@ export default function ExportPDF({
   }, [simulationResponse, playbackSeed?.stations]);
 
   return (
-    <div className="pdf-wrapper">
+    <main>
+      <Nav usermode={usermode} inpage="Output" onBackClick={onBackClick} />
+      <div className="pdf-wrapper">
       {/* Page 1 - Header & Overall Statistics & Heatmap */}
       <div className="page">
         <h1 className="text-bold text-center mb-6">Simulation Report</h1>
@@ -616,10 +623,11 @@ export default function ExportPDF({
         </div>
       </div>
 
-      {/* Print button (hidden when printing) */}
-      <div className="no-print" style={{ padding: 20 }}>
-        <button onClick={() => window.print()}>Export PDF</button>
+        {/* Print button (hidden when printing) */}
+        <div className="no-print" style={{ padding: 20 }}>
+          <button onClick={() => window.print()}>Export PDF</button>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

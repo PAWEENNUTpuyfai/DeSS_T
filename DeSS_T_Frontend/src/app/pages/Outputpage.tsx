@@ -60,6 +60,8 @@ export default function Outputpage({
       <ExportPDF
         simulationResponse={simulationResponse}
         playbackSeed={playbackSeed}
+        usermode={usermode}
+        onBackClick={() => setShowExportPDF(false)}
       />
     );
   }

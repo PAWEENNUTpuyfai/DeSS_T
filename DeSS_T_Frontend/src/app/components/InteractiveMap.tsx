@@ -191,6 +191,14 @@ export default function InteractiveMap({
   };
 
   const currentTimeLabel = formatTime(clampTimeMinutes);
+  // Round to the current time slot boundary for label display
+  const slotStartMinutes =
+    Math.floor(baseFrameMinutes / timeSlotMinutes) * timeSlotMinutes;
+  const slotEndMinutes = Math.min(
+    slotStartMinutes + timeSlotMinutes,
+    simEndMinutes,
+  );
+  const currentSlotLabel = `${formatTime(slotStartMinutes)}-${formatTime(slotEndMinutes)}`;
 
   // Calculate bus positions at an arbitrary time (supports intra-slot interpolation)
   const computeBusesAtTime = useCallback(
@@ -385,15 +393,15 @@ export default function InteractiveMap({
   }
 
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-2">
+      <div className="flex items-center mb-3 text-sm text-gray-700 ml-6">
+        <p>Simulation Period: {simWindow}</p>
+        <p className="ml-6">Time Slot: {timeSlotMinutes} min</p>
+      </div>
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left: Map + legend */}
-        <div className="flex-1 p-4">
-          <div className="flex justify-between items-center mb-3 text-sm text-gray-700">
-            <span>Simulation Period: {simWindow}</span>
-            <span>Time Slot: {timeSlotMinutes} min</span>
-          </div>
-          <div className="relative w-full h-[520px] rounded-[16px] overflow-hidden border border-gray-100">
+        <div className="flex-1 mx-4">
+          <div className="interactive-map relative w-full h-[520px] rounded-[16px] overflow-hidden border border-gray-100">
             <MapContainer
               key={`map-${stations[0]?.id}-${mockRoutes.length}`}
               center={mapCenter}
@@ -499,7 +507,7 @@ export default function InteractiveMap({
                     opacity={0.95}
                     permanent
                   >
-                    <span className="text-xs font-semibold">
+                    <span className="text-xs">
                       {b.id} @ {currentTimeLabel}
                     </span>
                   </Tooltip>
@@ -509,7 +517,7 @@ export default function InteractiveMap({
 
             {/* Legend overlay */}
             <div className="absolute left-3 bottom-3 z-[1000] pointer-events-auto bg-white/90 border border-gray-200 rounded-md p-3 text-xs space-y-2 shadow-sm max-w-[220px]">
-              <div className="font-semibold text-gray-800 mb-2">Routes</div>
+              <div className="text-gray-800 mb-2">Routes</div>
               {mockRoutes.map((r) => (
                 <button
                   key={r.id}
@@ -538,7 +546,7 @@ export default function InteractiveMap({
           </div>
 
           {/* Timeline slider */}
-          <div className="mt-4 px-4">
+          <div className="mt-4 px-4 interactive-map-timeline flex flex-col justify-center">
             <div className="flex items-center gap-3">
               <button
                 className="w-9 h-9 rounded-full border flex items-center justify-center text-purple-600 border-purple-600 hover:bg-purple-50 transition"
@@ -622,59 +630,68 @@ export default function InteractiveMap({
         </div>
 
         {/* Right: Stats */}
-        <div className="w-full lg:w-[340px] flex flex-col gap-4">
-          <div className="bg-white border border-gray-200 rounded-[16px] shadow-sm p-4">
+        <div className="w-full lg:w-[340px] flex flex-col">
+          <p className="text-[18px] text-[#4B4B4B]">
+            Simulation Results by Time Slot{" "}
+          </p>
+          <p className="text-[20px] text-[#81069E] mt-2">@ {currentSlotLabel}</p>
+          <div className="mt-6 mb-6">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-1 h-10 bg-purple-700 rounded-full" />
-              <div>
-                <p className="text-sm text-gray-600">Station :</p>
-                <p className="text-base font-semibold text-gray-900">
+              <div className="w-1 h-10 bg-[#81069E] rounded-full" />
+              <div className="flex items-center ">
+                <p className="text-[18px] text-[#4B4B4B]">Station :</p>
+                <p className="text-[18px] text-[#4B4B4B] ml-2">
                   {stationCard?.station_name ??
                     selectedStation?.id ??
                     "Unknown"}
                 </p>
               </div>
             </div>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li>
-                • Avg. Waiting Time{" "}
-                <span className="font-semibold text-purple-700">
-                  {(stationCard?.average_waiting_time ?? 0).toFixed(1)} mins
-                </span>
-              </li>
-              <li>
-                • Avg. Queue Length{" "}
-                <span className="font-semibold text-purple-700">
-                  {(stationCard?.average_queue_length ?? 0).toFixed(1)} persons
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          {summary && (
             <div className="bg-white border border-gray-200 rounded-[16px] shadow-sm p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-1 h-10 bg-purple-700 rounded-full" />
-                <div>
-                  <p className="text-base font-semibold text-gray-900">
-                    Average of All Stations
-                  </p>
-                </div>
-              </div>
-              <ul className="space-y-2 text-sm text-gray-700">
+              <ul className="space-y-2 text-sm text-gray-700 py-6 px-4">
                 <li>
                   • Avg. Waiting Time{" "}
-                  <span className="font-semibold text-purple-700">
-                    {summary.average_waiting_time.toFixed(1)} mins
+                  <span className=" text-purple-700">
+                    {(stationCard?.average_waiting_time ?? 0).toFixed(1)} mins
                   </span>
                 </li>
                 <li>
                   • Avg. Queue Length{" "}
-                  <span className="font-semibold text-purple-700">
-                    {summary.average_queue_length.toFixed(1)} persons
+                  <span className="text-purple-700">
+                    {(stationCard?.average_queue_length ?? 0).toFixed(1)}{" "}
+                    persons
                   </span>
                 </li>
               </ul>
+            </div>
+          </div>
+
+          {summary && (
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-1 h-10 bg-[#81069E] rounded-full" />
+                <div>
+                  <p className="text-[18px] text-[#4B4B4B]">
+                    Average of All Stations
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-[16px] shadow-sm p-4">
+                <ul className="space-y-2 text-sm text-gray-700 py-6 px-4">
+                  <li>
+                    • Avg. Waiting Time{" "}
+                    <span className="text-purple-700">
+                      {summary.average_waiting_time.toFixed(1)} mins
+                    </span>
+                  </li>
+                  <li>
+                    • Avg. Queue Length{" "}
+                    <span className="text-purple-700">
+                      {summary.average_queue_length.toFixed(1)} persons
+                    </span>
+                  </li>
+                </ul>
+              </div>
             </div>
           )}
         </div>

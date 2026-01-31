@@ -942,7 +942,7 @@ export default function Scenario({
                   </span>
                 </div>
                 <div className="config-name mr-10 flex gap-2 items-center">
-                  <p>Configuration Data : </p>
+                  <p className="text-[#323232]" >Configuration Data : </p>
                   <p className="text-[#81069e]">
                     {configurationName || "Guest Setup"}
                   </p>
@@ -1528,7 +1528,7 @@ export default function Scenario({
                 <div className="map-container flex-1 h-[90vh] flex flex-col items-center px-16">
                   <div className="my-4 flex w-full text-header-map justify-start gap-10 items-center">
                     <div className="flex items-center ">
-                      <p>Simulation Period :</p>
+                      <p className="text-[20px] text-[#323232]">Simulation Period :</p>
                       <div className="time-inputs p-2 px-4 text-[#C296CD] ml-3 my-2 h-[60px] flex items-center">
                         <input
                           type="number"
@@ -1557,7 +1557,7 @@ export default function Scenario({
                     </div>
 
                     <div className="flex items-center ">
-                      <p>Time Slot : </p>
+                      <p className="text-[20px] text-[#323232]">Time Slot : </p>
                       <div className="ml-3 my-2 h-full">
                         <CustomDropdown
                           options={timeSlotOptions}

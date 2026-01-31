@@ -464,12 +464,12 @@ export default function ExportPDF({
       <div className="page">
         <h2 className="text-[#81069e] mb-4">Route Statistics</h2>
         
-        <h3 style={{ fontSize: "16px", marginBottom: "12px", fontWeight: "600" }}>Top 3: Most Popular Lines by Customer</h3>
+        <h3 style={{ fontSize: "16px", marginBottom: "12px", fontWeight: "600" }}>All Lines: Most Popular by Customer</h3>
         <div className="mb-6">
           <TopRoutesChart
             route={routes}
             customerData={aggregatedCustomerData}
-            limit={3}
+            limit={routes.length}
           />
         </div>
 

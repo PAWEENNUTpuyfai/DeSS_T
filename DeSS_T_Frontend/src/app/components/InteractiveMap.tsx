@@ -395,8 +395,10 @@ export default function InteractiveMap({
   return (
     <div className="w-full flex flex-col gap-2">
       <div className="flex items-center mb-3 text-sm text-gray-700 ml-6">
-        <p>Simulation Period: {simWindow}</p>
-        <p className="ml-6">Time Slot: {timeSlotMinutes} min</p>
+        <p className="text-[18px]">Simulation Period:</p>
+        <p className="ml-2 text-[18px] text-[#81069e]"> {simWindow}</p>
+        <p className="ml-6 text-[18px]">Time Slot: </p>
+        <p className="ml-2 text-[18px] text-[#81069e]">{timeSlotMinutes} min</p>
       </div>
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left: Map + legend */}
@@ -516,31 +518,25 @@ export default function InteractiveMap({
             </MapContainer>
 
             {/* Legend overlay */}
-            <div className="absolute left-3 bottom-3 z-[1000] pointer-events-auto bg-white/90 border border-gray-200 rounded-md p-3 text-xs space-y-2 shadow-sm max-w-[220px]">
-              <div className="text-gray-800 mb-2">Routes</div>
+            <div className="absolute left-3 bottom-3 z-[1000] pointer-events-auto bg-white/80 rounded-[20px] p-3 text-xs space-y-2 shadow-sm max-w-[220px]">
               {mockRoutes.map((r) => (
-                <button
+                <label
                   key={r.id}
-                  onClick={() => toggleRoute(r.id)}
-                  className={`w-full flex items-center gap-2 p-1.5 rounded transition ${
-                    visibleRoutes.has(r.id)
-                      ? "bg-gray-100 border border-gray-300"
-                      : "bg-gray-50 border border-gray-200 opacity-50"
-                  } hover:bg-gray-100`}
-                  type="button"
+                  className="flex items-center gap-1 p-1 rounded hover:bg-gray-100 cursor-pointer"
                 >
-                  <input
-                    type="checkbox"
-                    checked={visibleRoutes.has(r.id)}
-                    onChange={() => {}}
-                    className="cursor-pointer"
-                  />
                   <span
-                    className="inline-block w-3 h-3 rounded-sm flex-shrink-0"
-                    style={{ backgroundColor: r.color }}
-                  />
-                  <span className="text-left">{r.name}</span>
-                </button>
+                    onClick={() => toggleRoute(r.id)}
+                    className={`inline-block w-4 h-4 rounded cursor-pointer transition-all ${
+                      visibleRoutes.has(r.id) ? "" : "bg-white"
+                    }`}
+                    style={
+                      visibleRoutes.has(r.id)
+                        ? { backgroundColor: r.color }
+                        : { border: `2px solid ${r.color}` }
+                    }
+                  ></span>
+                  <span className="text-sm">{r.name}</span>
+                </label>
               ))}
             </div>
           </div>
@@ -548,55 +544,111 @@ export default function InteractiveMap({
           {/* Timeline slider */}
           <div className="mt-4 px-4 interactive-map-timeline flex flex-col justify-center">
             <div className="flex items-center gap-3">
-              <button
-                className="w-9 h-9 rounded-full border flex items-center justify-center text-purple-600 border-purple-600 hover:bg-purple-50 transition"
-                type="button"
-                onClick={() => setPlaying((p) => !p)}
-                disabled={timeLabels.length <= 1}
+              <span
+                className="mb-2 ml-1 text-2xl text-[#81069E] cursor-pointer hover:opacity-70 transition select-none"
+                onClick={() => {
+                  if (timeLabels.length > 1) {
+                    setPlaying((p) => !p);
+                  }
+                }}
               >
-                {playing ? "❚❚" : "▶"}
-              </button>
-              <div className="flex-1 relative">
-                {/* Timeline background with tick marks */}
-                <div className="absolute top-0 w-full h-full flex items-center pointer-events-none">
-                  <div className="w-full h-1 bg-gray-300 rounded-full relative">
-                    {/* Tick marks for each frame */}
-                    {timeLabels.map((_, idx) => (
-                      <div
-                        key={`tick-${idx}`}
-                        className="absolute w-0.5 h-3 bg-gray-500 top-1/2 -translate-y-1/2"
-                        style={{
-                          left: `${(idx / Math.max(1, timeLabels.length - 1)) * 100}%`,
-                        }}
+                {playing ? (
+                  <svg
+                    width="25"
+                    height="20"
+                    viewBox="0 0 20 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g clip-path="url(#clip0_722_4065)">
+                      <path
+                        d="M3.33333 0C2.44928 0 1.60143 0.361223 0.976311 1.00421C0.351189 1.64719 0 2.51926 0 3.42857V20.5714C0 21.4807 0.351189 22.3528 0.976311 22.9958C1.60143 23.6388 2.44928 24 3.33333 24C4.21739 24 5.06523 23.6388 5.69036 22.9958C6.31548 22.3528 6.66667 21.4807 6.66667 20.5714V3.42857C6.66667 2.51926 6.31548 1.64719 5.69036 1.00421C5.06523 0.361223 4.21739 0 3.33333 0ZM16.6667 0C15.7826 0 14.9348 0.361223 14.3096 1.00421C13.6845 1.64719 13.3333 2.51926 13.3333 3.42857V20.5714C13.3333 21.4807 13.6845 22.3528 14.3096 22.9958C14.9348 23.6388 15.7826 24 16.6667 24C17.5507 24 18.3986 23.6388 19.0237 22.9958C19.6488 22.3528 20 21.4807 20 20.5714V3.42857C20 2.51926 19.6488 1.64719 19.0237 1.00421C18.3986 0.361223 17.5507 0 16.6667 0Z"
+                        fill="#81069E"
                       />
-                    ))}
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_722_4065">
+                        <rect width="20" height="24" fill="white" />
+                      </clipPath>
+                    </defs>
+                  </svg>
+                ) : (
+                  <svg
+                    width="25"
+                    height="20"
+                    viewBox="0 0 25 30"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M22.6579 12.2696C24.4695 13.4536 24.4695 16.1079 22.6579 17.2919L4.64132 29.0677C2.64598 30.3718 0 28.9402 0 26.5565V3.00503C0 0.62129 2.64598 -0.810322 4.64132 0.49384L22.6579 12.2696Z"
+                      fill="#81069E"
+                    />
+                  </svg>
+                )}
+              </span>
+              <div className="w-full">
+                <div className="flex-1 relative mx-4">
+                  {/* Timeline background with tick marks */}
+                  <div className="absolute top-0 w-full h-full flex items-center pointer-events-none">
+                    <div className="w-full h-1 bg-[#D9D9D9] rounded-full relative">
+                      {/* Tick marks for each frame - thick marks only on hour boundaries */}
+                      {timeLabels.map((label, idx) => {
+                        // Check if this is an hour boundary (ends with :00)
+                        const isHourBoundary = label.endsWith(":00");
+                        return (
+                          <div
+                            key={`tick-${idx}`}
+                            className={`absolute top-1/2 -translate-y-1/2 ${
+                              isHourBoundary
+                                ? "w-1 h-4 bg-[#9B9B9B]"
+                                : "w-0.5 h-3 bg-[#D9D9D9]"
+                            }`}
+                            style={{
+                              left: `${(idx / Math.max(1, timeLabels.length - 1)) * 100}%`,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(0, timeLabels.length - 1)}
+                    step={1}
+                    value={frameIdx}
+                    onChange={(e) => {
+                      setPlaying(false);
+                      setPlaybackState({
+                        idx: Number(e.target.value),
+                        progress: 0,
+                      });
+                    }}
+                    className="timeline-slider flex-1 w-full accent-purple-600 relative z-10"
+                    style={{
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      width: "100%",
+                      height: "6px",
+                      background: "transparent",
+                      outline: "none",
+                      cursor: "pointer",
+                    }}
+                  />
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={Math.max(0, timeLabels.length - 1)}
-                  step={1}
-                  value={frameIdx}
-                  onChange={(e) => {
-                    setPlaying(false);
-                    setPlaybackState({
-                      idx: Number(e.target.value),
-                      progress: 0,
-                    });
-                  }}
-                  className="flex-1 w-full accent-purple-600 relative z-10"
-                  style={{
-                    appearance: "none",
-                    WebkitAppearance: "none",
-                    width: "100%",
-                    height: "6px",
-                    background: "transparent",
-                    outline: "none",
-                    cursor: "pointer",
-                  }}
-                />
+                {/* Time labels */}
+                <div className="flex justify-between text-[#9B9B9B] text-xs">
+                  <span className="font-medium">{timeLabels[0] ?? "--"}</span>
+                  <span className="font-medium">
+                    {timeLabels[Math.floor(timeLabels.length / 2)] ?? "--"}
+                  </span>
+                  <span className="font-medium">
+                    {timeLabels[timeLabels.length - 1] ?? "--"}
+                  </span>
+                </div>
               </div>
+
               {/* Playback Speed Controls */}
               <div className="flex items-center gap-2">
                 <input
@@ -616,16 +668,6 @@ export default function InteractiveMap({
                 <span className="text-xs text-gray-600">x</span>
               </div>
             </div>
-            {/* Time labels */}
-            <div className="flex justify-between text-xs text-gray-600 mt-3">
-              <span className="font-medium">{timeLabels[0] ?? "--"}</span>
-              <span className="font-medium">
-                {timeLabels[Math.floor(timeLabels.length / 2)] ?? "--"}
-              </span>
-              <span className="font-medium">
-                {timeLabels[timeLabels.length - 1] ?? "--"}
-              </span>
-            </div>
           </div>
         </div>
 
@@ -634,7 +676,9 @@ export default function InteractiveMap({
           <p className="text-[18px] text-[#4B4B4B]">
             Simulation Results by Time Slot{" "}
           </p>
-          <p className="text-[20px] text-[#81069E] mt-2">@ {currentSlotLabel}</p>
+          <p className="text-[20px] text-[#81069E] mt-2">
+            @ {currentSlotLabel}
+          </p>
           <div className="mt-6 mb-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-1 h-10 bg-[#81069E] rounded-full" />
@@ -647,22 +691,24 @@ export default function InteractiveMap({
                 </p>
               </div>
             </div>
-            <div className="bg-white border border-gray-200 rounded-[16px] shadow-sm p-4">
-              <ul className="space-y-2 text-sm text-gray-700 py-6 px-4">
-                <li>
-                  • Avg. Waiting Time{" "}
-                  <span className=" text-purple-700">
-                    {(stationCard?.average_waiting_time ?? 0).toFixed(1)} mins
-                  </span>
-                </li>
-                <li>
-                  • Avg. Queue Length{" "}
-                  <span className="text-purple-700">
-                    {(stationCard?.average_queue_length ?? 0).toFixed(1)}{" "}
-                    persons
-                  </span>
-                </li>
-              </ul>
+            <div className="interactive-map-side-container">
+              <div className="py-12 px-8">
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li>
+                    • Avg. Waiting Time{" "}
+                    <span className=" text-[#81069E] text-[16px] font-bold ml-1">
+                      {(stationCard?.average_waiting_time ?? 0).toFixed(1)} mins
+                    </span>
+                  </li>
+                  <li>
+                    • Avg. Queue Length{" "}
+                    <span className="text-[#81069E] text-[16px] font-bold ml-1">
+                      {(stationCard?.average_queue_length ?? 0).toFixed(1)}{" "}
+                      persons
+                    </span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -676,21 +722,23 @@ export default function InteractiveMap({
                   </p>
                 </div>
               </div>
-              <div className="bg-white border border-gray-200 rounded-[16px] shadow-sm p-4">
-                <ul className="space-y-2 text-sm text-gray-700 py-6 px-4">
-                  <li>
-                    • Avg. Waiting Time{" "}
-                    <span className="text-purple-700">
-                      {summary.average_waiting_time.toFixed(1)} mins
-                    </span>
-                  </li>
-                  <li>
-                    • Avg. Queue Length{" "}
-                    <span className="text-purple-700">
-                      {summary.average_queue_length.toFixed(1)} persons
-                    </span>
-                  </li>
-                </ul>
+              <div className="interactive-map-side-container">
+                <div className="py-12 px-8">
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li>
+                      • Avg. Waiting Time{" "}
+                      <span className="text-[#81069E] text-[16px] font-bold ml-1">
+                        {summary.average_waiting_time.toFixed(1)} mins
+                      </span>
+                    </li>
+                    <li>
+                      • Avg. Queue Length{" "}
+                      <span className="text-[#81069E] text-[16px] font-bold ml-1">
+                        {summary.average_queue_length.toFixed(1)} persons
+                      </span>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           )}

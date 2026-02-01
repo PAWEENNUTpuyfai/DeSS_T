@@ -218,6 +218,7 @@ export default function Scenario({
     speed: number;
     capacity: number;
     maxBuses: number;
+    routeTravelingTime: number;
   };
 
   const createRoute = (idx: number): SimpleRoute => ({
@@ -233,6 +234,7 @@ export default function Scenario({
     speed: 60,
     capacity: 16,
     maxBuses: 4,
+    routeTravelingTime: 0,
   });
 
   const [routes, setRoutes] = useState<SimpleRoute[]>([createRoute(0)]);
@@ -287,7 +289,7 @@ export default function Scenario({
 
   const updateBusInfo = (
     routeId: string,
-    key: "maxDistance" | "speed" | "capacity" | "maxBuses",
+    key: "maxDistance" | "speed" | "capacity" | "maxBuses" | "routeTravelingTime",
     value: number,
   ) => {
     setRoutes((prev) =>
@@ -662,6 +664,7 @@ export default function Scenario({
         max_dis: r.maxDistance,
         max_bus: r.maxBuses,
         capacity: r.capacity,
+        route_traveling_time: r.routeTravelingTime || 0,
         bus_scenario_id: "bus-" + currentScenarioId,
         route_path_id: r.name + "-" + currentScenarioId,
       }));
@@ -1488,6 +1491,11 @@ export default function Scenario({
                                     label: "Max Bus :",
                                     key: "maxBuses" as const,
                                     unit: "buses",
+                                  },
+                                  {
+                                    label: "Route Traveling Time :",
+                                    key: "routeTravelingTime" as const,
+                                    unit: "mins",
                                   },
                                 ].map((field) => (
                                   <div

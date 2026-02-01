@@ -545,73 +545,66 @@ export default function ExportPDF({
         <div className="page">
           <h2 className="text-[#81069e] mb-4">Time-based Statistics</h2>
 
-          <div className="space-y-4">
-            {timeSlotData.map((slot, slotIdx) => (
-              <div
-                key={`slot-${slotIdx}`}
-                className="border-b border-gray-300 pb-3"
-              >
-                <h3
-                  style={{
-                    fontSize: "15px",
-                    fontWeight: "bold",
-                    marginBottom: "10px",
-                    color: "#1e40af",
-                  }}
-                >
-                  {slot.slotName}
-                </h3>
-                <div className="space-y-2">
-                  {slot.routes.map((route, routeIdx) => (
-                    <div key={`route-${slotIdx}-${routeIdx}`} className="ml-4">
-                      <div
-                        className="font-semibold mb-1 flex items-center gap-2"
-                        style={{ color: route.routeColor, fontSize: "14px" }}
+          <div className="overflow-hidden rounded border border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left px-3 py-2">Time Slot</th>
+                  <th className="text-left px-3 py-2">Route</th>
+                  <th className="text-left px-3 py-2">Avg. Waiting Time</th>
+                  <th className="text-left px-3 py-2">Avg. Queue Length</th>
+                  <th className="text-left px-3 py-2">Avg. Utilization</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeSlotData.map((slot, slotIdx) =>
+                  slot.routes.length > 0 ? (
+                    slot.routes.map((route, routeIdx) => (
+                      <tr
+                        key={`slot-${slotIdx}-route-${routeIdx}`}
+                        className="border-t"
                       >
-                        <span
-                          className="inline-block rounded-full"
-                          style={{
-                            backgroundColor: route.routeColor,
-                            width: "10px",
-                            height: "10px",
-                          }}
-                        ></span>
-                        {route.routeName}
-                      </div>
-                      <div
-                        className="ml-5 grid grid-cols-3 gap-3"
-                        style={{ fontSize: "12px" }}
-                      >
-                        <div>
-                          <span className="text-gray-600">
-                            Avg. Waiting Time:
-                          </span>{" "}
-                          <span className="font-medium">
-                            {route.avgWaitingTime} mins
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">
-                            Avg. Queue Length:
-                          </span>{" "}
-                          <span className="font-medium">
-                            {route.avgQueueLength} persons
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">
-                            Avg. Utilization:
-                          </span>{" "}
-                          <span className="font-medium">
-                            {route.avgUtilization}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+                        {routeIdx === 0 && (
+                          <td
+                            className="px-3 py-2 font-semibold text-blue-900 align-top"
+                            rowSpan={slot.routes.length}
+                          >
+                            {slot.slotName}
+                          </td>
+                        )}
+                        <td className="px-3 py-2">
+                          <span
+                            className="inline-block rounded-full mr-2"
+                            style={{
+                              backgroundColor: route.routeColor,
+                              width: "10px",
+                              height: "10px",
+                            }}
+                          ></span>
+                          {route.routeName}
+                        </td>
+                        <td className="px-3 py-2">
+                          {route.avgWaitingTime} mins
+                        </td>
+                        <td className="px-3 py-2">
+                          {route.avgQueueLength} persons
+                        </td>
+                        <td className="px-3 py-2">{route.avgUtilization}%</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr key={`slot-${slotIdx}-empty`} className="border-t">
+                      <td className="px-3 py-2 font-semibold text-blue-900">
+                        {slot.slotName}
+                      </td>
+                      <td className="px-3 py-2" colSpan={4}>
+                        No route data
+                      </td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 

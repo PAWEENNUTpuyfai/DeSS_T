@@ -28,7 +28,7 @@ type MockRoute = {
 const createBusIcon = (color: string) => {
   return L.divIcon({
     html: `
-      <svg width="32" height="38" viewBox="0 0 32 38" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+      <svg width="32" height="38" viewBox="0 0 32 38" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M0 28C0 29.77 0.78 31.34 2 32.44V36C2 37.1 2.9 38 4 38H6C6.53043 38 7.03914 37.7893 7.41421 37.4142C7.78929 37.0391 8 36.5304 8 36V34H24V36C24 36.5304 24.2107 37.0391 24.5858 37.4142C24.9609 37.7893 25.4696 38 26 38H28C29.1 38 30 37.1 30 36V32.44C31.22 31.34 32 29.77 32 28V8C32 1 24.84 0 16 0C7.16 0 0 1 0 8V28ZM7 30C5.34 30 4 28.66 4 27C4 25.34 5.34 24 7 24C8.66 24 10 25.34 10 27C10 28.66 8.66 30 7 30ZM25 30C23.34 30 22 28.66 22 27C22 25.34 23.34 24 25 24C26.66 24 28 25.34 28 27C28 28.66 26.66 30 25 30ZM28 18H4V8H28V18Z" fill="${color}"/>
       </svg>
     `,
@@ -225,10 +225,6 @@ export default function InteractiveMap({
       mockRoutes.forEach((r) => {
         if (r.coords.length < 2) return;
 
-        const routeBusInfo = playbackSeed?.busInfo?.find(
-          (bi) => bi.route_id === r.id,
-        );
-        const maxBuses = routeBusInfo?.max_bus ?? 1;
         const routeSchedule = playbackSeed?.scheduleData?.find((s) =>
           s.route_id.startsWith(r.name),
         );
@@ -241,7 +237,6 @@ export default function InteractiveMap({
 
         if (logDebug) {
           console.log(`🚌 Route ${r.name} (${r.id}):`, {
-            maxBuses,
             scheduleFound: !!routeSchedule,
             schedule_list: routeSchedule?.schedule_list,
             totalTravelTimeSeconds,
@@ -276,50 +271,50 @@ export default function InteractiveMap({
             `  Valid Departure times (within sim period):`,
             validDepartureTimes,
           );
-          console.log(`  Max buses for this route: ${maxBuses}`);
           console.log(`  Schedule list raw:`, routeSchedule?.schedule_list);
         }
 
         if (validDepartureTimes.length === 0) return;
 
-        validDepartureTimes.forEach((departureTime, busIdxInSchedule) => {
-          const departureTimeMinutes = timeToMinutes(departureTime);
-
-          if (
-            departureTimeMinutes <= currentMinutes &&
-            currentMinutes >= simStartMinutes
-          ) {
-            const timeSinceDeparture = currentMinutes - departureTimeMinutes;
-            const timeSinceDepartureSeconds = timeSinceDeparture * 60;
-
-            let progress = 0;
-            if (totalTravelTimeSeconds > 0) {
-              progress = Math.min(
-                timeSinceDepartureSeconds / totalTravelTimeSeconds,
-                0.95,
-              );
-            } else {
-              progress = Math.min(
-                (busIdxInSchedule + 1) / (validDepartureTimes.length + 1),
-                0.95,
-              );
-            }
-
-            // Cycling: ถ้าผ่าน maxBuses แล้ว ให้หมุนเวียน (reuse บัสคนแรกที่จบเที่ยว)
-            const displayBusIdx = busIdxInSchedule % maxBuses;
-
-            const coordIdx = Math.min(
-              Math.floor(progress * r.coords.length),
-              r.coords.length - 1,
+        const travelTimeMinutes = totalTravelTimeSeconds / 60;
+        const activeDeparture = [...validDepartureTimes]
+          .map((dep) => {
+            const depMin = timeToMinutes(dep);
+            const arrivalMin = depMin + travelTimeMinutes;
+            const slotIndex = Math.floor(
+              (arrivalMin - simStartMinutes) / timeSlotMinutes,
             );
+            const hideAtMin =
+              simStartMinutes + (slotIndex + 1) * timeSlotMinutes;
+            return { dep, depMin, arrivalMin, hideAtMin };
+          })
+          .filter(
+            ({ depMin, hideAtMin }) =>
+              depMin <= currentMinutes && currentMinutes < hideAtMin,
+          )
+          .sort((a, b) => b.depMin - a.depMin)[0];
 
-            const coord = r.coords[coordIdx];
-            buses.push({
-              id: `${r.name || "route"}-bus${displayBusIdx + 1}`,
-              coord: [coord[0], coord[1]] as [number, number],
-              color: r.color,
-            });
-          }
+        if (!activeDeparture) return;
+
+        const timeSinceDepartureMinutes =
+          currentMinutes - activeDeparture.depMin;
+        const timeSinceDepartureSeconds = timeSinceDepartureMinutes * 60;
+
+        const progress =
+          totalTravelTimeSeconds > 0
+            ? Math.min(timeSinceDepartureSeconds / totalTravelTimeSeconds, 1)
+            : 1;
+
+        const coordIdx = Math.min(
+          Math.floor(progress * r.coords.length),
+          r.coords.length - 1,
+        );
+
+        const coord = r.coords[coordIdx];
+        buses.push({
+          id: `${r.name || "route"}-bus1`,
+          coord: [coord[0], coord[1]] as [number, number],
+          color: r.color,
         });
       });
 
@@ -327,12 +322,12 @@ export default function InteractiveMap({
     },
     [
       mockRoutes,
-      playbackSeed?.busInfo,
       playbackSeed?.scheduleData,
       playbackSeed?.routeResults,
       simEndMinutes,
       simStartMinutes,
       activePlaybackData?.simWindow,
+      timeSlotMinutes,
     ],
   );
 
@@ -632,12 +627,16 @@ export default function InteractiveMap({
                     type="range"
                     min={0}
                     max={Math.max(0, timeLabels.length - 1)}
-                    step={1}
-                    value={frameIdx}
+                    step={0.001}
+                    value={Math.min(
+                      frameIdx + frameProgress,
+                      Math.max(0, timeLabels.length - 1),
+                    )}
                     onChange={(e) => {
                       setPlaying(false);
+                      const snappedIdx = Math.round(Number(e.target.value));
                       setPlaybackState({
-                        idx: Number(e.target.value),
+                        idx: snappedIdx,
                         progress: 0,
                       });
                     }}

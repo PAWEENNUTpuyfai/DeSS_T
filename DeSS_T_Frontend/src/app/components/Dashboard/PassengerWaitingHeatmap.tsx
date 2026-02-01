@@ -62,7 +62,22 @@ function HeatmapLayer({ data }: { data: HeatmapDataPoint[] }) {
       waitingTimes.reduce((a, b) => a + b, 0) / waitingTimes.length;
 
     // Create heatmap layer with custom options
-    const heat = (L as any)
+    interface HeatLayerOptions {
+      radius: number;
+      blur: number;
+      maxZoom: number;
+      max: number;
+      gradient: Record<string, string>;
+    }
+    
+    interface HeatLayer {
+      addTo: (map: ReturnType<typeof useMap>) => void;
+      remove: () => void;
+    }
+    
+    const heat = (L as typeof L & { 
+      heatLayer: (data: number[][], options: HeatLayerOptions) => HeatLayer
+    })
       .heatLayer(heatData, {
         radius: getRadiusFromWaitingTime(avgWaitingTime), // Size based on waiting time
         blur: getBlurFromWaitingTime(avgWaitingTime), // Blur based on waiting time

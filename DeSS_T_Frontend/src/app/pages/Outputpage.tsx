@@ -60,6 +60,8 @@ export default function Outputpage({
       <ExportPDF
         simulationResponse={simulationResponse}
         playbackSeed={playbackSeed}
+        usermode={usermode}
+        onBackClick={() => setShowExportPDF(false)}
       />
     );
   }
@@ -114,7 +116,7 @@ export default function Outputpage({
                 fill="#4B4B4B"
               />
             </svg>
-            <p className="whitespace-nowrap">Export PDF</p>
+            <p className="whitespace-nowrap text-[18px]">Export PDF</p>
           </button>
         </div>
 

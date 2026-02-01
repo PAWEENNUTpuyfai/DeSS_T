@@ -79,14 +79,10 @@ export default function RouteBarChart({
   const paddingBottom = compactMode ? 35 : 50;
   const chartHeight = compactMode ? 200 : 300;
   
-  // Fit A4 width (~720px available, minus axis)
-  const maxAvailableWidth = compactMode ? 720 : 1000;
-  const contentWidth = Math.min(
-    maxAvailableWidth,
-    Math.max(
-      compactMode ? 280 : 300,
-      chartData.length * baseBarWidth + paddingRight,
-    )
+  // Calculate width based on number of bars (no max limit to show all data)
+  const contentWidth = Math.max(
+    compactMode ? 280 : 300,
+    chartData.length * baseBarWidth + paddingRight,
   );
   const innerWidth = contentWidth - paddingRight;
   const innerHeight = chartHeight - paddingTop - paddingBottom;
@@ -155,8 +151,8 @@ export default function RouteBarChart({
         </svg>
       </div>
 
-      {/* Scrollable chart area - no scroll in compact mode */}
-      <div className={compactMode ? "w-full overflow-hidden" : "w-full overflow-x-auto"}>
+      {/* Scrollable chart area - enable scroll to show all bars */}
+      <div className="w-full overflow-x-auto">
         <svg width={contentWidth} height={chartHeight} className="bg-white">
           {yTickValues.map((tick, idx) => {
             const y = paddingTop + yScale(tick);

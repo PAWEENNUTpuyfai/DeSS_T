@@ -12,7 +12,7 @@ class RouteBusInformation(BaseModel):
     max_distance: float = Field(..., alias="max_distance")
     max_bus: int = Field(..., alias="max_bus")
     bus_capacity: int = Field(..., alias="bus_capacity")
-
+    avg_travel_time: float = Field(..., alias="avg_travel_time")
 
 class ScenarioData(BaseModel):
     route_id: str = Field(..., alias="route_id")
@@ -31,6 +31,7 @@ class RoutePair(BaseModel):
     snd_station: str = Field(..., alias="snd_station")
     travel_time: float = Field(..., alias="travel_time")
     distance: float = Field(..., alias="distance")
+
 
 
 class DisRecord(BaseModel):

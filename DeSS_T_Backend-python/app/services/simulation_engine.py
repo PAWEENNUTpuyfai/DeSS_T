@@ -97,9 +97,9 @@ class SimulationEngine:
                     alighting_rules=self.config["ALIGHTING_RULES"],
                     time_ctx=self.config["TIME_CTX"],
                     travel_times={
-                        k: v / 60 for k, v in self.config["TRAVEL_TIMES"].items()
+                        k: v / 60 for k, v in self.config["TRAVEL_TIMES"][route_id].items()
                     },
-                    travel_distances=self.config["TRAVEL_DISTANCES"],
+                    travel_distances=self.config["TRAVEL_DISTANCES"][route_id],
                     env=self.env
                 )
 
@@ -430,7 +430,7 @@ class Bus(sim.Component):
 
             # ---------- LOADING ----------
             if not is_last_station:
-                while len(self.passengers) < self.capacity:
+                while len(self.passengers) < self.capacity and station.wait_store.length() > 0:
                     p = yield self.from_store(station.wait_store)
                     if p is None:
                         break

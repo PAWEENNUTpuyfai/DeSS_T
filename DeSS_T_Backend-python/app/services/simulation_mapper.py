@@ -1,10 +1,12 @@
+import pprint
+
 import salabim as sim
 from app.services.simulation_time import TimeContext, parse_hour_min
 
 def build_simulation_config(req):
     time_ctx = TimeContext(req.time_period,req.time_slot)
 
-    travel_times, distances = map_route_pairs(
+    travel_times_ideal, distances = map_route_pairs(
         req.configuration_data.route_pair
     )
 
@@ -15,6 +17,18 @@ def build_simulation_config(req):
 
     bus_info = map_bus_information(req.scenario_data)
 
+    travel_times = build_travel_times(
+        bus_routes,
+        travel_times_ideal,
+        distances,
+        bus_info
+    )
+
+    route_distances = build_route_distances(
+        bus_routes,
+        distances
+    )
+    
     interarrival_rules = map_time_based_distributions(
         req.configuration_data.interarrival_data,
         time_ctx
@@ -30,17 +44,26 @@ def build_simulation_config(req):
         time_ctx
     )
 
-    return {
+    config = {
         "STATION_LIST": req.configuration_data.station_list,
         "TIME_CTX": time_ctx,
         "TRAVEL_TIMES": travel_times,
-        "TRAVEL_DISTANCES": distances,
+        "TRAVEL_DISTANCES": route_distances,
         "BUS_ROUTES": bus_routes,
         "BUS_INFO": bus_info,
         "BUS_SCHEDULES": bus_schedules,
         "INTERARRIVAL_RULES": interarrival_rules,
         "ALIGHTING_RULES": alighting_rules
     }
+
+    # text_dump = pprint.pformat(config, depth=4, width=120)
+
+    # with open("simulation_config.txt", "w", encoding="utf-8") as f:
+    #     f.write("===== SIMULATION CONFIG DUMP =====\n")
+    #     f.write(text_dump)
+    #     f.write("\n=================================\n")
+
+    return config
 
 
 # Example structure of the returned config:
@@ -212,7 +235,9 @@ def map_bus_information(scenarios):
             "max_distance": info.max_distance * 1000,
 
             "max_bus": info.max_bus,
-            "capacity": info.bus_capacity
+            "capacity": info.bus_capacity,
+            #minutes to seconds
+            "avg_travel_time": info.avg_travel_time *60
         }
 
     return bus_info
@@ -230,3 +255,78 @@ def map_bus_schedules(scenarios, time_ctx):
         schedules[sc.route_id] = sorted(times)
 
     return schedules
+
+def build_travel_times(
+    bus_routes,
+    travel_times_ideal,
+    travel_distances,
+    bus_info
+):
+    travel_times = {}
+
+    for route_id, stations in bus_routes.items():
+        avg_time = bus_info.get(route_id, {}).get("avg_travel_time", 0)
+
+        travel_times[route_id] = {}
+
+        # ----------------------------------
+        # สร้าง list ของ segment จาก key เดิม
+        # ----------------------------------
+        segments = []
+        total_distance = 0.0
+
+        for i in range(len(stations) - 1):
+            key = (stations[i], stations[i + 1])
+
+            # ❗ ใช้ key เดิมเป็นหลัก
+            if key not in travel_times_ideal:
+                raise KeyError(
+                    f"Route {route_id} missing travel_time for {key}"
+                )
+
+            if avg_time and avg_time > 0:
+                dist = travel_distances[key]
+                segments.append((key, dist))
+                total_distance += dist
+            else:
+                # ไม่มี avg_travel_time → ใช้ของเดิมทันที
+                travel_times[route_id][key] = travel_times_ideal[key]
+
+        # ----------------------------------
+        # ถ้าไม่มี avg_travel_time → จบ route นี้
+        # ----------------------------------
+        if not avg_time or avg_time <= 0:
+            continue
+
+        if total_distance <= 0:
+            raise ValueError(
+                f"Total distance is zero for route {route_id}"
+            )
+
+        # ----------------------------------
+        # แจกเวลาใหม่ตามสัดส่วน distance
+        # ----------------------------------
+        for key, dist in segments:
+            travel_times[route_id][key] = (
+                dist / total_distance
+            ) * avg_time
+
+    return travel_times
+
+def build_route_distances(bus_routes, distances):
+    route_distances = {}
+
+    for route_id, stations in bus_routes.items():
+        route_distances[route_id] = {}
+
+        for i in range(len(stations) - 1):
+            key = (stations[i], stations[i + 1])
+
+            if key not in distances:
+                raise KeyError(
+                    f"Missing distance for {key} in route {route_id}"
+                )
+
+            route_distances[route_id][key] = distances[key]
+
+    return route_distances

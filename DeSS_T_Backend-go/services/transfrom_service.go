@@ -106,6 +106,7 @@ func TransformScenario(
 				MaxDistance: float64(bi.MaxDis),
 				MaxBus:      bi.MaxBus,
 				BusCapacity: bi.Capacity,
+				AvgTravelTime: float64(bi.AvgTravelTime),
 			},
 		})
 	}

@@ -24,6 +24,7 @@ type RouteBusInformation struct {
 	MaxDistance float64 `json:"max_distance"`
 	MaxBus      int     `json:"max_bus"`
 	BusCapacity int     `json:"bus_capacity"`
+	AvgTravelTime float64 `json:"avg_travel_time"`
 }
 
 type ConfigurationData struct {

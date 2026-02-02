@@ -213,7 +213,7 @@ def map_time_based_distributions(simdata_list, time_ctx):
     for simdata in simdata_list:
         t0, t1 = time_ctx.range_to_sim(simdata.time_range)
 
-        for rec in simdata.alighting_records:
+        for rec in simdata.records:
             rules[(rec.station, t0, t1)] = \
                 build_distribution(
                     rec.distribution,

@@ -49,7 +49,7 @@ type RoutePair struct {
 
 type SimData struct {
 	TimeRange string `json:"time_range"`
-	DisRecords []DisRecord `json:"alighting_records"`
+	DisRecords []DisRecord `json:"records"`
 }
 
 type DisRecord struct {

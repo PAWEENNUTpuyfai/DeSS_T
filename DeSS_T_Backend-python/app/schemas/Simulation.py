@@ -42,7 +42,7 @@ class DisRecord(BaseModel):
 
 class SimData(BaseModel):
     time_range: str = Field(..., alias="time_range")
-    alighting_records: List[DisRecord] = Field(..., alias="alighting_records")
+    records: List[DisRecord] = Field(..., alias="records")
 
 
 class ConfigurationData(BaseModel):

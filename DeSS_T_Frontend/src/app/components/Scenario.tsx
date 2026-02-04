@@ -218,6 +218,7 @@ export default function Scenario({
     speed: number;
     capacity: number;
     maxBuses: number;
+    routeTravelingTime: number;
   };
 
   const createRoute = (idx: number): SimpleRoute => ({
@@ -233,6 +234,7 @@ export default function Scenario({
     speed: 60,
     capacity: 16,
     maxBuses: 4,
+    routeTravelingTime: 0,
   });
 
   const [routes, setRoutes] = useState<SimpleRoute[]>([createRoute(0)]);
@@ -287,7 +289,7 @@ export default function Scenario({
 
   const updateBusInfo = (
     routeId: string,
-    key: "maxDistance" | "speed" | "capacity" | "maxBuses",
+    key: "maxDistance" | "speed" | "capacity" | "maxBuses" | "routeTravelingTime",
     value: number,
   ) => {
     setRoutes((prev) =>
@@ -662,6 +664,7 @@ export default function Scenario({
         max_dis: r.maxDistance,
         max_bus: r.maxBuses,
         capacity: r.capacity,
+        route_traveling_time: r.routeTravelingTime || 0,
         bus_scenario_id: "bus-" + currentScenarioId,
         route_path_id: r.name + "-" + currentScenarioId,
       }));
@@ -942,7 +945,7 @@ export default function Scenario({
                   </span>
                 </div>
                 <div className="config-name mr-10 flex gap-2 items-center">
-                  <p>Configuration Data : </p>
+                  <p className="text-[#323232]" >Configuration Data : </p>
                   <p className="text-[#81069e]">
                     {configurationName || "Guest Setup"}
                   </p>
@@ -1489,6 +1492,11 @@ export default function Scenario({
                                     key: "maxBuses" as const,
                                     unit: "buses",
                                   },
+                                  {
+                                    label: "Route Traveling Time :",
+                                    key: "routeTravelingTime" as const,
+                                    unit: "mins",
+                                  },
                                 ].map((field) => (
                                   <div
                                     key={field.key}
@@ -1528,7 +1536,7 @@ export default function Scenario({
                 <div className="map-container flex-1 h-[90vh] flex flex-col items-center px-16">
                   <div className="my-4 flex w-full text-header-map justify-start gap-10 items-center">
                     <div className="flex items-center ">
-                      <p>Simulation Period :</p>
+                      <p className="text-[20px] text-[#323232]">Simulation Period :</p>
                       <div className="time-inputs p-2 px-4 text-[#C296CD] ml-3 my-2 h-[60px] flex items-center">
                         <input
                           type="number"
@@ -1557,7 +1565,7 @@ export default function Scenario({
                     </div>
 
                     <div className="flex items-center ">
-                      <p>Time Slot : </p>
+                      <p className="text-[20px] text-[#323232]">Time Slot : </p>
                       <div className="ml-3 my-2 h-full">
                         <CustomDropdown
                           options={timeSlotOptions}

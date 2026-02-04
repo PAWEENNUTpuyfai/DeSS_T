@@ -11,13 +11,18 @@ import LineChart from "./Dashboard/LineChart";
 import RouteBarChart from "./Dashboard/RouteBarChart";
 import PassengerWaitingHeatmap from "./Dashboard/PassengerWaitingHeatmap";
 import TopRoutesChart from "./Dashboard/TopRoutesChart";
+import Nav from "./NavBar";
 
 export default function ExportPDF({
   simulationResponse,
   playbackSeed,
+  onBackClick,
+  usermode = "user",
 }: {
   simulationResponse: SimulationResponse;
   playbackSeed?: PlaybackSeed;
+  onBackClick?: () => void;
+  usermode?: "guest" | "user";
 }) {
   // Validate that simulation routes match what user configured in Scenario
   useEffect(() => {
@@ -120,9 +125,7 @@ export default function ExportPDF({
   }, [simulationResponse, playbackSeed?.routes]);
 
   // Track selected routes
-  const [selectedRoutes] = useState<string[]>(() =>
-    allRoutes.map((r) => r[0]),
-  );
+  const [selectedRoutes] = useState<string[]>(() => allRoutes.map((r) => r[0]));
 
   // Filter routes for display
   const routes = useMemo(
@@ -364,14 +367,15 @@ export default function ExportPDF({
   const simulationPeriod = useMemo(() => {
     const slots = simulationResponse.simulation_result.slot_results;
     if (slots.length === 0) return "N/A";
-    
+
     const firstSlot = slots[0].slot_name;
     const lastSlot = slots[slots.length - 1].slot_name;
-    
+
     // Extract start time from first slot and end time from last slot
     const startTime = firstSlot.split("-")[0].trim();
-    const endTime = lastSlot.split("-")[1]?.trim() || lastSlot.split("-")[0].trim();
-    
+    const endTime =
+      lastSlot.split("-")[1]?.trim() || lastSlot.split("-")[0].trim();
+
     return `${startTime} - ${endTime}`;
   }, [simulationResponse]);
 
@@ -395,231 +399,394 @@ export default function ExportPDF({
   }, [simulationResponse, playbackSeed?.stations]);
 
   return (
-    <div className="pdf-wrapper">
-      {/* Page 1 - Header & Overall Statistics & Heatmap */}
-      <div className="page">
-        <h1 className="text-bold text-center mb-6">Simulation Report</h1>
-        
-        <div className="mb-6 text-center">
-          <div className="text-lg mb-2">
-            <span className="font-semibold">Simulation Period:</span> {simulationPeriod}
+    <main>
+      <Nav usermode={usermode} inpage="Output" onBackClick={onBackClick} />
+      <div className="pdf-wrapper">
+        {/* Page 1 - Header & Overall Statistics & Heatmap */}
+        <div className="page">
+          <h1 className="text-bold text-center mb-6">Simulation Report</h1>
+
+          <div className="mb-6 text-center">
+            <div className="text-lg mb-2">
+              <span className="font-semibold">Simulation Period:</span>{" "}
+              {simulationPeriod}
+            </div>
+            <div className="text-lg">
+              <span className="font-semibold">Time Slot:</span> {timeslot}{" "}
+              minutes
+            </div>
           </div>
-          <div className="text-lg">
-            <span className="font-semibold">Time Slot:</span> {timeslot} minutes
+
+          <h2 className="text-[#81069e] mb-4">Overall Statistics</h2>
+          <div className="grid grid-cols-5 gap-2 mb-6">
+            <div className="dashboard-card flex flex-col items-center justify-center">
+              <p className="chart-header">{summaryStats.avgWaitingTime}</p>
+              <p className="chart-context">Avg. Waiting Time</p>
+            </div>
+            <div className="dashboard-card flex flex-col items-center justify-center">
+              <p className="chart-header">{summaryStats.avgQueueLength}</p>
+              <p className="chart-context">Avg. Queue Length</p>
+            </div>
+            <div className="dashboard-card flex flex-col items-center justify-center">
+              <p className="chart-header">{summaryStats.avgUtilization}%</p>
+              <p className="chart-context">Avg. Utilization</p>
+            </div>
+            <div className="dashboard-card flex flex-col items-center justify-center">
+              <p className="chart-header">{summaryStats.avgTravelingTime}</p>
+              <p className="chart-context">Avg. Traveling Time</p>
+            </div>
+            <div className="dashboard-card flex flex-col items-center justify-center">
+              <p className="chart-header">
+                {summaryStats.avgTravelingDistance}
+              </p>
+              <p className="chart-context">Avg. Traveling Distance</p>
+            </div>
+          </div>
+
+          <h2 className="text-[#81069e] mb-3">Passenger Waiting Density</h2>
+          <div
+            className="mb-4 border border-gray-200 rounded-lg overflow-hidden"
+            style={{ height: 280 }}
+          >
+            <PassengerWaitingHeatmap
+              simulationResponse={simulationResponse}
+              stations={playbackSeed?.stations ?? []}
+            />
+          </div>
+          <div className="text-sm text-gray-700 mb-4 leading-relaxed">
+            <p className="mb-2">
+              <strong>Heatmap Legend:</strong> The heatmap visualizes passenger
+              waiting patterns across all stations:
+            </p>
+            <div className="px-4 py-2 border-b border-gray-200">
+              <div className="mb-3">
+                <div className="text-sm mb-2">Queue Length (Color)</div>
+                <div className="flex items-center gap-2 ml-8">
+                  <span className="text-xs text-gray-600">Low</span>
+                  <div
+                    className="flex-1 h-4 rounded"
+                    style={{
+                      background:
+                        "linear-gradient(to right, #0096ff, #00ff00, #ffff00, #ff8800, #ff0000)",
+                    }}
+                  ></div>
+                  <span className="text-xs text-gray-600">High</span>
+                </div>
+              </div>
+              <div>
+                <div className="text-sm mb-2">Waiting Time (Blur Width)</div>
+                <p className="text-xs text-gray-600 ml-8">
+                  Thicker/wider blur = longer waiting time
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <h2 className="text-[#81069e] mb-4">Overall Statistics</h2>
-        <div className="grid grid-cols-5 gap-2 mb-6">
-          <div className="dashboard-card flex flex-col items-center justify-center">
-            <p className="chart-header">{summaryStats.avgWaitingTime}</p>
-            <p className="chart-context">Avg. Waiting Time</p>
+        {/* Page 2 - Route Statistics */}
+        <div className="page">
+          <h2 className="text-[#81069e] mb-4">Route Statistics</h2>
+
+          <h3
+            style={{
+              fontSize: "16px",
+              marginBottom: "12px",
+              fontWeight: "600",
+            }}
+          >
+            All Lines: Most Popular by Customer
+          </h3>
+          <div className="mb-6">
+            <TopRoutesChart
+              route={routes}
+              customerData={aggregatedCustomerData}
+              limit={routes.length}
+            />
           </div>
-          <div className="dashboard-card flex flex-col items-center justify-center">
-            <p className="chart-header">{summaryStats.avgQueueLength}</p>
-            <p className="chart-context">Avg. Queue Length</p>
+
+          <h3
+            style={{
+              fontSize: "16px",
+              marginBottom: "12px",
+              fontWeight: "600",
+            }}
+          >
+            Average Traveling Time
+          </h3>
+          <div className="mb-6">
+            <RouteBarChart
+              route={routes}
+              dataset={filteredTravelingTimeData}
+              mode="avg-traveling-time"
+              compactMode={true}
+            />
           </div>
-          <div className="dashboard-card flex flex-col items-center justify-center">
-            <p className="chart-header">{summaryStats.avgUtilization}%</p>
-            <p className="chart-context">Avg. Utilization</p>
-          </div>
-          <div className="dashboard-card flex flex-col items-center justify-center">
-            <p className="chart-header">{summaryStats.avgTravelingTime}</p>
-            <p className="chart-context">Avg. Traveling Time</p>
-          </div>
-          <div className="dashboard-card flex flex-col items-center justify-center">
-            <p className="chart-header">{summaryStats.avgTravelingDistance}</p>
-            <p className="chart-context">Avg. Traveling Distance</p>
+
+          <h3
+            style={{
+              fontSize: "16px",
+              marginBottom: "12px",
+              fontWeight: "600",
+            }}
+          >
+            Average Traveling Distance
+          </h3>
+          <div className="mb-4">
+            <RouteBarChart
+              route={routes}
+              dataset={filteredTravelingDistanceData}
+              mode="avg-traveling-distance"
+              compactMode={true}
+            />
           </div>
         </div>
 
-        <h2 className="text-[#81069e] mb-3">Passenger Waiting Density</h2>
-        <div className="mb-4 border border-gray-200 rounded-lg overflow-hidden" style={{ height: 280 }}>
-          <PassengerWaitingHeatmap
-            simulationResponse={simulationResponse}
-            stations={playbackSeed?.stations ?? []}
-          />
-        </div>
-        <div className="text-sm text-gray-700 mb-4 leading-relaxed">
-          <p className="mb-2">
-            <strong>Heatmap Legend:</strong> The heatmap visualizes passenger waiting patterns across all stations:
-          </p>
-          <ul className="list-disc list-inside space-y-1 ml-2" style={{ fontSize: "12px" }}>
-            <li><span style={{ color: "#0096ff", fontWeight: "bold" }}>Blue</span> indicates low queue length (fewer waiting passengers)</li>
-            <li><span style={{ color: "#ffff00", fontWeight: "bold" }}>Yellow</span> indicates moderate queue length</li>
-            <li><span style={{ color: "#ff0000", fontWeight: "bold" }}>Red</span> indicates high queue length (many waiting passengers)</li>
-            <li>The size and blur of the heatmap spots represent average waiting time - larger/more blurred areas indicate longer wait times</li>
-          </ul>
-        </div>
-      </div>
+        {/* Page 3+ - Time-based Statistics (Tabular) */}
+        <div className="page">
+          <h2 className="text-[#81069e] mb-4">Time-based Statistics</h2>
 
-      {/* Page 2 - Route Statistics */}
-      <div className="page">
-        <h2 className="text-[#81069e] mb-4">Route Statistics</h2>
-        
-        <h3 style={{ fontSize: "16px", marginBottom: "12px", fontWeight: "600" }}>Top 3: Most Popular Lines by Customer</h3>
-        <div className="mb-6">
-          <TopRoutesChart
-            route={routes}
-            customerData={aggregatedCustomerData}
-            limit={3}
-          />
+          <div className="overflow-hidden rounded border border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left px-3 py-2">Time Slot</th>
+                  <th className="text-left px-3 py-2">Route</th>
+                  <th className="text-left px-3 py-2">Avg. Waiting Time</th>
+                  <th className="text-left px-3 py-2">Avg. Queue Length</th>
+                  <th className="text-left px-3 py-2">Avg. Utilization</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeSlotData.map((slot, slotIdx) =>
+                  slot.routes.length > 0 ? (
+                    slot.routes.map((route, routeIdx) => (
+                      <tr
+                        key={`slot-${slotIdx}-route-${routeIdx}`}
+                        className="border-t"
+                      >
+                        {routeIdx === 0 && (
+                          <td
+                            className="px-3 py-2 font-semibold text-blue-900 align-top"
+                            rowSpan={slot.routes.length}
+                          >
+                            {slot.slotName}
+                          </td>
+                        )}
+                        <td className="px-3 py-2">
+                          <span
+                            className="inline-block rounded-full mr-2"
+                            style={{
+                              backgroundColor: route.routeColor,
+                              width: "10px",
+                              height: "10px",
+                            }}
+                          ></span>
+                          {route.routeName}
+                        </td>
+                        <td className="px-3 py-2">
+                          {route.avgWaitingTime} mins
+                        </td>
+                        <td className="px-3 py-2">
+                          {route.avgQueueLength} persons
+                        </td>
+                        <td className="px-3 py-2">{route.avgUtilization}%</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr key={`slot-${slotIdx}-empty`} className="border-t">
+                      <td className="px-3 py-2 font-semibold text-blue-900">
+                        {slot.slotName}
+                      </td>
+                      <td className="px-3 py-2" colSpan={4}>
+                        No route data
+                      </td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <h3 style={{ fontSize: "16px", marginBottom: "12px", fontWeight: "600" }}>Average Traveling Time</h3>
-        <div className="mb-6">
-          <RouteBarChart
-            route={routes}
-            dataset={filteredTravelingTimeData}
-            mode="avg-traveling-time"
-            compactMode={true}
-          />
+        {/* Page 4 - Line Charts */}
+        <div className="page">
+          <h2 className="text-[#81069e] mb-4">Time Series Analysis</h2>
+
+          <div className="no-break" style={{ marginBottom: "20px" }}>
+            <h3
+              style={{
+                fontSize: "16px",
+                marginBottom: "10px",
+                fontWeight: "600",
+              }}
+            >
+              Average Waiting Time
+            </h3>
+            <LineChart
+              timeslot={timeslot}
+              route={routes}
+              dataset={filteredAvgWaitingTimeDataset}
+              mode="avg-waiting-time"
+              compactMode={true}
+            />
+          </div>
+
+          <div className="no-break" style={{ marginBottom: "20px" }}>
+            <h3
+              style={{
+                fontSize: "16px",
+                marginBottom: "10px",
+                fontWeight: "600",
+              }}
+            >
+              Average Queue Length
+            </h3>
+            <LineChart
+              timeslot={timeslot}
+              route={routes}
+              dataset={filteredAvgQueueLengthDataset}
+              mode="avg-queue-length"
+              compactMode={true}
+            />
+          </div>
+
+          <div className="no-break" style={{ marginBottom: "20px" }}>
+            <h3
+              style={{
+                fontSize: "16px",
+                marginBottom: "10px",
+                fontWeight: "600",
+              }}
+            >
+              Average Utilization
+            </h3>
+            <LineChart
+              timeslot={timeslot}
+              route={routes}
+              dataset={filteredAvgUtilizationDataset}
+              mode="avg-utilization"
+              compactMode={true}
+            />
+          </div>
         </div>
 
-        <h3 style={{ fontSize: "16px", marginBottom: "12px", fontWeight: "600" }}>Average Traveling Distance</h3>
-        <div className="mb-4">
-          <RouteBarChart
-            route={routes}
-            dataset={filteredTravelingDistanceData}
-            mode="avg-traveling-distance"
-            compactMode={true}
-          />
-        </div>
-      </div>
+        {/* Page 5 - Station Time-based Statistics */}
+        <div className="page">
+          <h2 className="text-[#81069e] mb-4">
+            Station Statistics (Time-based)
+          </h2>
 
-      {/* Page 3+ - Time-based Statistics (Tabular) */}
-      <div className="page">
-        <h2 className="text-[#81069e] mb-4">Time-based Statistics</h2>
-        
-        <div className="space-y-4">
-          {timeSlotData.map((slot, slotIdx) => (
-            <div key={`slot-${slotIdx}`} className="border-b border-gray-300 pb-3">
-              <h3 style={{ fontSize: "15px", fontWeight: "bold", marginBottom: "10px", color: "#1e40af" }}>
-                {slot.slotName}
-              </h3>
-              <div className="space-y-2">
-                {slot.routes.map((route, routeIdx) => (
-                  <div key={`route-${slotIdx}-${routeIdx}`} className="ml-4">
-                    <div 
-                      className="font-semibold mb-1 flex items-center gap-2"
-                      style={{ color: route.routeColor, fontSize: "14px" }}
+          <div className="space-y-6">
+            {stationTimeSlotData.map((slot, slotIdx) => {
+              // Calculate average of all stations for this time slot
+              const avgOfAllStations =
+                slot.stations.length > 0
+                  ? {
+                      avgWaitingTime: (
+                        slot.stations.reduce(
+                          (sum, s) => sum + parseFloat(s.avgWaitingTime),
+                          0,
+                        ) / slot.stations.length
+                      ).toFixed(1),
+                      avgQueueLength: (
+                        slot.stations.reduce(
+                          (sum, s) => sum + parseFloat(s.avgQueueLength),
+                          0,
+                        ) / slot.stations.length
+                      ).toFixed(1),
+                    }
+                  : { avgWaitingTime: "0.0", avgQueueLength: "0.0" };
+
+              return (
+                <div
+                  key={`station-slot-${slotIdx}`}
+                  className="border-b border-gray-300 pb-4"
+                >
+                  <h3
+                    style={{
+                      fontSize: "15px",
+                      fontWeight: "bold",
+                      marginBottom: "10px",
+                      color: "#1e40af",
+                    }}
+                  >
+                    {slot.slotName}
+                  </h3>
+
+                  {/* Average of All Stations */}
+                  <div className="bg-blue-50 border border-blue-200 rounded px-4 py-3 mb-3">
+                    <div
+                      className="font-semibold text-blue-900 mb-2"
+                      style={{ fontSize: "13px" }}
                     >
-                      <span
-                        className="inline-block rounded-full"
-                        style={{ 
-                          backgroundColor: route.routeColor,
-                          width: "10px",
-                          height: "10px"
-                        }}
-                      ></span>
-                      {route.routeName}
+                      Average of All Stations
                     </div>
-                    <div className="ml-5 grid grid-cols-3 gap-3" style={{ fontSize: "12px" }}>
+                    <div
+                      className="grid grid-cols-2 gap-4"
+                      style={{ fontSize: "12px" }}
+                    >
                       <div>
-                        <span className="text-gray-600">Avg. Waiting Time:</span>{" "}
-                        <span className="font-medium">{route.avgWaitingTime} mins</span>
+                        <span className="text-gray-700">
+                          • Avg. Waiting Time:
+                        </span>{" "}
+                        <span className="font-medium text-blue-900">
+                          {avgOfAllStations.avgWaitingTime} mins
+                        </span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Avg. Queue Length:</span>{" "}
-                        <span className="font-medium">{route.avgQueueLength} persons</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Avg. Utilization:</span>{" "}
-                        <span className="font-medium">{route.avgUtilization}%</span>
+                        <span className="text-gray-700">
+                          • Avg. Queue Length:
+                        </span>{" "}
+                        <span className="font-medium text-blue-900">
+                          {avgOfAllStations.avgQueueLength} persons
+                        </span>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
+
+                  {/* Station Details Table */}
+                  <div className="overflow-hidden rounded border border-gray-200">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left px-3 py-2">Station Name</th>
+                          <th className="text-left px-3 py-2">
+                            Avg. Waiting Time
+                          </th>
+                          <th className="text-left px-3 py-2">
+                            Avg. Queue Length
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {slot.stations.map((station, stationIdx) => (
+                          <tr
+                            key={`station-${slotIdx}-${stationIdx}`}
+                            className="border-t"
+                          >
+                            <td className="px-3 py-2">{station.stationName}</td>
+                            <td className="px-3 py-2">
+                              {station.avgWaitingTime} mins
+                            </td>
+                            <td className="px-3 py-2">
+                              {station.avgQueueLength} persons
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Print button (hidden when printing) */}
+        <div className="no-print" style={{ padding: 20 }}>
+          <button onClick={() => window.print()}>Export PDF</button>
         </div>
       </div>
-
-      {/* Page 4 - Line Charts */}
-      <div className="page">
-        <h2 className="text-[#81069e] mb-4">Time Series Analysis</h2>
-
-        <div className="no-break" style={{ marginBottom: "20px" }}>
-          <h3 style={{ fontSize: "16px", marginBottom: "10px", fontWeight: "600" }}>Average Waiting Time</h3>
-          <LineChart
-            timeslot={timeslot}
-            route={routes}
-            dataset={filteredAvgWaitingTimeDataset}
-            mode="avg-waiting-time"
-            compactMode={true}
-          />
-        </div>
-
-        <div className="no-break" style={{ marginBottom: "20px" }}>
-          <h3 style={{ fontSize: "16px", marginBottom: "10px", fontWeight: "600" }}>Average Queue Length</h3>
-          <LineChart
-            timeslot={timeslot}
-            route={routes}
-            dataset={filteredAvgQueueLengthDataset}
-            mode="avg-queue-length"
-            compactMode={true}
-          />
-        </div>
-
-        <div className="no-break" style={{ marginBottom: "20px" }}>
-          <h3 style={{ fontSize: "16px", marginBottom: "10px", fontWeight: "600" }}>Average Utilization</h3>
-          <LineChart
-            timeslot={timeslot}
-            route={routes}
-            dataset={filteredAvgUtilizationDataset}
-            mode="avg-utilization"
-            compactMode={true}
-          />
-        </div>
-      </div>
-
-      {/* Page 5 - Station Time-based Statistics */}
-      <div className="page">
-        <h2 className="text-[#81069e] mb-4">Station Statistics (Time-based)</h2>
-
-        <div className="space-y-6">
-          {stationTimeSlotData.map((slot, slotIdx) => (
-            <div key={`station-slot-${slotIdx}`} className="border-b border-gray-300 pb-4">
-              <h3
-                style={{
-                  fontSize: "15px",
-                  fontWeight: "bold",
-                  marginBottom: "10px",
-                  color: "#1e40af",
-                }}
-              >
-                {slot.slotName}
-              </h3>
-              <div className="overflow-hidden rounded border border-gray-200">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left px-3 py-2">Station Name</th>
-                      <th className="text-left px-3 py-2">Avg. Waiting Time</th>
-                      <th className="text-left px-3 py-2">Avg. Queue Length</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {slot.stations.map((station, stationIdx) => (
-                      <tr key={`station-${slotIdx}-${stationIdx}`} className="border-t">
-                        <td className="px-3 py-2">{station.stationName}</td>
-                        <td className="px-3 py-2">{station.avgWaitingTime} mins</td>
-                        <td className="px-3 py-2">{station.avgQueueLength} persons</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Print button (hidden when printing) */}
-      <div className="no-print" style={{ padding: 20 }}>
-        <button onClick={() => window.print()}>Export PDF</button>
-      </div>
-    </div>
+    </main>
   );
 }

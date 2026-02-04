@@ -15,7 +15,8 @@
 
 .dashboard-bg {
   background: #ffffff;
-  box-shadow: -10px 4px 10px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    -10px 4px 10px rgba(0, 0, 0, 0.1),
     10px 0px 10px rgba(0, 0, 0, 0.1);
   border-radius: 30px 30px 0px 0px;
   /* height: 100vh; */
@@ -160,13 +161,17 @@
   line-height: 12px;
   text-align: center;
   background: #ffffff;
-  box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.25), 2px 4px 4px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    -2px -2px 4px rgba(0, 0, 0, 0.25),
+    2px 4px 4px rgba(0, 0, 0, 0.25);
   color: #4b4b4b;
   transition: all 0.6s ease;
 }
 .btn-export-pdf:hover {
   background: #f9f9f9;
-  box-shadow: -3px -3px 8px rgba(0, 0, 0, 0.25), 4px 8px 8px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    -3px -3px 8px rgba(0, 0, 0, 0.25),
+    4px 8px 8px rgba(0, 0, 0, 0.25);
   cursor: pointer;
 }
 
@@ -218,3 +223,56 @@
   outline: none;
 }
 
+.interactive-map {
+  box-shadow: 5px 4px 4px rgba(103, 103, 103, 0.25);
+  border-radius: 35px;
+}
+
+.interactive-map-timeline {
+  background: #ffffff;
+  box-shadow:
+    -2px -2px 4px rgba(103, 103, 103, 0.25),
+    4px 4px 4px rgba(86, 86, 86, 0.25);
+  border-radius: 25px;
+  height: 60px;
+}
+
+.interactive-map-side-container {
+  background: #ffffff;
+  box-shadow:
+    -2px -2px 4px rgba(103, 103, 103, 0.25),
+    4px 4px 4px rgba(86, 86, 86, 0.25);
+  border-radius: 25px;
+}
+
+/* Timeline slider thumb styling */
+.timeline-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #81069e;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-top: -5px;
+  margin-left: 2.5px;
+}
+
+.timeline-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #81069e;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-top: -5px;
+  margin-left: 2.5px;
+}
+
+.timeline-slider::-moz-range-track {
+  background: transparent;
+  border: none;
+}

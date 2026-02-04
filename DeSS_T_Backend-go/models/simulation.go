@@ -24,6 +24,7 @@ type RouteBusInformation struct {
 	MaxDistance float64 `json:"max_distance"`
 	MaxBus      int     `json:"max_bus"`
 	BusCapacity int     `json:"bus_capacity"`
+	AvgTravelTime float64 `json:"avg_travel_time"`
 }
 
 type ConfigurationData struct {
@@ -48,7 +49,7 @@ type RoutePair struct {
 
 type SimData struct {
 	TimeRange string `json:"time_range"`
-	DisRecords []DisRecord `json:"alighting_records"`
+	DisRecords []DisRecord `json:"records"`
 }
 
 type DisRecord struct {

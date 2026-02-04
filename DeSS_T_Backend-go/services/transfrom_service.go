@@ -16,7 +16,7 @@ func TransformSimulationRequest(
 ) models.SimulationRequest {
 
 	scenarioData := TransformScenario(scenario, timePeriods)
-	configurationData := TransformConfiguration(cfg, timePeriods)
+	configurationData := TransformConfiguration(cfg, scenario, timePeriods)
 	return models.SimulationRequest{
 		TimePeriod:        timePeriods,
 		TimeSlot:          timeSlot,
@@ -106,6 +106,7 @@ func TransformScenario(
 				MaxDistance: float64(bi.MaxDis),
 				MaxBus:      bi.MaxBus,
 				BusCapacity: bi.Capacity,
+				AvgTravelTime: float64(bi.AvgTravelTime),
 			},
 		})
 	}
@@ -115,11 +116,21 @@ func TransformScenario(
 }
 func TransformConfiguration(
 	cfg models.ConfigurationDetail,
+	scenario models.ScenarioDetail,
 	timePeriods string,
 ) models.ConfigurationData {
 
+	usedPairIDs := collectUsedPairIDs(scenario.RouteScenario.RoutePaths)
+
 	routePairs := make([]models.RoutePair, 0)
+	usedStations := make(map[string]struct{})
+
 	for _, sp := range cfg.NetworkModel.StationPairs {
+
+		if _, ok := usedPairIDs[sp.StationPairID]; !ok {
+			continue
+		}
+
 		routePairs = append(routePairs, models.RoutePair{
 			RoutePairID: sp.StationPairID,
 			FstStation:  sp.FstStationID,
@@ -127,10 +138,20 @@ func TransformConfiguration(
 			TravelTime:  sp.RouteBetween.TravelTime,
 			Distance:    sp.RouteBetween.Distance,
 		})
+
+		// เก็บ station ที่ถูกใช้งานจริง
+		usedStations[sp.FstStationID] = struct{}{}
+		usedStations[sp.SndStationID] = struct{}{}
 	}
 
 	stationList := make([]models.StationList, 0)
+
 	for _, s := range cfg.NetworkModel.StationDetails {
+
+		if _, ok := usedStations[s.StationDetailID]; !ok {
+			continue
+		}
+
 		stationList = append(stationList, models.StationList{
 			StationID:   s.StationDetailID,
 			StationName: s.Name,
@@ -138,17 +159,19 @@ func TransformConfiguration(
 	}
 
 	alightingFitItems := AlightingDataToFitItems(cfg.AlightingData)
-	
+
 	alightingData := groupFitItemsToSimData(
 		alightingFitItems,
 		timePeriods,
+		usedStations,
 	)
-    
+
 	interArrivalFitItems := InterArrivalDataToFitItems(cfg.InterArrivalData)
-	
+
 	interarrivalData := groupFitItemsToSimData(
 		interArrivalFitItems,
 		timePeriods,
+		usedStations,
 	)
 	
 	return models.ConfigurationData{
@@ -198,13 +221,20 @@ func InterArrivalDataToFitItems(
 func groupFitItemsToSimData(
 	items []models.FitItem,
 	timePeriods string,
+	usedStations map[string]struct{},
 ) []models.SimData {
 	
 	groups := make(map[string][]models.DisRecord)
 
 	for _, item := range items {
 
+		// filter ตาม time
 		if !isTimeRangeInPeriod(item.TimeRange, timePeriods) {
+			continue
+		}
+
+		// filter ตาม station ที่ใช้งานจริง
+		if _, ok := usedStations[item.Station]; !ok {
 			continue
 		}
 
@@ -262,4 +292,15 @@ func isTimeInPeriod(timeStr, period string) bool {
 	end := timeToMinute(pr[1])
 
 	return t >= start && t < end
+}
+
+func collectUsedPairIDs(routes []models.RoutePath) map[string]struct{} {
+	used := make(map[string]struct{})
+
+	for _, rp := range routes {
+		for _, o := range rp.Orders {
+			used[o.StationPairID] = struct{}{}
+		}
+	}
+	return used
 }

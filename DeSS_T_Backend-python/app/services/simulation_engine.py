@@ -326,6 +326,7 @@ class Bus(sim.Component):
     ):
         super().__init__(env=env)
         self.route_id = route_id
+
         # 👇 assign bus number at creation time
         self.env.route_bus_seq[self.route_id] += 1
         self.bus_no = self.env.route_bus_seq[self.route_id]
@@ -344,6 +345,13 @@ class Bus(sim.Component):
         self.passengers = []
         self.max_distance_init = max_distance
         self.remaining_distance = max_distance
+
+        dwell = env.sim_engine.config["DWELL_TIME"]
+
+        self.door_open_time = dwell["door_open_time"]
+        self.door_close_time = dwell["door_close_time"]
+        self.boarding_time = dwell["boarding_time"]
+        self.alighting_time = dwell["alighting_time"]
 
     def process(self):
         delay = self.depart_time - self.env.now()
@@ -388,6 +396,7 @@ class Bus(sim.Component):
                 f"Bus {self.bus_id} arrives at {station.name}"
             )
 
+
             # ---------- ALIGHTING ----------
             if is_first_station:
                 alight_count = 0
@@ -408,6 +417,21 @@ class Bus(sim.Component):
                 p = self.passengers.pop(0)
                 p.activate()
 
+
+            need_open = (
+                alight_count > 0 or
+                (
+                    not is_last_station and
+                    station.wait_store.length() > 0
+                )
+            )
+            if alight_count > 0:
+                yield self.hold(alight_count * self.alighting_time)
+
+            if need_open:
+                add_log(self.env, "Bus", f"Bus {self.bus_id} opens door at {station.name}")
+                yield self.hold(self.door_open_time)
+
             if is_first_station:
                 add_log(self.env, "Bus", f"Bus {self.bus_id} first station, no alighting")
             else:
@@ -426,9 +450,14 @@ class Bus(sim.Component):
                 rq = slots[slot]["route_queue"][self.route_id]
                 rq["sum"] += queue_len
                 rq["count"] += 1
-
-
+            
+            # ---------- QUEUE LENGTH (per station) ----------
+            engine = self.env.sim_engine
+            engine.slots[slot]["station_queue"][station.name].tally(queue_len)
             # ---------- LOADING ----------
+
+            boarded = 0
+
             if not is_last_station:
                 while len(self.passengers) < self.capacity and station.wait_store.length() > 0:
                     p = yield self.from_store(station.wait_store)
@@ -462,7 +491,24 @@ class Bus(sim.Component):
                     slots[slot]["route_customer_count"][self.route_id] += 1
 
                     self.passengers.append(p)
+                    boarded += 1
+            if boarded > 0:
+                yield self.hold(boarded * self.boarding_time)
 
+            if need_open:
+                add_log(self.env, "Bus", f"Bus {self.bus_id} closes door at {station.name}")
+                yield self.hold(self.door_close_time)
+
+            dwell_time = 0.0
+
+            if need_open:
+                dwell_time = (
+                    self.door_open_time
+                    + alight_count * self.alighting_time
+                    + boarded * self.boarding_time
+                    + self.door_close_time
+                )
+            self.total_travel_time += dwell_time
 
             # ---------- TRAVEL ----------
             if not is_last_station:
@@ -521,21 +567,21 @@ class Bus(sim.Component):
                 self.total_travel_time += travel_time
                 self.total_travel_dist += travel_dist
 
-                # ✅ utilization ยังต้องอยู่ตรงนี้ (time-based)
-                utilization = len(self.passengers) / self.capacity
-                self.env.route_util_mon[self.route_id].tally(
-                    utilization,
-                    weight=travel_time
-                )
-                self.env.global_utilization_mon.tally(
-                    utilization,
-                    weight=travel_time
-                )
+                if dwell_time > 0:
+                    utilization = len(self.passengers) / self.capacity
 
-                slots[slot]["route_util"][self.route_id].tally(
-                    utilization,
-                    weight=travel_time
-                )
+                    self.env.route_util_mon[self.route_id].tally(
+                        utilization,
+                        weight=dwell_time
+                    )
+                    self.env.global_utilization_mon.tally(
+                        utilization,
+                        weight=dwell_time
+                    )
+                    slots[slot]["route_util"][self.route_id].tally(
+                        utilization,
+                        weight=dwell_time
+                    )
 
                 if travel_time <= 0:
                     travel_time = 0.0001

@@ -43,7 +43,12 @@ def build_simulation_config(req):
         req.scenario_data,
         time_ctx
     )
-
+    dwell_time={
+        "door_open_time": 0.1,   
+        "door_close_time": 0.1,  
+        "boarding_time": 0.05,   
+        "alighting_time": 0.04   
+    }
     config = {
         "STATION_LIST": req.configuration_data.station_list,
         "TIME_CTX": time_ctx,
@@ -53,7 +58,8 @@ def build_simulation_config(req):
         "BUS_INFO": bus_info,
         "BUS_SCHEDULES": bus_schedules,
         "INTERARRIVAL_RULES": interarrival_rules,
-        "ALIGHTING_RULES": alighting_rules
+        "ALIGHTING_RULES": alighting_rules,
+        "DWELL_TIME":dwell_time
     }
 
     # text_dump = pprint.pformat(config, depth=4, width=120)

@@ -1,11 +1,11 @@
-import type { DataFitResponse } from "../../app/models/DistriButionFitModel";
+import type { DataFitResponse } from "../../app/models/DistributionFitModel";
 import type { StationDetail } from "../../app/models/Network";
 import { API_BASE_URL } from "../config";
 import { buildStationNameToIdMap } from "../sheetHelpers";
 
 export async function AlightingFitFromXlsx(
   file: File,
-  stationDetails: StationDetail[]
+  stationDetails: StationDetail[],
 ): Promise<DataFitResponse> {
   const form = new FormData();
 
@@ -37,7 +37,7 @@ export async function AlightingFitFromXlsx(
 
 export async function InterarrivalFitFromXlsx(
   file: File,
-  stationDetails: StationDetail[]
+  stationDetails: StationDetail[],
 ): Promise<DataFitResponse> {
   const form = new FormData();
   const stationMap = buildStationNameToIdMap(stationDetails);

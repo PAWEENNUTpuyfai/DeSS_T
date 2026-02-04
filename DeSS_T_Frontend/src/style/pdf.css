@@ -20,6 +20,14 @@
   overflow-y: auto;
   padding: 0;
   margin: 0;
+  visibility: visible;
+}
+
+/* Hide pdf-wrapper on screen when inside print-only container */
+.print-only .pdf-wrapper {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .pdf-wrapper * {
@@ -30,12 +38,22 @@
   .pdf-wrapper {
     position: static;
     overflow: visible;
+    visibility: visible !important;
+  }
+  
+  .print-only .pdf-wrapper {
+    position: static;
+    visibility: visible !important;
+    pointer-events: auto;
   }
 }
 
 @media screen {
   .print-only {
-    display: none;
+    position: absolute !important;
+    left: -9999px !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 }
 
@@ -49,6 +67,20 @@
 
   .no-print {
     display: none !important;
+  }
+  
+  /* Hide all main content when printing */
+  .dashboard-bg > *:not(.print-only) {
+    display: none !important;
+  }
+  
+  /* Show only print-only content */
+  .print-only {
+    position: static !important;
+    left: auto !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    display: block !important;
   }
 }
 

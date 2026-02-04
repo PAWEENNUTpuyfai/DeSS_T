@@ -49,22 +49,10 @@ export default function Outputpage({
   usermode?: "guest" | "user";
 }) {
   const [mode, setMode] = useState<"dashboard" | "map">("map");
-  const [showExportPDF, setShowExportPDF] = useState(false);
 
   useEffect(() => {
     console.log("simulationResponse:", simulationResponse);
   }, [simulationResponse]);
-
-  if (showExportPDF && simulationResponse) {
-    return (
-      <ExportPDF
-        simulationResponse={simulationResponse}
-        playbackSeed={playbackSeed}
-        usermode={usermode}
-        onBackClick={() => setShowExportPDF(false)}
-      />
-    );
-  }
 
   return (
     <main>
@@ -102,7 +90,11 @@ export default function Outputpage({
           <button
             type="button"
             className="btn-export-pdf px-8 inline-flex items-center justify-center gap-2"
-            onClick={() => setShowExportPDF(true)}
+            onClick={() => {
+              if (!simulationResponse) return;
+              // Trigger print dialog directly
+              window.print();
+            }}
           >
             <svg
               width="24"
@@ -138,6 +130,18 @@ export default function Outputpage({
             <InteractiveMap
               simulationResponse={simulationResponse}
               playbackSeed={playbackSeed}
+            />
+          </div>
+        )}
+
+        {/* Hidden ExportPDF for print functionality - only visible when printing */}
+        {simulationResponse && (
+          <div className="print-only">
+            <ExportPDF
+              simulationResponse={simulationResponse}
+              playbackSeed={playbackSeed}
+              usermode={usermode}
+              onBackClick={() => {}}
             />
           </div>
         )}

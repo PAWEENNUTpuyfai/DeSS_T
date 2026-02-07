@@ -212,8 +212,14 @@ type User struct {
 	Picture      string `json:"picture_url"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	TokenExpires string `json:"token_expires_at"`
 	LastLogin    string `json:"last_login"`
 	CreatedAt    string `json:"created_at"`
+
+	PublicScenarios      []PublicScenario      `json:"public_scenarios,omitempty"`
+	UserScenarios        []UserScenario        `json:"user_scenarios,omitempty"`
+	UserConfigurations   []UserConfiguration   `json:"user_configurations,omitempty"`
+	PublicConfigurations []PublicConfiguration `json:"public_configurations,omitempty"`
 }
 
 // ======================================================
@@ -230,12 +236,21 @@ type UserProfileResponse struct {
 }
 
 // ======================================================
-// COVER IMAGE
+// COVER IMAGE PROJECT
 // ======================================================
 
-type CoverImage struct {
-	CoverImageID string `json:"cover_image_id"`
-	PathFile     string `json:"path_file"`
+type CoverImageProject struct {
+	CoverImageProID string `json:"cover_image_pro_id"`
+	PathFile        string `json:"path_file"`
+}
+
+// ======================================================
+// COVER IMAGE CONFIGURATION
+// ======================================================
+
+type CoverImageConf struct {
+	CoverImageConfID string `json:"cover_image_conf_id"`
+	PathFile         string `json:"path_file"`
 }
 
 // ======================================================
@@ -243,18 +258,20 @@ type CoverImage struct {
 // ======================================================
 
 type PublicScenario struct {
-	PublicScenarioID string         `json:"public_scenario_id"`
-	Name             string         `json:"name"`
-	Description      string         `json:"description"`
-	ModifyDate       string         `json:"modify_date"`
-	PublishDate      string         `json:"publish_date"`
-	CreateBy         string         `json:"create_by"`
-	PublishBy        string         `json:"publish_by"`
-	OriginFrom       string         `json:"origin_from"`
-	CoverImgID       string         `json:"cover_img_id"`
-	ScenarioDetailID string         `json:"scenario_detail_id"`
-	CoverImage       CoverImage     `json:"cover_image,omitempty"`
-	ScenarioDetail   ScenarioDetail `json:"scenario_detail,omitempty"`
+	PublicScenarioID string              `json:"public_scenario_id"`
+	Name             string              `json:"name"`
+	Description      string              `json:"description"`
+	ModifyDate       string              `json:"modify_date"`
+	PublishDate      string              `json:"publish_date"`
+	CreateBy         string              `json:"create_by"`
+	PublishBy        string              `json:"publish_by"`
+	OriginFrom       string              `json:"origin_from"`
+	CoverImgID       string              `json:"cover_img_id"`
+	ScenarioDetailID string              `json:"scenario_detail_id"`
+
+	CoverImage       CoverImageProject   `json:"cover_image,omitempty"`
+	ScenarioDetail   ScenarioDetail      `json:"scenario_detail,omitempty"`
+
 }
 
 // ======================================================
@@ -262,14 +279,14 @@ type PublicScenario struct {
 // ======================================================
 
 type UserScenario struct {
-	UserScenarioID   string         `json:"user_scenario_id"`
-	Name             string         `json:"name"`
-	ModifyDate       string         `json:"modify_date"`
-	CreateBy         string         `json:"create_by"`
-	CoverImgID       string         `json:"cover_img_id"`
-	ScenarioDetailID string         `json:"scenario_detail_id"`
-	CoverImage       CoverImage     `json:"cover_image,omitempty"`
-	ScenarioDetail   ScenarioDetail `json:"scenario_detail,omitempty"`
+	UserScenarioID   string            `json:"user_scenario_id"`
+	Name             string            `json:"name"`
+	ModifyDate       string            `json:"modify_date"`
+	CreateBy         string            `json:"create_by"`
+	CoverImgID       string            `json:"cover_img_id"`
+	ScenarioDetailID string            `json:"scenario_detail_id"`
+	CoverImage       CoverImageProject `json:"cover_image,omitempty"`
+	ScenarioDetail   ScenarioDetail    `json:"scenario_detail,omitempty"`
 }
 
 // ======================================================
@@ -313,7 +330,7 @@ type UserConfiguration struct {
 	CreateBy              string             `json:"create_by"`
 	CoverImgID            string             `json:"cover_img_id"`
 	ConfigurationDetailID string             `json:"configuration_detail_id"`
-	CoverImage            CoverImage         `json:"cover_image,omitempty"`
+	CoverImage            CoverImageConf     `json:"cover_image,omitempty"`
 	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail,omitempty"`
 }
 
@@ -332,7 +349,7 @@ type PublicConfiguration struct {
 	PublishBy             string             `json:"publish_by"`
 	OriginFrom            string             `json:"origin_from"`
 	ConfigurationDetailID string             `json:"configuration_detail_id"`
-	CoverImage            CoverImage         `json:"cover_image,omitempty"`
+	CoverImage            CoverImageConf     `json:"cover_image,omitempty"`
 	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail,omitempty"`
 }
 

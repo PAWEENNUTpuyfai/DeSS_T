@@ -1,3 +1,6 @@
+import type { ScenarioDetail } from "./Scenario";
+import type { ConfigurationDetail } from "./Configuration";
+
 // ------------------- USER --------------------
 export interface User {
   google_id: string;
@@ -9,10 +12,10 @@ export interface User {
   token_expires_at: string; // ISO date string
   last_login: string; // ISO date string
   created_at: string; // ISO date string
-  public_scenarios?: any[]; // Reference to PublicScenario
-  user_scenarios?: any[]; // Reference to UserScenario
-  user_configurations?: any[]; // Reference to UserConfiguration
-  public_configurations?: any[]; // Reference to PublicConfiguration
+  public_scenarios?: PublicScenario[];
+  user_scenarios?: UserScenario[];
+  user_configurations?: UserConfiguration[];
+  public_configurations?: PublicConfiguration[];
 }
 
 // ------------------- COVER IMAGE --------------------
@@ -36,10 +39,10 @@ export interface PublicScenario {
   create_by: string;
   publish_by: string;
   origin_from: string;
-  cover_img: string;
-  scenario_detail: string;
+  cover_img_id: string;
+  scenario_detail_id: string;
   cover_image?: CoverImageProject;
-  scenario_detail_obj?: any; // Reference to ScenarioDetail from Scenario.ts
+  scenario_detail?: ScenarioDetail;
 }
 
 // ------------------- USER SCENARIO --------------------
@@ -48,10 +51,10 @@ export interface UserScenario {
   name: string;
   modify_date: string; // ISO date string
   create_by: string;
-  cover_img: string;
-  scenario_detail: string;
+  cover_img_id: string;
+  scenario_detail_id: string;
   cover_image?: CoverImageProject;
-  scenario_detail_obj?: any; // Reference to ScenarioDetail from Scenario.ts
+  scenario_detail?: ScenarioDetail;
 }
 
 // ------------------- USER CONFIGURATION --------------------
@@ -60,10 +63,10 @@ export interface UserConfiguration {
   name: string;
   modify_date: string; // ISO date string
   create_by: string;
-  cover_img: string;
-  configuration_detail: string;
+  cover_img_id: string;
+  configuration_detail_id: string;
   cover_image?: CoverImageConf;
-  configuration_detail_obj?: any; // Reference to ConfigurationDetail from Configuration.ts
+  configuration_detail?: ConfigurationDetail;
 }
 
 // ------------------- PUBLIC CONFIGURATION --------------------
@@ -73,11 +76,11 @@ export interface PublicConfiguration {
   description: string;
   modify_date: string; // ISO date string
   publish_date: string; // ISO date string
-  cover_img: string;
+  cover_img_id: string;
   create_by: string;
   publish_by: string;
   origin_from: string;
-  configuration_detail: string;
+  configuration_detail_id: string;
   cover_image?: CoverImageConf;
-  configuration_detail_obj?: any; // Reference to ConfigurationDetail from Configuration.ts
+  configuration_detail?: ConfigurationDetail;
 }

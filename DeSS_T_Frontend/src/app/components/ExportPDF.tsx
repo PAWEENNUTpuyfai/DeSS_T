@@ -314,7 +314,7 @@ export default function ExportPDF({
   // Helper function to split route data into rows for bar charts
   const splitRouteDataIntoRows = (
     dataset: [string, number][],
-    maxRoutesPerRow: number
+    maxRoutesPerRow: number,
   ): [string, number][][] => {
     if (dataset.length <= maxRoutesPerRow) {
       return [dataset];
@@ -331,23 +331,24 @@ export default function ExportPDF({
 
   // Split route bar chart data into rows (max 10 routes per row for PDF)
   const maxRoutesPerRow = 10;
-  const travelingTimeRows = useMemo(() => 
-    splitRouteDataIntoRows(filteredTravelingTimeData, maxRoutesPerRow),
-    [filteredTravelingTimeData]
+  const travelingTimeRows = useMemo(
+    () => splitRouteDataIntoRows(filteredTravelingTimeData, maxRoutesPerRow),
+    [filteredTravelingTimeData],
   );
-  const travelingDistanceRows = useMemo(() => 
-    splitRouteDataIntoRows(filteredTravelingDistanceData, maxRoutesPerRow),
-    [filteredTravelingDistanceData]
+  const travelingDistanceRows = useMemo(
+    () =>
+      splitRouteDataIntoRows(filteredTravelingDistanceData, maxRoutesPerRow),
+    [filteredTravelingDistanceData],
   );
 
   // Helper function to split dataset into chunks for pagination
   const splitDatasetIntoChunks = (
     dataset: [string, string, number][],
-    maxSlotsPerPage: number
+    maxSlotsPerPage: number,
   ): [string, string, number][][] => {
     // Get unique time slots sorted
     const uniqueTimes = Array.from(new Set(dataset.map((d) => d[0]))).sort();
-    
+
     if (uniqueTimes.length <= maxSlotsPerPage) {
       return [dataset];
     }
@@ -364,17 +365,20 @@ export default function ExportPDF({
 
   // Split datasets into chunks (max 6 time slots per chart for A4 fit)
   const maxSlotsPerChart = 6;
-  const avgWaitingTimeChunks = useMemo(() => 
-    splitDatasetIntoChunks(filteredAvgWaitingTimeDataset, maxSlotsPerChart),
-    [filteredAvgWaitingTimeDataset]
+  const avgWaitingTimeChunks = useMemo(
+    () =>
+      splitDatasetIntoChunks(filteredAvgWaitingTimeDataset, maxSlotsPerChart),
+    [filteredAvgWaitingTimeDataset],
   );
-  const avgQueueLengthChunks = useMemo(() => 
-    splitDatasetIntoChunks(filteredAvgQueueLengthDataset, maxSlotsPerChart),
-    [filteredAvgQueueLengthDataset]
+  const avgQueueLengthChunks = useMemo(
+    () =>
+      splitDatasetIntoChunks(filteredAvgQueueLengthDataset, maxSlotsPerChart),
+    [filteredAvgQueueLengthDataset],
   );
-  const avgUtilizationChunks = useMemo(() => 
-    splitDatasetIntoChunks(filteredAvgUtilizationDataset, maxSlotsPerChart),
-    [filteredAvgUtilizationDataset]
+  const avgUtilizationChunks = useMemo(
+    () =>
+      splitDatasetIntoChunks(filteredAvgUtilizationDataset, maxSlotsPerChart),
+    [filteredAvgUtilizationDataset],
   );
 
   // Extract summary statistics
@@ -520,7 +524,7 @@ export default function ExportPDF({
             />
           </div>
           <div className="text-xs text-gray-700 mb-2 leading-tight">
-              <p className="mb-2">
+            <p className="mb-2">
               <strong>Heatmap Legend:</strong> The heatmap visualizes passenger
               waiting patterns across all stations:
             </p>
@@ -550,6 +554,7 @@ export default function ExportPDF({
         </div>
 
         {/* Page 2 - Route Statistics */}
+        <div className="page-break"></div>
         <div className="page">
           <h2 className="text-[#81069e] mb-4">Route Statistics</h2>
 
@@ -616,6 +621,7 @@ export default function ExportPDF({
         </div>
 
         {/* Page 3+ - Time-based Statistics (Tabular) */}
+        <div className="page-break"></div>
         <div className="page">
           <h2 className="text-[#81069e] mb-4">Time-based Statistics</h2>
 
@@ -684,78 +690,83 @@ export default function ExportPDF({
 
         {/* Page 4+ - Line Charts (paginated if data is too long) */}
         {avgWaitingTimeChunks.map((chunk, chunkIdx) => (
-          <div key={`time-series-page-${chunkIdx}`} className="page">
-            <h2 className="text-[#81069e] mb-4">
-              Time Series Analysis
-              {avgWaitingTimeChunks.length > 1 && ` (Part ${chunkIdx + 1}/${avgWaitingTimeChunks.length})`}
-            </h2>
+          <>
+            <div className="page-break"></div>
+            <div key={`time-series-page-${chunkIdx}`} className="page">
+              <h2 className="text-[#81069e] mb-4">
+                Time Series Analysis
+                {avgWaitingTimeChunks.length > 1 &&
+                  ` (Part ${chunkIdx + 1}/${avgWaitingTimeChunks.length})`}
+              </h2>
 
-            <div className="no-break" style={{ marginBottom: "20px" }}>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  marginBottom: "10px",
-                  fontWeight: "600",
-                }}
-              >
-                Average Waiting Time
-              </h3>
-              <LineChart
-                timeslot={timeslot}
-                route={routes}
-                dataset={chunk}
-                mode="avg-waiting-time"
-                compactMode={true}
-              />
+              <div className="no-break" style={{ marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontSize: "16px",
+                    marginBottom: "10px",
+                    fontWeight: "600",
+                  }}
+                >
+                  Average Waiting Time
+                </h3>
+                <LineChart
+                  timeslot={timeslot}
+                  route={routes}
+                  dataset={chunk}
+                  mode="avg-waiting-time"
+                  compactMode={true}
+                />
+              </div>
+
+              {/* Show Queue Length for this chunk */}
+              {avgQueueLengthChunks[chunkIdx] && (
+                <div className="no-break" style={{ marginBottom: "20px" }}>
+                  <h3
+                    style={{
+                      fontSize: "16px",
+                      marginBottom: "10px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Average Queue Length
+                  </h3>
+                  <LineChart
+                    timeslot={timeslot}
+                    route={routes}
+                    dataset={avgQueueLengthChunks[chunkIdx]}
+                    mode="avg-queue-length"
+                    compactMode={true}
+                  />
+                </div>
+              )}
+
+              {/* Show Utilization for this chunk */}
+              {avgUtilizationChunks[chunkIdx] && (
+                <div className="no-break" style={{ marginBottom: "20px" }}>
+                  <h3
+                    style={{
+                      fontSize: "16px",
+                      marginBottom: "10px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Average Utilization
+                  </h3>
+                  <LineChart
+                    timeslot={timeslot}
+                    route={routes}
+                    dataset={avgUtilizationChunks[chunkIdx]}
+                    mode="avg-utilization"
+                    compactMode={true}
+                  />
+                </div>
+              )}
             </div>
-
-            {/* Show Queue Length for this chunk */}
-            {avgQueueLengthChunks[chunkIdx] && (
-              <div className="no-break" style={{ marginBottom: "20px" }}>
-                <h3
-                  style={{
-                    fontSize: "16px",
-                    marginBottom: "10px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Average Queue Length
-                </h3>
-                <LineChart
-                  timeslot={timeslot}
-                  route={routes}
-                  dataset={avgQueueLengthChunks[chunkIdx]}
-                  mode="avg-queue-length"
-                  compactMode={true}
-                />
-              </div>
-            )}
-
-            {/* Show Utilization for this chunk */}
-            {avgUtilizationChunks[chunkIdx] && (
-              <div className="no-break" style={{ marginBottom: "20px" }}>
-                <h3
-                  style={{
-                    fontSize: "16px",
-                    marginBottom: "10px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Average Utilization
-                </h3>
-                <LineChart
-                  timeslot={timeslot}
-                  route={routes}
-                  dataset={avgUtilizationChunks[chunkIdx]}
-                  mode="avg-utilization"
-                  compactMode={true}
-                />
-              </div>
-            )}
-          </div>
+          </>
         ))}
 
         {/* Page 5 - Station Time-based Statistics */}
+        <div className="page-break"></div>
         <div className="page">
           <h2 className="text-[#81069e] mb-4">
             Station Statistics (Time-based)

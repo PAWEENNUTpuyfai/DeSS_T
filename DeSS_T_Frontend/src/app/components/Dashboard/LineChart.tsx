@@ -149,20 +149,6 @@ export default function LineChart({
 
   return (
     <div className={compactMode ? "w-full overflow-hidden" : "w-full"}>
-      {/* Legend - hidden in compact mode */}
-      {!compactMode && (
-        <div className="flex gap-3 items-center mb-2 text-sm">
-          {routes.map(([id, name, color]) => (
-            <div key={id} className="flex items-center gap-1">
-              <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{ backgroundColor: color }}
-              ></span>
-              <span>{name}</span>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className={compactMode ? "relative w-full overflow-hidden" : "relative w-full"}>
         {/* Fixed Y-axis */}

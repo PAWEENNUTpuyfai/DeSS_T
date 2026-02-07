@@ -276,3 +276,11 @@
   background: transparent;
   border: none;
 }
+
+/* Print styles */
+@media print {
+  .dashboard-bg {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+}

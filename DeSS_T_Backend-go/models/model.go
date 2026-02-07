@@ -200,3 +200,168 @@ type InterArrivalData struct {
 
 	StationDetail StationDetail `json:"station_detail"`
 }
+
+// ======================================================
+// USER
+// ======================================================
+
+type User struct {
+	GoogleID     string `json:"google_id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Picture      string `json:"picture_url"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	LastLogin    string `json:"last_login"`
+	CreatedAt    string `json:"created_at"`
+}
+
+// ======================================================
+// USER PROFILE RESPONSE
+// ======================================================
+
+type UserProfileResponse struct {
+	GoogleID  string `json:"google_id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Picture   string `json:"picture_url"`
+	LastLogin string `json:"last_login"`
+	CreatedAt string `json:"created_at"`
+}
+
+// ======================================================
+// COVER IMAGE
+// ======================================================
+
+type CoverImage struct {
+	CoverImageID string `json:"cover_image_id"`
+	PathFile     string `json:"path_file"`
+}
+
+// ======================================================
+// PUBLIC SCENARIO
+// ======================================================
+
+type PublicScenario struct {
+	PublicScenarioID string         `json:"public_scenario_id"`
+	Name             string         `json:"name"`
+	Description      string         `json:"description"`
+	ModifyDate       string         `json:"modify_date"`
+	PublishDate      string         `json:"publish_date"`
+	CreateBy         string         `json:"create_by"`
+	PublishBy        string         `json:"publish_by"`
+	OriginFrom       string         `json:"origin_from"`
+	CoverImgID       string         `json:"cover_img_id"`
+	ScenarioDetailID string         `json:"scenario_detail_id"`
+	CoverImage       CoverImage     `json:"cover_image,omitempty"`
+	ScenarioDetail   ScenarioDetail `json:"scenario_detail,omitempty"`
+}
+
+// ======================================================
+// USER SCENARIO
+// ======================================================
+
+type UserScenario struct {
+	UserScenarioID   string         `json:"user_scenario_id"`
+	Name             string         `json:"name"`
+	ModifyDate       string         `json:"modify_date"`
+	CreateBy         string         `json:"create_by"`
+	CoverImgID       string         `json:"cover_img_id"`
+	ScenarioDetailID string         `json:"scenario_detail_id"`
+	CoverImage       CoverImage     `json:"cover_image,omitempty"`
+	ScenarioDetail   ScenarioDetail `json:"scenario_detail,omitempty"`
+}
+
+// ======================================================
+// CREATE SCENARIO REQUEST
+// ======================================================
+
+type CreateScenarioRequest struct {
+	Name           string         `json:"name"`
+	Description    string         `json:"description"`
+	IsPublic       bool           `json:"is_public"`
+	ScenarioDetail ScenarioDetail `json:"scenario_detail"`
+}
+
+// ======================================================
+// UPDATE SCENARIO REQUEST
+// ======================================================
+
+type UpdateScenarioRequest struct {
+	Name           string         `json:"name"`
+	Description    string         `json:"description,omitempty"`
+	ScenarioDetail ScenarioDetail `json:"scenario_detail,omitempty"`
+}
+
+// ======================================================
+// SCENARIO LIST RESPONSE
+// ======================================================
+
+type ScenarioListResponse struct {
+	PublicScenarios []PublicScenario `json:"public_scenarios"`
+	UserScenarios   []UserScenario   `json:"user_scenarios"`
+}
+
+// ======================================================
+// USER CONFIGURATION
+// ======================================================
+
+type UserConfiguration struct {
+	UserConfigurationID   string             `json:"user_configuration_id"`
+	Name                  string             `json:"name"`
+	ModifyDate            string             `json:"modify_date"`
+	CreateBy              string             `json:"create_by"`
+	CoverImgID            string             `json:"cover_img_id"`
+	ConfigurationDetailID string             `json:"configuration_detail_id"`
+	CoverImage            CoverImage         `json:"cover_image,omitempty"`
+	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail,omitempty"`
+}
+
+// ======================================================
+// PUBLIC CONFIGURATION
+// ======================================================
+
+type PublicConfiguration struct {
+	PublicConfigurationID string             `json:"public_configuration_id"`
+	Name                  string             `json:"name"`
+	Description           string             `json:"description"`
+	ModifyDate            string             `json:"modify_date"`
+	PublishDate           string             `json:"publish_date"`
+	CoverImgID            string             `json:"cover_img_id"`
+	CreateBy              string             `json:"create_by"`
+	PublishBy             string             `json:"publish_by"`
+	OriginFrom            string             `json:"origin_from"`
+	ConfigurationDetailID string             `json:"configuration_detail_id"`
+	CoverImage            CoverImage         `json:"cover_image,omitempty"`
+	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail,omitempty"`
+}
+
+// ======================================================
+// CREATE CONFIGURATION REQUEST
+// ======================================================
+
+type CreateConfigurationRequest struct {
+	Name                  string             `json:"name"`
+	Description           string             `json:"description"`
+	IsPublic              bool               `json:"is_public"`
+	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail"`
+}
+
+// ======================================================
+// UPDATE CONFIGURATION REQUEST
+// ======================================================
+
+type UpdateConfigurationRequest struct {
+	Name                  string             `json:"name"`
+	Description           string             `json:"description,omitempty"`
+	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail,omitempty"`
+}
+
+// ======================================================
+// CONFIGURATION LIST RESPONSE
+// ======================================================
+
+type ConfigurationListResponse struct {
+	PublicConfigurations []PublicConfiguration `json:"public_configurations"`
+	UserConfigurations   []UserConfiguration   `json:"user_configurations"`
+}

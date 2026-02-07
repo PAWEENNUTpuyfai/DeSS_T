@@ -466,7 +466,7 @@ export default function ExportPDF({
 
   return (
     <main>
-      <Nav usermode={usermode} inpage="Output" onBackClick={onBackClick} />
+      {/* <Nav usermode={usermode} inpage="Output" onBackClick={onBackClick} /> */}
       <div className="pdf-wrapper">
         {/* Page 1 - Header & Overall Statistics & Heatmap */}
         <div className="page">

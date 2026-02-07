@@ -73,15 +73,16 @@ export default function RouteBarChart({
 
   // Chart dimensions - responsive for PDF
   const axisWidth = compactMode ? 55 : 70; // fixed y-axis area (labels stay put)
-  const baseBarWidth = compactMode ? 30 : 50; // desired bar width before scaling
-  const paddingRight = compactMode ? 12 : 20;
+  const baseBarWidth = compactMode ? 40 : 70; // wider bars for better readability
+  const paddingRight = compactMode ? 16 : 28;
   const paddingTop = compactMode ? 15 : 20;
   const paddingBottom = compactMode ? 35 : 50;
   const chartHeight = compactMode ? 200 : 300;
+  const pdfMinWidth = 680; // approximate printable width for A4 with margins
   
   // Calculate width based on number of bars (no max limit to show all data)
   const contentWidth = Math.max(
-    compactMode ? 280 : 300,
+    compactMode ? pdfMinWidth : 420,
     chartData.length * baseBarWidth + paddingRight,
   );
   const innerWidth = contentWidth - paddingRight;
@@ -152,8 +153,13 @@ export default function RouteBarChart({
       </div>
 
       {/* Scrollable chart area - enable scroll to show all bars */}
-      <div className="w-full overflow-x-auto">
-        <svg width={contentWidth} height={chartHeight} className="bg-white">
+      <div className={compactMode ? "w-full overflow-hidden" : "w-full overflow-x-auto"}>
+        <svg
+          width={compactMode ? "100%" : contentWidth}
+          height={chartHeight}
+          viewBox={`0 0 ${contentWidth} ${chartHeight}`}
+          className="bg-white"
+        >
           {yTickValues.map((tick, idx) => {
             const y = paddingTop + yScale(tick);
             return (

@@ -488,7 +488,7 @@ export default function ExportPDF({
           </div>
 
           <h2 className="text-[#81069e] mb-4">Overall Statistics</h2>
-          <div className="grid grid-cols-5 gap-2 mb-6">
+          <div className="grid grid-cols-5 gap-2 mb-8">
             <div className="dashboard-card flex flex-col items-center justify-center">
               <p className="chart-header">{summaryStats.avgWaitingTime}</p>
               <p className="chart-context">Avg. Waiting Time</p>
@@ -513,26 +513,28 @@ export default function ExportPDF({
             </div>
           </div>
 
-          <h2 className="text-[#81069e] mb-2">Passenger Waiting Density</h2>
+          <h2 className="text-[#81069e] mb-4 ">Passenger Waiting Density</h2>
           <div
             className="mb-3 border border-gray-200 rounded-lg overflow-hidden"
-            style={{ height: 220 }}
+            style={{ height: 400 }}
           >
             <PassengerWaitingHeatmap
               simulationResponse={simulationResponse}
               stations={playbackSeed?.stations ?? []}
             />
           </div>
-          <div className="text-xs text-gray-700 mb-2 leading-tight">
+          <div className=" text-gray-700 mb-2 leading-tight">
             <p className="mb-2">
               <strong>Heatmap Legend:</strong> The heatmap visualizes passenger
               waiting patterns across all stations:
             </p>
             <div className="px-4 py-1 border-b border-gray-200">
               <div className="mb-2">
-                <div className="text-xs mb-1">Queue Length (Color)</div>
+                <div className=" mb-1">
+                  <strong>Queue Length (Color)</strong>
+                </div>
                 <div className="flex items-center gap-2 ml-4">
-                  <span className="text-xs text-gray-600">Low</span>
+                  <span className=" text-gray-600">Low</span>
                   <div
                     className="flex-1 h-3 rounded"
                     style={{
@@ -540,12 +542,14 @@ export default function ExportPDF({
                         "linear-gradient(to right, #0096ff, #00ff00, #ffff00, #ff8800, #ff0000)",
                     }}
                   ></div>
-                  <span className="text-xs text-gray-600">High</span>
+                  <span className=" text-gray-600">High</span>
                 </div>
               </div>
               <div>
-                <div className="text-xs mb-1">Waiting Time (Blur Width)</div>
-                <p className="text-xs text-gray-600 ml-4">
+                <div className="mb-1">
+                  <strong>Waiting Time (Blur Width)</strong>
+                </div>
+                <p className="text-gray-600 ml-4">
                   Thicker/wider blur = longer waiting time
                 </p>
               </div>
@@ -567,7 +571,7 @@ export default function ExportPDF({
           >
             All Lines: Most Popular by Customer
           </h3>
-          <div className="mb-6">
+          <div className="mb-6 w-full">
             <TopRoutesChart
               route={routes}
               customerData={aggregatedCustomerData}
@@ -584,9 +588,9 @@ export default function ExportPDF({
           >
             Average Traveling Time
           </h3>
-          <div className="space-y-4 mb-6">
+          <div className="space-y-4 mb-6 w-full">
             {travelingTimeRows.map((rowData, rowIdx) => (
-              <div key={`traveling-time-row-${rowIdx}`}>
+              <div key={`traveling-time-row-${rowIdx}`} className="w-full">
                 <RouteBarChart
                   route={routes}
                   dataset={rowData}
@@ -606,9 +610,9 @@ export default function ExportPDF({
           >
             Average Traveling Distance
           </h3>
-          <div className="space-y-4 mb-4">
+          <div className="space-y-4 mb-4 w-full">
             {travelingDistanceRows.map((rowData, rowIdx) => (
-              <div key={`traveling-distance-row-${rowIdx}`}>
+              <div key={`traveling-distance-row-${rowIdx}`} className="w-full">
                 <RouteBarChart
                   route={routes}
                   dataset={rowData}

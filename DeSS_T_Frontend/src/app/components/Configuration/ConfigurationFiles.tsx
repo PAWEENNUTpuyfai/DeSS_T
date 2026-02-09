@@ -19,6 +19,7 @@ interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
   onBack: () => void;
+  onBackClick?: () => void;
   OnBackScenario: () => void;
   onSubmit: (config: ConfigurationDetail) => void;
   usermode?: "guest" | "user";
@@ -32,6 +33,7 @@ export default function ConfigurationFiles({
   stationDetails,
   mapBounds,
   onBack,
+  onBackClick,
   onSubmit,
   usermode = "guest",
   configuration,
@@ -41,13 +43,15 @@ export default function ConfigurationFiles({
       if (typeof crypto !== "undefined" && crypto.randomUUID) {
         return crypto.randomUUID();
       }
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
     return Math.random().toString(36).slice(2);
   };
 
   const findStationDetail = (
     key: string,
-    list: StationDetail[]
+    list: StationDetail[],
   ): StationDetail | undefined => {
     return (
       list.find((sd) => sd.station_detail_id === key) ||
@@ -61,7 +65,7 @@ export default function ConfigurationFiles({
 
   const toAlightingData = (
     res: unknown,
-    stations: StationDetail[]
+    stations: StationDetail[],
   ): AlightingData[] => {
     if (!isDataFitResponse(res)) return [];
     return res.DataFitResponse.map((item) => ({
@@ -77,7 +81,7 @@ export default function ConfigurationFiles({
 
   const toInterArrivalData = (
     res: unknown,
-    stations: StationDetail[]
+    stations: StationDetail[],
   ): InterArrivalData[] => {
     if (!isDataFitResponse(res)) return [];
     return res.DataFitResponse.map((item) => ({
@@ -128,7 +132,7 @@ export default function ConfigurationFiles({
       setLoadingI(true);
       const output = await InterarrivalFitFromXlsx(
         interarrivalFile,
-        stationDetails
+        stationDetails,
       );
       setInterarrivalResult(output);
       return output;
@@ -157,7 +161,7 @@ export default function ConfigurationFiles({
     for (let h = s; h < e; h++) {
       const label = `${String(h).padStart(2, "0")}:00-${String(h).padStart(
         2,
-        "0"
+        "0",
       )}:59`;
       segments.push(label);
     }
@@ -246,7 +250,7 @@ export default function ConfigurationFiles({
         try {
           network = await buildNetworkModelFromStations(
             stationDetails,
-            "guest_network"
+            "guest_network",
           );
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err);
@@ -255,7 +259,7 @@ export default function ConfigurationFiles({
           // Surface a single clear error; outer catch will alert
           throw new Error(
             "Failed to build network. Ensure the backend is running and try again.\n\nDetails: " +
-              errorMsg
+              errorMsg,
           );
         }
       } else {
@@ -315,7 +319,11 @@ export default function ConfigurationFiles({
           isSubmitting ? "Applying configuration..." : "Processing files..."
         }
       />
-      <Nav usermode={usermode} inpage="Configuration" />
+      <Nav
+        usermode={usermode}
+        inpage="Configuration"
+        onBackClick={onBackClick}
+      />
       <main>
         <div className="h-[12vh]"></div>
         <div className="content h-full mx-auto">
@@ -421,7 +429,7 @@ export default function ConfigurationFiles({
                 onClick={() =>
                   (
                     document.getElementById(
-                      "alight-file"
+                      "alight-file",
                     ) as HTMLInputElement | null
                   )?.click()
                 }
@@ -464,7 +472,7 @@ export default function ConfigurationFiles({
                 onClick={() =>
                   (
                     document.getElementById(
-                      "inter-file"
+                      "inter-file",
                     ) as HTMLInputElement | null
                   )?.click()
                 }
@@ -516,8 +524,8 @@ export default function ConfigurationFiles({
                   {isSubmitting || loadingA || loadingI
                     ? "Applying..."
                     : usermode === "user"
-                    ? "Save"
-                    : "Apply"}
+                      ? "Save"
+                      : "Apply"}
                 </button>
               </div>
             </div>

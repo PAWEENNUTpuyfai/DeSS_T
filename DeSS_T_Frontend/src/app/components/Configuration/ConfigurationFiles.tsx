@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
-} from "../../../utility/api/distribution_fit";
+} from "../../../utility/api/distributionFit";
 import MapViewer from "../MapViewer";
 import LoadingModal from "../LoadingModal";
 import type { StationDetail, StationPair } from "../../models/Network";

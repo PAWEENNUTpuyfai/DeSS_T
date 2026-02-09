@@ -1,12 +1,21 @@
 import "../../style/LandingPage.css";
 import { useNavigate } from "react-router-dom";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
   const googleButtonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // If user is already logged in, redirect to workspace page
+    if (!isLoading && isAuthenticated) {
+      navigate("/user/workspace", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleCredentialResponse = (credentialResponse: any) => {
     try {
@@ -17,8 +26,8 @@ export default function LandingPage() {
       localStorage.setItem("user", JSON.stringify(decoded));
       localStorage.setItem("googleToken", credentialResponse.credential);
 
-      // Navigate to the login page
-      navigate("/user/login");
+      // Navigate to the workspace page
+      navigate("/user/workspace");
     } catch (error) {
       console.error("Error decoding token:", error);
     }
@@ -48,7 +57,7 @@ export default function LandingPage() {
           {/* Google Login with Custom Button Overlay */}
           <div className="relative my-4">
             {/* Custom Pretty Button (Visual Layer) */}
-            <div className="google-login flex items-center justify-center gap-8">
+            <div className="google-login flex items-center justify-center gap-8 pointer-events-none">
               <svg
                 width="36"
                 height="36"
@@ -66,17 +75,17 @@ export default function LandingPage() {
               <span>Log in with Google</span>
             </div>
 
-            {/* Real Google Login Button (Hidden but Clickable) */}
+            {/* Real Google Login Button (Hidden but Clickable) - Scaled Up */}
             <div
               ref={googleButtonRef}
-              className="absolute inset-0 opacity-0 flex items-center justify-center pointer-events-none"
+              className="absolute inset-0 opacity-0 flex items-center justify-center"
+              style={{ transform: "scale(3)", transformOrigin: "center" }}
             >
-              <div className="pointer-events-auto">
-                <GoogleLogin
-                  onSuccess={handleCredentialResponse}
-                  onError={handleGoogleLoginError}
-                />
-              </div>
+              <GoogleLogin
+                onSuccess={handleCredentialResponse}
+                onError={handleGoogleLoginError}
+                width="400"
+              />
             </div>
           </div>
           <div className="use-as-guest" onClick={handleGuestClick}>

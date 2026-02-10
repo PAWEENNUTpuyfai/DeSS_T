@@ -7,7 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, login } = useAuth();
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,9 +22,24 @@ export default function LandingPage() {
       const decoded = jwtDecode<any>(credentialResponse.credential);
       console.log("User logged in:", decoded);
 
-      // Store user information in localStorage
-      localStorage.setItem("user", JSON.stringify(decoded));
-      localStorage.setItem("googleToken", credentialResponse.credential);
+      // Create User object with token expiration (Google tokens typically expire in 1 hour)
+      const tokenExpiresAt = new Date();
+      tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 1);
+
+      const userData = {
+        google_id: decoded.sub,
+        name: decoded.name,
+        email: decoded.email,
+        picture_url: decoded.picture || "",
+        access_token: credentialResponse.credential,
+        refresh_token: "",
+        token_expires_at: tokenExpiresAt.toISOString(),
+        last_login: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      // Use AuthContext login function
+      login(userData);
 
       // Navigate to the workspace page
       navigate("/user/workspace");

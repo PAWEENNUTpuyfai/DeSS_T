@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 // import { useEffect, useRef } from "react";
 import "../../style/navbar.css";
 
@@ -6,8 +7,10 @@ interface NavProps {
   usermode: "guest" | "user";
   configurationName?: string;
   projectName?: string;
-  inpage?: "Configuration" | "Project" | "Output";
+  inpage?: "Configuration" | "Project" | "Output" | "Workspace";
   onBackClick?: () => void;
+  userAvatarUrl?: string;
+  userName?: string;
 }
 
 export default function Nav({
@@ -16,8 +19,11 @@ export default function Nav({
   projectName,
   inpage,
   onBackClick,
+  userAvatarUrl,
+  userName,
 }: NavProps) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const navigate = useNavigate();
 
   const handleConfirmLeave = () => {
     onBackClick?.();
@@ -49,6 +55,10 @@ export default function Nav({
             className="nav-icon"
             style={{ cursor: usermode === "guest" ? "pointer" : "default" }}
             onClick={() => {
+              if (!onBackClick) {
+                return;
+              }
+
               if (inpage === "Output") {
                 handleConfirmLeave();
               } else {
@@ -70,7 +80,9 @@ export default function Nav({
               transform: "translate(-50%, -50%)",
             }}
           >
-            {inpage === "Configuration" ? (
+            {inpage === "Workspace" ? (
+              "User Workspace"
+            ) : inpage === "Configuration" ? (
               usermode === "guest" ? (
                 "Set up Configuration Data"
               ) : (
@@ -99,13 +111,25 @@ export default function Nav({
               </>
             )}
           </h1>
-          {usermode === "guest" && (
+          {usermode === "guest" ? (
             <button
               className="login-btn mr-8"
-              onClick={() => alert("Login action")}
+              onClick={() => navigate("/")}
             >
               Login
             </button>
+          ) : (
+            <div className="nav-user">
+              {userAvatarUrl && (
+                <img
+                  src={userAvatarUrl}
+                  alt={userName ? `${userName} profile` : "Profile"}
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  className="nav-user-avatar"
+                />
+              )}
+            </div>
           )}
         </div>
       </nav>

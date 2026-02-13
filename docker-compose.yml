@@ -1,13 +1,15 @@
 services:
   frontend:
-    image: paweennutpuyfai/dess-t-frontend:3.0
+    image: paweennutpuyfai/dess-t-frontend:6.2
     ports:
       - "3000:80"
     depends_on:
       - backend-go
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
   backend-go:
-    image: paweennutpuyfai/dess-t-go:4.3
+    image: paweennutpuyfai/dess-t-go:6.0
     env_file:
       - .env
     ports:
@@ -18,11 +20,10 @@ services:
       backend-python:
         condition: service_started
     environment:
-      DB_HOST: postgres        # 👈 override localhost
-
+      DB_HOST: postgres
 
   backend-python:
-    image: paweennutpuyfai/dess-t-python:4.3
+    image: paweennutpuyfai/dess-t-python:6.0
     ports:
       - "5000:5000"
 

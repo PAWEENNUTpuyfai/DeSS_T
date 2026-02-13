@@ -5,7 +5,7 @@ import { buildStationNameToIdMap } from "../sheetHelpers";
 
 export async function AlightingFitFromXlsx(
   file: File,
-  stationDetails: StationDetail[],
+  stationDetails: StationDetail[]
 ): Promise<DataFitResponse> {
   const form = new FormData();
 

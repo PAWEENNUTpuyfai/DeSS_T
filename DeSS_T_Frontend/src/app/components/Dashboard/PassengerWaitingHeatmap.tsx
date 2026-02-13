@@ -69,15 +69,17 @@ function HeatmapLayer({ data }: { data: HeatmapDataPoint[] }) {
       max: number;
       gradient: Record<string, string>;
     }
-    
+
     interface HeatLayer {
       addTo: (map: ReturnType<typeof useMap>) => void;
       remove: () => void;
     }
-    
-    const heat = (L as typeof L & { 
-      heatLayer: (data: number[][], options: HeatLayerOptions) => HeatLayer
-    })
+
+    const heat = (
+      L as typeof L & {
+        heatLayer: (data: number[][], options: HeatLayerOptions) => HeatLayer;
+      }
+    )
       .heatLayer(heatData, {
         radius: getRadiusFromWaitingTime(avgWaitingTime), // Size based on waiting time
         blur: getBlurFromWaitingTime(avgWaitingTime), // Blur based on waiting time
@@ -113,6 +115,20 @@ function HeatmapLayer({ data }: { data: HeatmapDataPoint[] }) {
         .addTo(map);
       markers.push(marker);
     });
+
+    // Fit bounds to show all heatmap points
+    const minLat = Math.min(...data.map((d) => d.lat));
+    const maxLat = Math.max(...data.map((d) => d.lat));
+    const minLon = Math.min(...data.map((d) => d.lon));
+    const maxLon = Math.max(...data.map((d) => d.lon));
+
+    map.fitBounds(
+      [
+        [minLat, minLon],
+        [maxLat, maxLon],
+      ],
+      { padding: [50, 50] },
+    );
 
     // Cleanup on unmount
     return () => {
@@ -226,20 +242,16 @@ export default function PassengerWaitingHeatmap({
   const centerLon = (minLon + maxLon) / 2;
 
   return (
-    <div className="w-full h-[90%] flex flex-col bg-white rounded-lg">
+    <div
+      className="w-full flex flex-col bg-white rounded-lg"
+      style={{ height: "100%" }}
+    >
       {/* Map with density heatmap */}
-      <div
-        className="flex-1 rounded border border-gray-200 overflow-hidden"
-        style={{ minHeight: "200px" }}
-      >
+      <div className="flex-1 rounded border border-gray-200 overflow-hidden">
         <MapContainer
           center={[centerLat, centerLon]}
           zoom={13}
           style={{ height: "100%", width: "100%" }}
-          bounds={[
-            [minLat, minLon],
-            [maxLat, maxLon],
-          ]}
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

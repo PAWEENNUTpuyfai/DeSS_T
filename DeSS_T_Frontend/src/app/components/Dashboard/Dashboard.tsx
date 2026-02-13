@@ -231,7 +231,6 @@ export default function Dashboard({
 
   // Debug: Log the dataset used by moded4 (time/distance) in readable units
   useEffect(() => {
-
     const routeNames: Record<string, string> = {};
     allRoutes.forEach(([id, name]) => {
       routeNames[id] = name;
@@ -428,10 +427,12 @@ export default function Dashboard({
               <HelpButton helpType="Heatmap" />
             </div>
           </div>
-          <PassengerWaitingHeatmap
-            simulationResponse={simulationResponse}
-            stations={playbackSeed?.stations ?? []}
-          />
+          <div className="h-[90%]">
+            <PassengerWaitingHeatmap
+              simulationResponse={simulationResponse}
+              stations={playbackSeed?.stations ?? []}
+            />
+          </div>
         </div>
         <div className="w-[40%] dashboard-block">
           <div className="flex flex-wrap mb-4 mx-auto gap-4">

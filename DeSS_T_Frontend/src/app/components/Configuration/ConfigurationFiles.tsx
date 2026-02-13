@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
-} from "../../../utility/api/distribution_fit";
+} from "../../../utility/api/distributionFit";
 import MapViewer from "../MapViewer";
 import LoadingModal from "../LoadingModal";
 import type { StationDetail, StationPair } from "../../models/Network";
@@ -19,6 +19,7 @@ interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
   onBack: () => void;
+  onBackClick?: () => void;
   OnBackScenario: () => void;
   onSubmit: (config: ConfigurationDetail) => void;
   usermode?: "guest" | "user";
@@ -32,6 +33,7 @@ export default function ConfigurationFiles({
   stationDetails,
   mapBounds,
   onBack,
+  onBackClick,
   onSubmit,
   usermode = "guest",
   configuration,
@@ -317,7 +319,11 @@ export default function ConfigurationFiles({
           isSubmitting ? "Applying configuration..." : "Processing files..."
         }
       />
-      <Nav usermode={usermode} inpage="Configuration" />
+      <Nav
+        usermode={usermode}
+        inpage="Configuration"
+        onBackClick={onBackClick}
+      />
       <main>
         <div className="h-[12vh]"></div>
         <div className="content h-full mx-auto">

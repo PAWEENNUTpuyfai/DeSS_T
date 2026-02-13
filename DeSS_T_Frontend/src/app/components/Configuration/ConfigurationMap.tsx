@@ -38,7 +38,7 @@ export default function ConfigurationMap({
 
   const [mapConfirmed, setMapConfirmed] = useState(false);
   const [stationDetails, setStationDetails] = useState<StationDetail[] | null>(
-    null
+    null,
   );
   const [loadingStops, setLoadingStops] = useState(false);
 
@@ -84,7 +84,7 @@ export default function ConfigurationMap({
           name: String(
             typeof stop.tags?.name === "string"
               ? stop.tags.name
-              : stop.tags?.name ?? `Bus Stop ${stop.id}`
+              : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
           ),
           location: {
             type: "Point",
@@ -137,7 +137,7 @@ export default function ConfigurationMap({
         name: String(
           typeof stop.tags?.name === "string"
             ? stop.tags.name
-            : stop.tags?.name ?? `Bus Stop ${stop.id}`
+            : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
         ),
         location: {
           type: "Point",
@@ -161,7 +161,7 @@ export default function ConfigurationMap({
       console.error("Failed to fetch bus stops for manual bounds:", err);
       alert(
         "ไม่สามารถโหลดสถานีได้: " +
-          (err instanceof Error ? err.message : "Unknown error")
+          (err instanceof Error ? err.message : "Unknown error"),
       );
     } finally {
       setLoadingStops(false);
@@ -189,7 +189,7 @@ export default function ConfigurationMap({
           name: String(
             typeof stop.tags?.name === "string"
               ? stop.tags.name
-              : stop.tags?.name ?? `Bus Stop ${stop.id}`
+              : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
           ),
           location: {
             type: "Point",
@@ -230,7 +230,7 @@ export default function ConfigurationMap({
         name: String(
           typeof stop.tags?.name === "string"
             ? stop.tags.name
-            : stop.tags?.name ?? `Bus Stop ${stop.id}`
+            : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
         ),
         location: {
           type: "Point",
@@ -283,6 +283,7 @@ export default function ConfigurationMap({
           setMapBounds(undefined);
           setStationDetails(null);
         }}
+        onBackClick={onBackClick}
         OnBackScenario={onBackClick}
         onSubmit={(config) => setSubmittedConfig(config)}
       />

@@ -384,7 +384,11 @@ export default function InteractiveMap({
         average_waiting_time: 0,
         average_queue_length: 0,
       };
-  const summary = activeSimulationResponse?.simulation_result?.result_summary;
+
+  // Use backend-provided totals for current time slot
+  const summary =
+    matchingSlot?.result_total_station ||
+    activeSimulationResponse?.simulation_result?.result_summary;
 
   const mapCenter: [number, number] = [
     stations[0]?.lat ?? 13.75,

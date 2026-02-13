@@ -46,6 +46,7 @@ func main() {
 	routes.SetupComputeRoutes(app)
 	routes.SetupDistributionRoutes(app)
 	routes.SetupSimulationRoutes(app)
+	routes.DatabaseRoutes(app)
 
 	println("🚀 DeSS_T Backend running on http://localhost:8080")
 

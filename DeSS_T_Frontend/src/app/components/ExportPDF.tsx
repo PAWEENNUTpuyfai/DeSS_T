@@ -314,7 +314,7 @@ export default function ExportPDF({
   // Helper function to split route data into rows for bar charts
   const splitRouteDataIntoRows = (
     dataset: [string, number][],
-    maxRoutesPerRow: number
+    maxRoutesPerRow: number,
   ): [string, number][][] => {
     if (dataset.length <= maxRoutesPerRow) {
       return [dataset];
@@ -331,23 +331,24 @@ export default function ExportPDF({
 
   // Split route bar chart data into rows (max 10 routes per row for PDF)
   const maxRoutesPerRow = 10;
-  const travelingTimeRows = useMemo(() => 
-    splitRouteDataIntoRows(filteredTravelingTimeData, maxRoutesPerRow),
-    [filteredTravelingTimeData]
+  const travelingTimeRows = useMemo(
+    () => splitRouteDataIntoRows(filteredTravelingTimeData, maxRoutesPerRow),
+    [filteredTravelingTimeData],
   );
-  const travelingDistanceRows = useMemo(() => 
-    splitRouteDataIntoRows(filteredTravelingDistanceData, maxRoutesPerRow),
-    [filteredTravelingDistanceData]
+  const travelingDistanceRows = useMemo(
+    () =>
+      splitRouteDataIntoRows(filteredTravelingDistanceData, maxRoutesPerRow),
+    [filteredTravelingDistanceData],
   );
 
   // Helper function to split dataset into chunks for pagination
   const splitDatasetIntoChunks = (
     dataset: [string, string, number][],
-    maxSlotsPerPage: number
+    maxSlotsPerPage: number,
   ): [string, string, number][][] => {
     // Get unique time slots sorted
     const uniqueTimes = Array.from(new Set(dataset.map((d) => d[0]))).sort();
-    
+
     if (uniqueTimes.length <= maxSlotsPerPage) {
       return [dataset];
     }
@@ -364,17 +365,20 @@ export default function ExportPDF({
 
   // Split datasets into chunks (max 6 time slots per chart for A4 fit)
   const maxSlotsPerChart = 6;
-  const avgWaitingTimeChunks = useMemo(() => 
-    splitDatasetIntoChunks(filteredAvgWaitingTimeDataset, maxSlotsPerChart),
-    [filteredAvgWaitingTimeDataset]
+  const avgWaitingTimeChunks = useMemo(
+    () =>
+      splitDatasetIntoChunks(filteredAvgWaitingTimeDataset, maxSlotsPerChart),
+    [filteredAvgWaitingTimeDataset],
   );
-  const avgQueueLengthChunks = useMemo(() => 
-    splitDatasetIntoChunks(filteredAvgQueueLengthDataset, maxSlotsPerChart),
-    [filteredAvgQueueLengthDataset]
+  const avgQueueLengthChunks = useMemo(
+    () =>
+      splitDatasetIntoChunks(filteredAvgQueueLengthDataset, maxSlotsPerChart),
+    [filteredAvgQueueLengthDataset],
   );
-  const avgUtilizationChunks = useMemo(() => 
-    splitDatasetIntoChunks(filteredAvgUtilizationDataset, maxSlotsPerChart),
-    [filteredAvgUtilizationDataset]
+  const avgUtilizationChunks = useMemo(
+    () =>
+      splitDatasetIntoChunks(filteredAvgUtilizationDataset, maxSlotsPerChart),
+    [filteredAvgUtilizationDataset],
   );
 
   // Extract summary statistics
@@ -466,7 +470,7 @@ export default function ExportPDF({
 
   return (
     <main>
-      <Nav usermode={usermode} inpage="Output" onBackClick={onBackClick} />
+      {/* <Nav usermode={usermode} inpage="Output" onBackClick={onBackClick} /> */}
       <div className="pdf-wrapper">
         {/* Page 1 - Header & Overall Statistics & Heatmap */}
         <div className="page">
@@ -484,7 +488,7 @@ export default function ExportPDF({
           </div>
 
           <h2 className="text-[#81069e] mb-4">Overall Statistics</h2>
-          <div className="grid grid-cols-5 gap-2 mb-6">
+          <div className="grid grid-cols-5 gap-2 mb-8">
             <div className="dashboard-card flex flex-col items-center justify-center">
               <p className="chart-header">{summaryStats.avgWaitingTime}</p>
               <p className="chart-context">Avg. Waiting Time</p>
@@ -509,26 +513,28 @@ export default function ExportPDF({
             </div>
           </div>
 
-          <h2 className="text-[#81069e] mb-2">Passenger Waiting Density</h2>
+          <h2 className="text-[#81069e] mb-4 ">Passenger Waiting Density</h2>
           <div
             className="mb-3 border border-gray-200 rounded-lg overflow-hidden"
-            style={{ height: 220 }}
+            style={{ height: 400 }}
           >
             <PassengerWaitingHeatmap
               simulationResponse={simulationResponse}
               stations={playbackSeed?.stations ?? []}
             />
           </div>
-          <div className="text-xs text-gray-700 mb-2 leading-tight">
-              <p className="mb-2">
+          <div className=" text-gray-700 mb-2 leading-tight">
+            <p className="mb-2">
               <strong>Heatmap Legend:</strong> The heatmap visualizes passenger
               waiting patterns across all stations:
             </p>
             <div className="px-4 py-1 border-b border-gray-200">
               <div className="mb-2">
-                <div className="text-xs mb-1">Queue Length (Color)</div>
+                <div className=" mb-1">
+                  <strong>Queue Length (Color)</strong>
+                </div>
                 <div className="flex items-center gap-2 ml-4">
-                  <span className="text-xs text-gray-600">Low</span>
+                  <span className=" text-gray-600">Low</span>
                   <div
                     className="flex-1 h-3 rounded"
                     style={{
@@ -536,12 +542,14 @@ export default function ExportPDF({
                         "linear-gradient(to right, #0096ff, #00ff00, #ffff00, #ff8800, #ff0000)",
                     }}
                   ></div>
-                  <span className="text-xs text-gray-600">High</span>
+                  <span className=" text-gray-600">High</span>
                 </div>
               </div>
               <div>
-                <div className="text-xs mb-1">Waiting Time (Blur Width)</div>
-                <p className="text-xs text-gray-600 ml-4">
+                <div className="mb-1">
+                  <strong>Waiting Time (Blur Width)</strong>
+                </div>
+                <p className="text-gray-600 ml-4">
                   Thicker/wider blur = longer waiting time
                 </p>
               </div>
@@ -550,6 +558,7 @@ export default function ExportPDF({
         </div>
 
         {/* Page 2 - Route Statistics */}
+        <div className="page-break"></div>
         <div className="page">
           <h2 className="text-[#81069e] mb-4">Route Statistics</h2>
 
@@ -562,7 +571,7 @@ export default function ExportPDF({
           >
             All Lines: Most Popular by Customer
           </h3>
-          <div className="mb-6">
+          <div className="mb-6 w-full">
             <TopRoutesChart
               route={routes}
               customerData={aggregatedCustomerData}
@@ -579,9 +588,9 @@ export default function ExportPDF({
           >
             Average Traveling Time
           </h3>
-          <div className="space-y-4 mb-6">
+          <div className="space-y-4 mb-6 w-full">
             {travelingTimeRows.map((rowData, rowIdx) => (
-              <div key={`traveling-time-row-${rowIdx}`}>
+              <div key={`traveling-time-row-${rowIdx}`} className="w-full">
                 <RouteBarChart
                   route={routes}
                   dataset={rowData}
@@ -601,9 +610,9 @@ export default function ExportPDF({
           >
             Average Traveling Distance
           </h3>
-          <div className="space-y-4 mb-4">
+          <div className="space-y-4 mb-4 w-full">
             {travelingDistanceRows.map((rowData, rowIdx) => (
-              <div key={`traveling-distance-row-${rowIdx}`}>
+              <div key={`traveling-distance-row-${rowIdx}`} className="w-full">
                 <RouteBarChart
                   route={routes}
                   dataset={rowData}
@@ -616,6 +625,7 @@ export default function ExportPDF({
         </div>
 
         {/* Page 3+ - Time-based Statistics (Tabular) */}
+        <div className="page-break"></div>
         <div className="page">
           <h2 className="text-[#81069e] mb-4">Time-based Statistics</h2>
 
@@ -684,78 +694,83 @@ export default function ExportPDF({
 
         {/* Page 4+ - Line Charts (paginated if data is too long) */}
         {avgWaitingTimeChunks.map((chunk, chunkIdx) => (
-          <div key={`time-series-page-${chunkIdx}`} className="page">
-            <h2 className="text-[#81069e] mb-4">
-              Time Series Analysis
-              {avgWaitingTimeChunks.length > 1 && ` (Part ${chunkIdx + 1}/${avgWaitingTimeChunks.length})`}
-            </h2>
+          <>
+            <div className="page-break"></div>
+            <div key={`time-series-page-${chunkIdx}`} className="page">
+              <h2 className="text-[#81069e] mb-4">
+                Time Series Analysis
+                {avgWaitingTimeChunks.length > 1 &&
+                  ` (Part ${chunkIdx + 1}/${avgWaitingTimeChunks.length})`}
+              </h2>
 
-            <div className="no-break" style={{ marginBottom: "20px" }}>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  marginBottom: "10px",
-                  fontWeight: "600",
-                }}
-              >
-                Average Waiting Time
-              </h3>
-              <LineChart
-                timeslot={timeslot}
-                route={routes}
-                dataset={chunk}
-                mode="avg-waiting-time"
-                compactMode={true}
-              />
+              <div className="no-break" style={{ marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontSize: "16px",
+                    marginBottom: "10px",
+                    fontWeight: "600",
+                  }}
+                >
+                  Average Waiting Time
+                </h3>
+                <LineChart
+                  timeslot={timeslot}
+                  route={routes}
+                  dataset={chunk}
+                  mode="avg-waiting-time"
+                  compactMode={true}
+                />
+              </div>
+
+              {/* Show Queue Length for this chunk */}
+              {avgQueueLengthChunks[chunkIdx] && (
+                <div className="no-break" style={{ marginBottom: "20px" }}>
+                  <h3
+                    style={{
+                      fontSize: "16px",
+                      marginBottom: "10px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Average Queue Length
+                  </h3>
+                  <LineChart
+                    timeslot={timeslot}
+                    route={routes}
+                    dataset={avgQueueLengthChunks[chunkIdx]}
+                    mode="avg-queue-length"
+                    compactMode={true}
+                  />
+                </div>
+              )}
+
+              {/* Show Utilization for this chunk */}
+              {avgUtilizationChunks[chunkIdx] && (
+                <div className="no-break" style={{ marginBottom: "20px" }}>
+                  <h3
+                    style={{
+                      fontSize: "16px",
+                      marginBottom: "10px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Average Utilization
+                  </h3>
+                  <LineChart
+                    timeslot={timeslot}
+                    route={routes}
+                    dataset={avgUtilizationChunks[chunkIdx]}
+                    mode="avg-utilization"
+                    compactMode={true}
+                  />
+                </div>
+              )}
             </div>
-
-            {/* Show Queue Length for this chunk */}
-            {avgQueueLengthChunks[chunkIdx] && (
-              <div className="no-break" style={{ marginBottom: "20px" }}>
-                <h3
-                  style={{
-                    fontSize: "16px",
-                    marginBottom: "10px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Average Queue Length
-                </h3>
-                <LineChart
-                  timeslot={timeslot}
-                  route={routes}
-                  dataset={avgQueueLengthChunks[chunkIdx]}
-                  mode="avg-queue-length"
-                  compactMode={true}
-                />
-              </div>
-            )}
-
-            {/* Show Utilization for this chunk */}
-            {avgUtilizationChunks[chunkIdx] && (
-              <div className="no-break" style={{ marginBottom: "20px" }}>
-                <h3
-                  style={{
-                    fontSize: "16px",
-                    marginBottom: "10px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Average Utilization
-                </h3>
-                <LineChart
-                  timeslot={timeslot}
-                  route={routes}
-                  dataset={avgUtilizationChunks[chunkIdx]}
-                  mode="avg-utilization"
-                  compactMode={true}
-                />
-              </div>
-            )}
-          </div>
+          </>
         ))}
 
         {/* Page 5 - Station Time-based Statistics */}
+        <div className="page-break"></div>
         <div className="page">
           <h2 className="text-[#81069e] mb-4">
             Station Statistics (Time-based)

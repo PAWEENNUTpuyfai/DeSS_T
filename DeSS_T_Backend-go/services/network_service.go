@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"DeSS_T_Backend-go/models"
@@ -37,7 +40,7 @@ func OrsMatrix(stations []models.StationDetail, key string) (*ORSMatrixResponse,
 		return &ORSMatrixResponse{}, nil
 	}
 
-	client := &http.Client{Timeout: 60 * time.Second}
+	client := &http.Client{Timeout: orsHTTPTimeout()}
 
 	if n <= orsMatrixChunkSize {
 		locations := buildLocations(stations, nil)
@@ -136,6 +139,19 @@ func minInt(a, b int) int {
 	return b
 }
 
+func orsHTTPTimeout() time.Duration {
+	const defaultSeconds = 60
+	env := strings.TrimSpace(os.Getenv("ORS_HTTP_TIMEOUT_SECONDS"))
+	if env == "" {
+		return time.Duration(defaultSeconds) * time.Second
+	}
+	seconds, err := strconv.Atoi(env)
+	if err != nil || seconds <= 0 {
+		return time.Duration(defaultSeconds) * time.Second
+	}
+	return time.Duration(seconds) * time.Second
+}
+
 /* ───────────────────────────── ORS ROUTE ───────────────────────────── */
 
 func OrsRoute(start [2]float64, end [2]float64, key string) ([][2]float64, error) {
@@ -153,14 +169,13 @@ func OrsRoute(start [2]float64, end [2]float64, key string) ([][2]float64, error
 	req.Header.Set("Authorization", key)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 60 * time.Second}
+	client := &http.Client{Timeout: orsHTTPTimeout()}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("❌ ORS request failed: %v\n", err)
 		return nil, fmt.Errorf("ORS Route request failed: %v", err)
 	}
 	defer resp.Body.Close()
-
 	data, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("ORS Route error (%d): %s", resp.StatusCode, string(data))

@@ -11,13 +11,10 @@ import LineChart from "./Dashboard/LineChart";
 import RouteBarChart from "./Dashboard/RouteBarChart";
 import PassengerWaitingHeatmap from "./Dashboard/PassengerWaitingHeatmap";
 import TopRoutesChart from "./Dashboard/TopRoutesChart";
-import Nav from "./NavBar";
 
 export default function ExportPDF({
   simulationResponse,
   playbackSeed,
-  onBackClick,
-  usermode = "user",
 }: {
   simulationResponse: SimulationResponse;
   playbackSeed?: PlaybackSeed;

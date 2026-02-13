@@ -33,6 +33,7 @@ export interface BusInformation {
   max_dis: number;
   max_bus: number;
   capacity: number;
+  avg_travel_time: number;
   bus_scenario_id: string;
   route_path_id: string;
   route_path?: RoutePath;

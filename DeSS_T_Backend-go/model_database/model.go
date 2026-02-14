@@ -184,7 +184,8 @@ type UserConfiguration struct {
 	CoverImgID            string    `json:"cover_img" gorm:"column:cover_img"`
 	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail"`
 
-	CoverImage CoverImageConf `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	CoverImage          CoverImageConf      `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- PUBLIC CONFIGURATION --------------------
@@ -200,7 +201,8 @@ type PublicConfiguration struct {
 	OriginFrom            string    `json:"origin_from" gorm:"column:origin_from"`
 	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail"`
 
-	CoverImage CoverImageConf `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	CoverImage          CoverImageConf      `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- CONFIGURATION DETAIL --------------------
@@ -208,7 +210,11 @@ type ConfigurationDetail struct {
 	ConfigurationDetailID string `gorm:"primaryKey" json:"configuration_detail_id"`
 	NetworkModelID        string `json:"network_model" gorm:"column:network_model"`
 
-	NetworkModel NetworkModel `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
+	NetworkModel         NetworkModel          `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
+	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+	AlightingData        []AlightingData       `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+	InterArrivalData     []InterArrivalData    `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ALIGHTING DATA --------------------
@@ -220,7 +226,8 @@ type AlightingData struct {
 	ArgumentList          string `json:"argument_list" gorm:"column:argument_list"`
 	StationID             string `json:"station_id" gorm:"column:station_id"`
 
-	StationDetail StationDetail `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	StationDetail       StationDetail       `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- INTER ARRIVAL DATA --------------------
@@ -232,7 +239,8 @@ type InterArrivalData struct {
 	ArgumentList          string `json:"argument_list" gorm:"column:argument_list"`
 	StationID             string `json:"station_id" gorm:"column:station_id"`
 
-	StationDetail StationDetail `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	StationDetail       StationDetail       `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- NETWORK MODEL --------------------
@@ -264,6 +272,7 @@ type StationPair struct {
 	FstStation   StationDetail `gorm:"foreignKey:FstStationID;constraint:OnDelete:CASCADE;" json:"-"`
 	SndStation   StationDetail `gorm:"foreignKey:SndStationID;constraint:OnDelete:CASCADE;" json:"-"`
 	RouteBetween RouteBetween  `gorm:"foreignKey:RouteBetweenID;constraint:OnDelete:CASCADE;" json:"RouteBetween"`
+	NetworkModel NetworkModel  `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"network_model,omitempty"`
 }
 
 // ------------------- ROUTE BETWEEN --------------------

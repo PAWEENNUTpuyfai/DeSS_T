@@ -21,7 +21,7 @@ services:
         condition: service_started
     environment:
       DB_HOST: postgres
-      UPLOAD_DIR: /app/uploads
+      UPLOAD_DIR: /uploads
     volumes:
       - ./data/uploads:/uploads
 

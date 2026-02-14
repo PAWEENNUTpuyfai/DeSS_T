@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { GoogleLogin } from "@react-oauth/google";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
 
 export default function LandingPage() {
   const navigate = useNavigate();

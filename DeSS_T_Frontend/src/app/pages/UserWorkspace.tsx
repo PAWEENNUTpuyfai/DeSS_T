@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from "react-router-dom";
 import { userLogin as userLoginAPI } from "../../utility/api/userLogin";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
@@ -38,7 +38,33 @@ export default function UserWorkspace() {
     }
 
     if (activeTab === "config") {
-      return (user.user_configurations ?? []).map((config) => ({
+      const configs = user.user_configurations ?? [];
+      const mockConfigs = [
+        {
+          id: "mock-config-1",
+          name: "Chiang Mai AM Peak",
+          date: new Date().toISOString(),
+          imageUrl: "",
+        },
+        {
+          id: "mock-config-2",
+          name: "Old Town Midday",
+          date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+          imageUrl: "",
+        },
+        {
+          id: "mock-config-3",
+          name: "Airport Corridor",
+          date: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+          imageUrl: "",
+        },
+      ];
+
+      if (configs.length === 0) {
+        return mockConfigs;
+      }
+
+      return configs.map((config) => ({
         id: config.user_configuration_id,
         name: config.name,
         date: config.modify_date,

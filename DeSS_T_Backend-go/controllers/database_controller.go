@@ -16,72 +16,77 @@ import (
 )
 
 func CreateGoogleUser(c *fiber.Ctx) error {
-    var userInput models.User
-    if err := c.BodyParser(&userInput); err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
-    }
+	var userInput models.User
+	if err := c.BodyParser(&userInput); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+	}
 
-    // Check if user exists by GoogleID
-    var existingUser model_database.User
-    result := config.DB.First(&existingUser, "google_id = ?", userInput.GoogleID)
+	// Check if user exists by GoogleID
+	var existingUser model_database.User
+	result := config.DB.First(&existingUser, "google_id = ?", userInput.GoogleID)
+	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to query user", "detail": result.Error.Error()})
+	}
 
-    if result.Error == nil {
-        // User exists - update token and check for changes in Name, Email, Picture
-        updateData := map[string]interface{}{
-            "access_token":   userInput.AccessToken,
-            "refresh_token":  userInput.RefreshToken,
-            "token_expires":  parseStringToTime(userInput.TokenExpires),
-            "last_login":     parseStringToTime(userInput.LastLogin),
-        }
+	if result.Error == nil {
+		// User exists - update token and check for changes in Name, Email, Picture
+		updateData := map[string]interface{}{
+			"access_token":  userInput.AccessToken,
+			"refresh_token": userInput.RefreshToken,
+			"token_expires": parseStringToTime(userInput.TokenExpires),
+			"last_login":    parseStringToTime(userInput.LastLogin),
+		}
 
-        // Check and update Name, Email, Picture if they changed
-        if existingUser.Name != userInput.Name {
-            updateData["name"] = userInput.Name
-        }
-        if existingUser.Email != userInput.Email {
-            updateData["email"] = userInput.Email
-        }
-        if existingUser.Picture != userInput.Picture {
-            updateData["picture"] = userInput.Picture
-        }
+		// Check and update Name, Email, Picture if they changed
+		if existingUser.Name != userInput.Name {
+			updateData["name"] = userInput.Name
+		}
+		if existingUser.Email != userInput.Email {
+			updateData["email"] = userInput.Email
+		}
+		if existingUser.Picture != userInput.Picture {
+			updateData["picture"] = userInput.Picture
+		}
 
-        config.DB.Model(&existingUser).Updates(updateData)
-        return c.JSON(existingUser)
-    }
+		config.DB.Model(&existingUser).Updates(updateData)
+		return c.JSON(existingUser)
+	}
 
-    // User doesn't exist - create new user
-    newUser := model_database.User{
-        GoogleID:     userInput.GoogleID,
-        Name:         userInput.Name,
-        Email:        userInput.Email,
-        Picture:      userInput.Picture,
-        AccessToken:  userInput.AccessToken,
-        RefreshToken: userInput.RefreshToken,
-        TokenExpires: parseStringToTime(userInput.TokenExpires),
-        LastLogin:    parseStringToTime(userInput.LastLogin),
-        CreatedAt:    parseStringToTime(userInput.CreatedAt),
-    }
+	// User doesn't exist - create new user
+	newUser := model_database.User{
+		GoogleID:     userInput.GoogleID,
+		Name:         userInput.Name,
+		Email:        userInput.Email,
+		Picture:      userInput.Picture,
+		AccessToken:  userInput.AccessToken,
+		RefreshToken: userInput.RefreshToken,
+		TokenExpires: parseStringToTime(userInput.TokenExpires),
+		LastLogin:    parseStringToTime(userInput.LastLogin),
+		CreatedAt:    parseStringToTime(userInput.CreatedAt),
+	}
 
-    config.DB.Create(&newUser)
-    return c.JSON(newUser)
+	if err := config.DB.Create(&newUser).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to create user", "detail": err.Error()})
+	}
+	return c.JSON(newUser)
 }
 
 // Helper function to parse string to time
 func parseStringToTime(dateStr string) time.Time {
-    if dateStr == "" {
-        return time.Now()
-    }
-    parsedTime, err := time.Parse(time.RFC3339, dateStr)
-    if err != nil {
-        return time.Now()
-    }
-    return parsedTime
+	if dateStr == "" {
+		return time.Now()
+	}
+	parsedTime, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		return time.Now()
+	}
+	return parsedTime
 }
 
 func GetGoogleUsers(c *fiber.Ctx) error {
-    var users []model_database.User
-    config.DB.Find(&users)
-    return c.JSON(users)
+	var users []model_database.User
+	config.DB.Find(&users)
+	return c.JSON(users)
 }
 
 // UploadConfigurationCoverImg อัปโหลดรูปปกสำหรับการกำหนดค่า และเก็บลงฐานข้อมูล
@@ -250,12 +255,18 @@ func CreateUserConfiguration(c *fiber.Ctx) error {
 	}
 
 	// 4. Create UserConfiguration
+	// Handle empty CoverImgID - convert empty string to nil pointer
+	var coverImgID *string
+	if req.CoverImgID != "" {
+		coverImgID = &req.CoverImgID
+	}
+
 	userConfig := model_database.UserConfiguration{
 		UserConfigurationID:   userConfigID,
 		Name:                  req.Name,
 		ModifyDate:            time.Now(),
 		CreateBy:              req.CreateBy,
-		CoverImgID:            req.CoverImgID,
+		CoverImgID:            coverImgID,
 		ConfigurationDetailID: configDetailID,
 	}
 
@@ -270,9 +281,9 @@ func CreateUserConfiguration(c *fiber.Ctx) error {
 	}
 
 	return c.Status(201).JSON(fiber.Map{
-		"message":                    "User configuration created successfully",
-		"user_configuration_id":      userConfigID,
-		"configuration_detail_id":    configDetailID,
+		"message":                 "User configuration created successfully",
+		"user_configuration_id":   userConfigID,
+		"configuration_detail_id": configDetailID,
 	})
 }
 
@@ -379,10 +390,10 @@ func UpdateUserConfiguration(c *fiber.Ctx) error {
 
 	// 4. Update UserConfiguration
 	updateData := map[string]interface{}{
-		"name":                  req.Name,
-		"modify_date":           time.Now(),
-		"create_by":             req.CreateBy,
-		"cover_img_id":          req.CoverImgID,
+		"name":                    req.Name,
+		"modify_date":             time.Now(),
+		"create_by":               req.CreateBy,
+		"cover_img_id":            req.CoverImgID,
 		"configuration_detail_id": configDetailID,
 	}
 
@@ -397,9 +408,9 @@ func UpdateUserConfiguration(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message":                    "User configuration updated successfully",
-		"user_configuration_id":      userConfigID,
-		"configuration_detail_id":    configDetailID,
+		"message":                 "User configuration updated successfully",
+		"user_configuration_id":   userConfigID,
+		"configuration_detail_id": configDetailID,
 	})
 }
 
@@ -753,4 +764,3 @@ func UploadScenarioCoverImg(c *fiber.Ctx) error {
 		"url":            fileURL,
 	})
 }
-

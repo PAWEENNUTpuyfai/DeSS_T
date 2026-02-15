@@ -102,6 +102,27 @@ func ConnectDatabase() {
 	); err != nil {
 		log.Fatal("❌ AutoMigrate (dependent) failed:", err)
 	}
+	if err := fixConfigurationDetailNetworkModelFK(db, schema); err != nil {
+		log.Fatal("❌ Fix configuration_details FK failed:", err)
+	}
+	if err := fixStationPairNetworkModelFK(db, schema); err != nil {
+		log.Fatal("❌ Fix station_pairs FK failed:", err)
+	}
+	if err := fixScenarioDetailConfigurationDetailFK(db, schema); err != nil {
+		log.Fatal("❌ Fix scenario_details FK failed:", err)
+	}
+	if err := fixUserConfigurationConfigurationDetailFK(db, schema); err != nil {
+		log.Fatal("❌ Fix user_configurations FK failed:", err)
+	}
+	if err := fixPublicConfigurationConfigurationDetailFK(db, schema); err != nil {
+		log.Fatal("❌ Fix public_configurations FK failed:", err)
+	}
+	if err := fixAlightingDataConfigurationDetailFK(db, schema); err != nil {
+		log.Fatal("❌ Fix alighting_data FK failed:", err)
+	}
+	if err := fixInterArrivalDataConfigurationDetailFK(db, schema); err != nil {
+		log.Fatal("❌ Fix inter_arrival_data FK failed:", err)
+	}
 
 	db.Config.DisableForeignKeyConstraintWhenMigrating = prevDisableFK
 	if err := createForeignKeyConstraints(db); err != nil {
@@ -127,7 +148,6 @@ func createForeignKeyConstraints(db *gorm.DB) error {
 		{&model_database.UserScenario{}, "CreateByUser"},
 		{&model_database.ScenarioDetail{}, "BusScenario"},
 		{&model_database.ScenarioDetail{}, "RouteScenario"},
-		{&model_database.ScenarioDetail{}, "ConfigurationDetail"},
 		{&model_database.ScheduleData{}, "RoutePath"},
 		{&model_database.ScheduleData{}, "BusScenario"},
 		{&model_database.BusInformation{}, "RoutePath"},
@@ -136,21 +156,15 @@ func createForeignKeyConstraints(db *gorm.DB) error {
 		{&model_database.Order{}, "RoutePath"},
 		{&model_database.Order{}, "StationPair"},
 		{&model_database.UserConfiguration{}, "CoverImage"},
-		{&model_database.UserConfiguration{}, "ConfigurationDetail"},
 		{&model_database.UserConfiguration{}, "CreateByUser"},
 		{&model_database.PublicConfiguration{}, "CoverImage"},
-		{&model_database.PublicConfiguration{}, "ConfigurationDetail"},
 		{&model_database.PublicConfiguration{}, "CreateByUser"},
 		{&model_database.PublicConfiguration{}, "PublishByUser"},
-		{&model_database.ConfigurationDetail{}, "NetworkModel"},
 		{&model_database.AlightingData{}, "StationDetail"},
-		{&model_database.AlightingData{}, "ConfigurationDetail"},
 		{&model_database.InterArrivalData{}, "StationDetail"},
-		{&model_database.InterArrivalData{}, "ConfigurationDetail"},
 		{&model_database.StationPair{}, "FstStation"},
 		{&model_database.StationPair{}, "SndStation"},
 		{&model_database.StationPair{}, "RouteBetween"},
-		{&model_database.StationPair{}, "NetworkModel"},
 	}
 	for _, c := range constraints {
 		if migrator.HasConstraint(c.model, c.name) {
@@ -161,6 +175,286 @@ func createForeignKeyConstraints(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+func fixConfigurationDetailNetworkModelFK(db *gorm.DB, schema string) error {
+	if schema == "" {
+		schema = "public"
+	}
+	if !isSafeIdentifier(schema) {
+		return fmt.Errorf("invalid schema name: %s", schema)
+	}
+
+	drop := `DO $$
+DECLARE r record;
+BEGIN
+	FOR r IN
+		SELECT n.nspname AS schema_name, c.relname AS table_name
+		FROM pg_constraint con
+		JOIN pg_class c ON c.oid = con.conrelid
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE con.conname = 'fk_configuration_details_network_model'
+			AND c.relname = 'network_models'
+	LOOP
+		EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.schema_name, r.table_name, 'fk_configuration_details_network_model');
+	END LOOP;
+END $$;`
+	if err := db.Exec(drop).Error; err != nil {
+		return err
+	}
+
+	add := fmt.Sprintf(`DO $$
+BEGIN
+	ALTER TABLE "%s"."configuration_details"
+	DROP CONSTRAINT IF EXISTS fk_configuration_details_network_model;
+
+	ALTER TABLE "%s"."configuration_details"
+	ADD CONSTRAINT fk_configuration_details_network_model
+	FOREIGN KEY (network_model)
+	REFERENCES "%s"."network_models"(network_model_id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+END $$;`, schema, schema, schema)
+	return db.Exec(add).Error
+}
+
+func fixStationPairNetworkModelFK(db *gorm.DB, schema string) error {
+	if schema == "" {
+		schema = "public"
+	}
+	if !isSafeIdentifier(schema) {
+		return fmt.Errorf("invalid schema name: %s", schema)
+	}
+
+	drop := `DO $$
+DECLARE r record;
+BEGIN
+	FOR r IN
+		SELECT n.nspname AS schema_name, c.relname AS table_name
+		FROM pg_constraint con
+		JOIN pg_class c ON c.oid = con.conrelid
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE con.conname = 'fk_station_pairs_network_model'
+			AND c.relname = 'network_models'
+	LOOP
+		EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.schema_name, r.table_name, 'fk_station_pairs_network_model');
+	END LOOP;
+END $$;`
+	if err := db.Exec(drop).Error; err != nil {
+		return err
+	}
+
+	add := fmt.Sprintf(`DO $$
+BEGIN
+	ALTER TABLE "%s"."station_pairs"
+	DROP CONSTRAINT IF EXISTS fk_station_pairs_network_model;
+
+	ALTER TABLE "%s"."station_pairs"
+	ADD CONSTRAINT fk_station_pairs_network_model
+	FOREIGN KEY (network_model)
+	REFERENCES "%s"."network_models"(network_model_id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+END $$;`, schema, schema, schema)
+	return db.Exec(add).Error
+}
+
+func fixScenarioDetailConfigurationDetailFK(db *gorm.DB, schema string) error {
+	if schema == "" {
+		schema = "public"
+	}
+	if !isSafeIdentifier(schema) {
+		return fmt.Errorf("invalid schema name: %s", schema)
+	}
+
+	drop := `DO $$
+DECLARE r record;
+BEGIN
+	FOR r IN
+		SELECT n.nspname AS schema_name, c.relname AS table_name
+		FROM pg_constraint con
+		JOIN pg_class c ON c.oid = con.conrelid
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE con.conname = 'fk_scenario_details_configuration_detail'
+			AND c.relname = 'configuration_details'
+	LOOP
+		EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.schema_name, r.table_name, 'fk_scenario_details_configuration_detail');
+	END LOOP;
+END $$;`
+	if err := db.Exec(drop).Error; err != nil {
+		return err
+	}
+
+	add := fmt.Sprintf(`DO $$
+BEGIN
+	ALTER TABLE "%s"."scenario_details"
+	DROP CONSTRAINT IF EXISTS fk_scenario_details_configuration_detail;
+
+	ALTER TABLE "%s"."scenario_details"
+	ADD CONSTRAINT fk_scenario_details_configuration_detail
+	FOREIGN KEY (configuration_detail)
+	REFERENCES "%s"."configuration_details"(configuration_detail_id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+END $$;`, schema, schema, schema)
+	return db.Exec(add).Error
+}
+
+func fixUserConfigurationConfigurationDetailFK(db *gorm.DB, schema string) error {
+	if schema == "" {
+		schema = "public"
+	}
+	if !isSafeIdentifier(schema) {
+		return fmt.Errorf("invalid schema name: %s", schema)
+	}
+
+	drop := `DO $$
+DECLARE r record;
+BEGIN
+	FOR r IN
+		SELECT n.nspname AS schema_name, c.relname AS table_name
+		FROM pg_constraint con
+		JOIN pg_class c ON c.oid = con.conrelid
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE con.conname = 'fk_user_configurations_configuration_detail'
+			AND c.relname = 'configuration_details'
+	LOOP
+		EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.schema_name, r.table_name, 'fk_user_configurations_configuration_detail');
+	END LOOP;
+END $$;`
+	if err := db.Exec(drop).Error; err != nil {
+		return err
+	}
+
+	add := fmt.Sprintf(`DO $$
+BEGIN
+	ALTER TABLE "%s"."user_configurations"
+	DROP CONSTRAINT IF EXISTS fk_user_configurations_configuration_detail;
+
+	ALTER TABLE "%s"."user_configurations"
+	ADD CONSTRAINT fk_user_configurations_configuration_detail
+	FOREIGN KEY (configuration_detail)
+	REFERENCES "%s"."configuration_details"(configuration_detail_id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+END $$;`, schema, schema, schema)
+	return db.Exec(add).Error
+}
+
+func fixPublicConfigurationConfigurationDetailFK(db *gorm.DB, schema string) error {
+	if schema == "" {
+		schema = "public"
+	}
+	if !isSafeIdentifier(schema) {
+		return fmt.Errorf("invalid schema name: %s", schema)
+	}
+
+	drop := `DO $$
+DECLARE r record;
+BEGIN
+	FOR r IN
+		SELECT n.nspname AS schema_name, c.relname AS table_name
+		FROM pg_constraint con
+		JOIN pg_class c ON c.oid = con.conrelid
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE con.conname = 'fk_public_configurations_configuration_detail'
+			AND c.relname = 'configuration_details'
+	LOOP
+		EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.schema_name, r.table_name, 'fk_public_configurations_configuration_detail');
+	END LOOP;
+END $$;`
+	if err := db.Exec(drop).Error; err != nil {
+		return err
+	}
+
+	add := fmt.Sprintf(`DO $$
+BEGIN
+	ALTER TABLE "%s"."public_configurations"
+	DROP CONSTRAINT IF EXISTS fk_public_configurations_configuration_detail;
+
+	ALTER TABLE "%s"."public_configurations"
+	ADD CONSTRAINT fk_public_configurations_configuration_detail
+	FOREIGN KEY (configuration_detail)
+	REFERENCES "%s"."configuration_details"(configuration_detail_id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+END $$;`, schema, schema, schema)
+	return db.Exec(add).Error
+}
+
+func fixAlightingDataConfigurationDetailFK(db *gorm.DB, schema string) error {
+	if schema == "" {
+		schema = "public"
+	}
+	if !isSafeIdentifier(schema) {
+		return fmt.Errorf("invalid schema name: %s", schema)
+	}
+
+	drop := `DO $$
+DECLARE r record;
+BEGIN
+	FOR r IN
+		SELECT n.nspname AS schema_name, c.relname AS table_name
+		FROM pg_constraint con
+		JOIN pg_class c ON c.oid = con.conrelid
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE con.conname = 'fk_alighting_data_configuration_detail'
+			AND c.relname = 'configuration_details'
+	LOOP
+		EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.schema_name, r.table_name, 'fk_alighting_data_configuration_detail');
+	END LOOP;
+END $$;`
+	if err := db.Exec(drop).Error; err != nil {
+		return err
+	}
+
+	add := fmt.Sprintf(`DO $$
+BEGIN
+	ALTER TABLE "%s"."alighting_data"
+	DROP CONSTRAINT IF EXISTS fk_alighting_data_configuration_detail;
+
+	ALTER TABLE "%s"."alighting_data"
+	ADD CONSTRAINT fk_alighting_data_configuration_detail
+	FOREIGN KEY (configuration_detail)
+	REFERENCES "%s"."configuration_details"(configuration_detail_id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+END $$;`, schema, schema, schema)
+	return db.Exec(add).Error
+}
+
+func fixInterArrivalDataConfigurationDetailFK(db *gorm.DB, schema string) error {
+	if schema == "" {
+		schema = "public"
+	}
+	if !isSafeIdentifier(schema) {
+		return fmt.Errorf("invalid schema name: %s", schema)
+	}
+
+	drop := `DO $$
+DECLARE r record;
+BEGIN
+	FOR r IN
+		SELECT n.nspname AS schema_name, c.relname AS table_name
+		FROM pg_constraint con
+		JOIN pg_class c ON c.oid = con.conrelid
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE con.conname = 'fk_inter_arrival_data_configuration_detail'
+			AND c.relname = 'configuration_details'
+	LOOP
+		EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.schema_name, r.table_name, 'fk_inter_arrival_data_configuration_detail');
+	END LOOP;
+END $$;`
+	if err := db.Exec(drop).Error; err != nil {
+		return err
+	}
+
+	add := fmt.Sprintf(`DO $$
+BEGIN
+	ALTER TABLE "%s"."inter_arrival_data"
+	DROP CONSTRAINT IF EXISTS fk_inter_arrival_data_configuration_detail;
+
+	ALTER TABLE "%s"."inter_arrival_data"
+	ADD CONSTRAINT fk_inter_arrival_data_configuration_detail
+	FOREIGN KEY (configuration_detail)
+	REFERENCES "%s"."configuration_details"(configuration_detail_id)
+	ON DELETE CASCADE ON UPDATE CASCADE;
+END $$;`, schema, schema, schema)
+	return db.Exec(add).Error
 }
 
 func ensureSchema(db *gorm.DB, schema string) error {

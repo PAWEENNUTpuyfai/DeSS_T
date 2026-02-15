@@ -89,13 +89,13 @@ type PublicScenario struct {
 	CreateBy         string    `json:"create_by" gorm:"column:create_by"`
 	PublishBy        string    `json:"publish_by" gorm:"column:publish_by"`
 	OriginFrom       string    `json:"origin_from" gorm:"column:origin_from"`
-	CoverImgID       string    `json:"cover_img" gorm:"column:cover_img"`
+	CoverImgID       *string   `json:"cover_img" gorm:"column:cover_img"`
 	ScenarioDetailID string    `json:"scenario_detail" gorm:"column:scenario_detail"`
 
-	CoverImage     CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
-	ScenarioDetail ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID"`
-	CreateByUser   User              `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
-	PublishByUser  User              `gorm:"foreignKey:PublishBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	CoverImage     *CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
+	ScenarioDetail ScenarioDetail     `gorm:"foreignKey:ScenarioDetailID"`
+	CreateByUser   User               `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	PublishByUser  User               `gorm:"foreignKey:PublishBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- USER SCENARIO --------------------
@@ -104,12 +104,12 @@ type UserScenario struct {
 	Name             string    `json:"name"`
 	ModifyDate       time.Time `json:"modify_date"`
 	CreateBy         string    `json:"create_by" gorm:"column:create_by"`
-	CoverImgID       string    `json:"cover_img" gorm:"column:cover_img"`
+	CoverImgID       *string   `json:"cover_img" gorm:"column:cover_img"`
 	ScenarioDetailID string    `json:"scenario_detail" gorm:"column:scenario_detail"`
 
-	CoverImage     CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
-	ScenarioDetail ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID"`
-	CreateByUser   User              `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	CoverImage     *CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
+	ScenarioDetail ScenarioDetail     `gorm:"foreignKey:ScenarioDetailID"`
+	CreateByUser   User               `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- SCENARIO DETAIL --------------------
@@ -187,10 +187,10 @@ type UserConfiguration struct {
 	Name                  string    `json:"name"`
 	ModifyDate            time.Time `json:"modify_date"`
 	CreateBy              string    `json:"create_by" gorm:"column:create_by"`
-	CoverImgID            string    `json:"cover_img" gorm:"column:cover_img"`
+	CoverImgID            *string   `json:"cover_img" gorm:"column:cover_img"`
 	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail"`
 
-	CoverImage          CoverImageConf      `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	CoverImage          *CoverImageConf     `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
 	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 	CreateByUser        User                `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 }
@@ -202,13 +202,13 @@ type PublicConfiguration struct {
 	Description           string    `json:"description"`
 	ModifyDate            time.Time `json:"modify_date"`
 	PublishDate           time.Time `json:"publish_date"`
-	CoverImgID            string    `json:"cover_img" gorm:"column:cover_img"`
+	CoverImgID            *string   `json:"cover_img" gorm:"column:cover_img"`
 	CreateBy              string    `json:"create_by" gorm:"column:create_by"`
 	PublishBy             string    `json:"publish_by" gorm:"column:publish_by"`
 	OriginFrom            string    `json:"origin_from" gorm:"column:origin_from"`
 	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail"`
 
-	CoverImage          CoverImageConf      `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	CoverImage          *CoverImageConf     `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
 	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 	CreateByUser        User                `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 	PublishByUser       User                `gorm:"foreignKey:PublishBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
@@ -219,7 +219,7 @@ type ConfigurationDetail struct {
 	ConfigurationDetailID string `gorm:"primaryKey" json:"configuration_detail_id"`
 	NetworkModelID        string `json:"network_model" gorm:"column:network_model"`
 
-	NetworkModel         *NetworkModel         `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;"`
+	NetworkModel         *NetworkModel         `gorm:"foreignKey:NetworkModelID;references:NetworkModelID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;"`
 	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`
 	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`
 	AlightingData        []AlightingData       `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`

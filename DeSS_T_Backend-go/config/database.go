@@ -153,6 +153,9 @@ func createForeignKeyConstraints(db *gorm.DB) error {
 		{&model_database.StationPair{}, "NetworkModel"},
 	}
 	for _, c := range constraints {
+		if migrator.HasConstraint(c.model, c.name) {
+			continue
+		}
 		if err := migrator.CreateConstraint(c.model, c.name); err != nil {
 			return err
 		}

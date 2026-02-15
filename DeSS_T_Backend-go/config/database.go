@@ -52,21 +52,39 @@ func ConnectDatabase() {
 	// 	&models.User{},
 	// 	&models.PythonLog{},
 	// )
-	// Migrate in dependency order to satisfy FK constraints
+	// Disable FK creation during migration, then add constraints explicitly.
+	prevDisableFK := db.Config.DisableForeignKeyConstraintWhenMigrating
+	db.Config.DisableForeignKeyConstraintWhenMigrating = true
+
+	// Migrate in phases so FK tables only run after their dependencies exist.
 	if err = db.AutoMigrate(
 		// Core lookup tables first
-		&model_database.User{},
 		&model_database.CoverImageProject{},
 		&model_database.CoverImageConf{},
 		&model_database.StationDetail{},
 		&model_database.RouteBetween{},
-		// Network and configuration roots
+		// Network and transport roots
 		&model_database.NetworkModel{},
-		&model_database.ConfigurationDetail{},
-		// Transport graph roots
 		&model_database.BusScenario{},
 		&model_database.RouteScenario{},
 		&model_database.RoutePath{},
+	); err != nil {
+		log.Fatal("❌ AutoMigrate (base) failed:", err)
+	}
+
+	// Create configuration_details and users explicitly to avoid auto-migrating dependent tables.
+	if !db.Migrator().HasTable(&model_database.ConfigurationDetail{}) {
+		if err = db.Migrator().CreateTable(&model_database.ConfigurationDetail{}); err != nil {
+			log.Fatal("❌ CreateTable(configuration_details) failed:", err)
+		}
+	}
+	if !db.Migrator().HasTable(&model_database.User{}) {
+		if err = db.Migrator().CreateTable(&model_database.User{}); err != nil {
+			log.Fatal("❌ CreateTable(users) failed:", err)
+		}
+	}
+
+	if err = db.AutoMigrate(
 		// Transport dependents
 		&model_database.StationPair{},
 		&model_database.Order{},
@@ -82,11 +100,64 @@ func ConnectDatabase() {
 		&model_database.UserConfiguration{},
 		&model_database.PublicConfiguration{},
 	); err != nil {
-		log.Fatal("❌ AutoMigrate failed:", err)
+		log.Fatal("❌ AutoMigrate (dependent) failed:", err)
+	}
+
+	db.Config.DisableForeignKeyConstraintWhenMigrating = prevDisableFK
+	if err := createForeignKeyConstraints(db); err != nil {
+		log.Fatal("❌ CreateConstraint failed:", err)
 	}
 
 	DB = db
 	fmt.Println("✅ Migration complete")
+}
+
+func createForeignKeyConstraints(db *gorm.DB) error {
+	migrator := db.Migrator()
+	constraints := []struct {
+		model interface{}
+		name  string
+	}{
+		{&model_database.PublicScenario{}, "CoverImage"},
+		{&model_database.PublicScenario{}, "ScenarioDetail"},
+		{&model_database.PublicScenario{}, "CreateByUser"},
+		{&model_database.PublicScenario{}, "PublishByUser"},
+		{&model_database.UserScenario{}, "CoverImage"},
+		{&model_database.UserScenario{}, "ScenarioDetail"},
+		{&model_database.UserScenario{}, "CreateByUser"},
+		{&model_database.ScenarioDetail{}, "BusScenario"},
+		{&model_database.ScenarioDetail{}, "RouteScenario"},
+		{&model_database.ScenarioDetail{}, "ConfigurationDetail"},
+		{&model_database.ScheduleData{}, "RoutePath"},
+		{&model_database.ScheduleData{}, "BusScenario"},
+		{&model_database.BusInformation{}, "RoutePath"},
+		{&model_database.BusInformation{}, "BusScenario"},
+		{&model_database.RoutePath{}, "RouteScenario"},
+		{&model_database.Order{}, "RoutePath"},
+		{&model_database.Order{}, "StationPair"},
+		{&model_database.UserConfiguration{}, "CoverImage"},
+		{&model_database.UserConfiguration{}, "ConfigurationDetail"},
+		{&model_database.UserConfiguration{}, "CreateByUser"},
+		{&model_database.PublicConfiguration{}, "CoverImage"},
+		{&model_database.PublicConfiguration{}, "ConfigurationDetail"},
+		{&model_database.PublicConfiguration{}, "CreateByUser"},
+		{&model_database.PublicConfiguration{}, "PublishByUser"},
+		{&model_database.ConfigurationDetail{}, "NetworkModel"},
+		{&model_database.AlightingData{}, "StationDetail"},
+		{&model_database.AlightingData{}, "ConfigurationDetail"},
+		{&model_database.InterArrivalData{}, "StationDetail"},
+		{&model_database.InterArrivalData{}, "ConfigurationDetail"},
+		{&model_database.StationPair{}, "FstStation"},
+		{&model_database.StationPair{}, "SndStation"},
+		{&model_database.StationPair{}, "RouteBetween"},
+		{&model_database.StationPair{}, "NetworkModel"},
+	}
+	for _, c := range constraints {
+		if err := migrator.CreateConstraint(c.model, c.name); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ensureSchema(db *gorm.DB, schema string) error {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
@@ -12,9 +12,15 @@ import type {
   ConfigurationDetail,
 } from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
+import type { UserScenario } from "../../models/User";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
 import { isDataFitResponse } from "../../models/DistributionFitModel";
 import HelpButton from "../HelpButton";
+import { useAuth } from "../../contexts/useAuth";
+import {
+  uploadConfigurationCoverImage,
+  createUserConfiguration,
+} from "../../../utility/api/configuration";
 interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
@@ -36,8 +42,11 @@ export default function ConfigurationFiles({
   onBackClick,
   onSubmit,
   usermode = "guest",
+  configurationName,
   configuration,
 }: GuestConfigurationFilesProps) {
+  const { user } = useAuth();
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const makeId = (): string => {
     try {
       if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -220,9 +229,91 @@ export default function ConfigurationFiles({
     }
   };
 
+  const captureMapImage = async (): Promise<File | null> => {
+    if (!mapContainerRef.current) return null;
+
+    try {
+      // Dynamically import html2canvas
+      const html2canvas = (await import("html2canvas")).default;
+
+      const canvas = await html2canvas(mapContainerRef.current, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+      });
+
+      // Convert canvas to blob
+      return new Promise<File | null>((resolve) => {
+        canvas.toBlob((blob: Blob | null) => {
+          if (blob) {
+            const file = new File([blob], `config-cover-${Date.now()}.png`, {
+              type: "image/png",
+            });
+            resolve(file);
+          } else {
+            resolve(null);
+          }
+        }, "image/png");
+      });
+    } catch (err) {
+      console.error("Failed to capture map image:", err);
+      return null;
+    }
+  };
+
   const submitSelected = async () => {
     if (usermode === "user") {
-      // For user mode, do nothing on save click
+      // For user mode, capture map and create UserConfiguration
+      if (isSubmitting) return;
+
+      if (!user) {
+        alert("User not authenticated");
+        return;
+      }
+
+      if (!configurationName) {
+        alert("Configuration name is required");
+        return;
+      }
+
+      try {
+        setIsSubmitting(true);
+
+        // Capture map image
+        const mapImage = await captureMapImage();
+        if (!mapImage) {
+          throw new Error("Failed to capture map image");
+        }
+
+        // Upload cover image
+        const uploadResponse = await uploadConfigurationCoverImage(mapImage);
+        const coverImageId = uploadResponse.cover_image_conf_id;
+
+        // Create UserScenario payload (API expects this structure)
+        const userScenario: UserScenario = {
+          user_scenario_id: makeId(),
+          name: configurationName,
+          modify_date: new Date().toISOString(),
+          create_by: user.google_id || user.email,
+          cover_img_id: coverImageId,
+          scenario_detail_id: configuration_detail_id,
+        };
+
+        // Call createUserConfiguration API
+        const userConfiguration = await createUserConfiguration(userScenario);
+
+        alert(`Configuration "${configurationName}" saved successfully!`);
+        console.log("Created UserConfiguration:", userConfiguration);
+
+        // Optionally call onSubmit with the configuration detail
+        // if needed for further processing
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        alert("Failed to save configuration: " + msg);
+      } finally {
+        setIsSubmitting(false);
+      }
+
       return;
     }
 
@@ -322,6 +413,7 @@ export default function ConfigurationFiles({
       <Nav
         usermode={usermode}
         inpage="Configuration"
+        configurationName={configurationName}
         onBackClick={onBackClick}
       />
       <main>
@@ -330,6 +422,8 @@ export default function ConfigurationFiles({
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
             {/* Left: Map */}
             <div
+              ref={mapContainerRef}
+              id="map-container"
               className="flex-1 border rounded-[25px] overflow-hidden my-8 ml-2"
               style={{ position: "relative", zIndex: 1 }}
             >

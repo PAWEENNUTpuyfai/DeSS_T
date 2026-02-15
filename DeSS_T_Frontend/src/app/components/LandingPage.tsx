@@ -4,6 +4,7 @@ import { useRef, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../contexts/useAuth";
+import { userLogin as userLoginAPI } from "../../utility/api/userLogin";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -40,6 +41,19 @@ export default function LandingPage() {
 
       // Use AuthContext login function
       login(userData);
+
+      // Sync with backend database
+      userLoginAPI(userData)
+        .then((verifiedUser) => {
+          console.log("✓ Backend sync successful:", verifiedUser);
+        })
+        .catch((error) => {
+          console.error(
+            "⚠ Backend sync failed, but user logged in locally:",
+            error,
+          );
+          // User is still logged in locally even if backend sync fails
+        });
 
       // Navigate to the workspace page
       navigate("/user/workspace");

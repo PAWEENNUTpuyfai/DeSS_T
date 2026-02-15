@@ -219,7 +219,7 @@ type ConfigurationDetail struct {
 	ConfigurationDetailID string `gorm:"primaryKey" json:"configuration_detail_id"`
 	NetworkModelID        string `json:"network_model" gorm:"column:network_model"`
 
-	NetworkModel         NetworkModel          `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
+	NetworkModel         *NetworkModel         `gorm:"constraint:OnDelete:CASCADE,OnUpdate:CASCADE;"`
 	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`
 	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`
 	AlightingData        []AlightingData       `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`

@@ -205,6 +205,15 @@ func CreateUserConfiguration(c *fiber.Ctx) error {
 	}
 	if networkModelID == "" {
 		networkModelID = uuid.New().String()
+	}
+
+	var existingNetworkModel model_database.NetworkModel
+	result := tx.Where("network_model_id = ?", networkModelID).Limit(1).Find(&existingNetworkModel)
+	if result.Error != nil {
+		tx.Rollback()
+		return c.Status(500).JSON(fiber.Map{"error": "failed to query network model", "detail": result.Error.Error()})
+	}
+	if result.RowsAffected == 0 {
 		newNetworkModel := model_database.NetworkModel{NetworkModelID: networkModelID}
 		if err := tx.Create(&newNetworkModel).Error; err != nil {
 			tx.Rollback()
@@ -220,6 +229,143 @@ func CreateUserConfiguration(c *fiber.Ctx) error {
 	if err := tx.Create(&configDetail).Error; err != nil {
 		tx.Rollback()
 		return c.Status(500).JSON(fiber.Map{"error": "failed to create configuration detail", "detail": err.Error()})
+	}
+
+	if len(req.ConfigurationDetail.NetworkModel.StationDetails) > 0 {
+		for _, station := range req.ConfigurationDetail.NetworkModel.StationDetails {
+			stationDetailID := station.StationDetailID
+			if stationDetailID == "" && station.StationID != "" {
+				stationDetailID = station.StationID
+			}
+			if stationDetailID == "" {
+				tx.Rollback()
+				return c.Status(400).JSON(fiber.Map{"error": "station_detail_id is required"})
+			}
+
+			var existingStation model_database.StationDetail
+			result := tx.Where("station_detail_id = ?", stationDetailID).Limit(1).Find(&existingStation)
+			if result.Error != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{"error": "failed to query station detail", "detail": result.Error.Error()})
+			}
+			if result.RowsAffected == 0 {
+				name := station.Name
+				if name == "" {
+					name = station.StationName
+				}
+				newStation := model_database.StationDetail{
+					StationDetailID: stationDetailID,
+					Name:            name,
+					Location: model_database.GeoPoint{
+						Type:        station.Location.Type,
+						Coordinates: station.Location.Coordinates,
+					},
+					Lat:          station.Lat,
+					Lon:          station.Lon,
+					StationIDOSM: station.StationIDOSM,
+				}
+				if err := tx.Create(&newStation).Error; err != nil {
+					tx.Rollback()
+					return c.Status(500).JSON(fiber.Map{"error": "failed to create station detail", "detail": err.Error()})
+				}
+			}
+		}
+	}
+
+	if len(req.ConfigurationDetail.NetworkModel.StationPairs) > 0 {
+		for _, pair := range req.ConfigurationDetail.NetworkModel.StationPairs {
+			routeBetweenID := pair.RouteBetweenID
+			if routeBetweenID == "" && pair.RouteBetween.RouteBetweenID != "" {
+				routeBetweenID = pair.RouteBetween.RouteBetweenID
+			}
+			if routeBetweenID == "" {
+				routeBetweenID = uuid.New().String()
+			}
+
+			var existingRouteBetween model_database.RouteBetween
+			result := tx.Where("route_between_id = ?", routeBetweenID).Limit(1).Find(&existingRouteBetween)
+			if result.Error != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{"error": "failed to query route between", "detail": result.Error.Error()})
+			}
+			if result.RowsAffected == 0 {
+				newRouteBetween := model_database.RouteBetween{
+					RouteBetweenID: routeBetweenID,
+					TravelTime:     pair.RouteBetween.TravelTime,
+					Distance:       pair.RouteBetween.Distance,
+				}
+				if err := tx.Create(&newRouteBetween).Error; err != nil {
+					tx.Rollback()
+					return c.Status(500).JSON(fiber.Map{"error": "failed to create route between", "detail": err.Error()})
+				}
+			}
+
+			stationPairID := pair.StationPairID
+			if stationPairID == "" {
+				stationPairID = uuid.New().String()
+			}
+
+			var existingPair model_database.StationPair
+			result = tx.Where("station_pair_id = ?", stationPairID).Limit(1).Find(&existingPair)
+			if result.Error != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{"error": "failed to query station pair", "detail": result.Error.Error()})
+			}
+			if result.RowsAffected == 0 {
+				newPair := model_database.StationPair{
+					StationPairID:  stationPairID,
+					FstStationID:   pair.FstStationID,
+					SndStationID:   pair.SndStationID,
+					RouteBetweenID: routeBetweenID,
+					NetworkModelID: networkModelID,
+				}
+				if err := tx.Create(&newPair).Error; err != nil {
+					tx.Rollback()
+					return c.Status(500).JSON(fiber.Map{"error": "failed to create station pair", "detail": err.Error()})
+				}
+			}
+		}
+	}
+
+	stationIDSet := make(map[string]struct{})
+	for _, alighting := range req.ConfigurationDetail.AlightingData {
+		if alighting.StationID != "" {
+			stationIDSet[alighting.StationID] = struct{}{}
+		}
+	}
+	for _, interArrival := range req.ConfigurationDetail.InterArrivalData {
+		if interArrival.StationID != "" {
+			stationIDSet[interArrival.StationID] = struct{}{}
+		}
+	}
+
+	if len(stationIDSet) > 0 {
+		stationIDs := make([]string, 0, len(stationIDSet))
+		for stationID := range stationIDSet {
+			stationIDs = append(stationIDs, stationID)
+		}
+
+		var existingStations []model_database.StationDetail
+		if err := tx.Where("station_detail_id IN ?", stationIDs).Find(&existingStations).Error; err != nil {
+			tx.Rollback()
+			return c.Status(500).JSON(fiber.Map{"error": "failed to query station details", "detail": err.Error()})
+		}
+
+		found := make(map[string]struct{}, len(existingStations))
+		for _, station := range existingStations {
+			found[station.StationDetailID] = struct{}{}
+		}
+
+		missing := make([]string, 0)
+		for stationID := range stationIDSet {
+			if _, ok := found[stationID]; !ok {
+				missing = append(missing, stationID)
+			}
+		}
+		if len(missing) > 0 {
+			tx.Rollback()
+			return c.Status(400).JSON(fiber.Map{"error": "station not found", "missing_station_ids": missing})
+		}
 	}
 
 	// 2. Create AlightingData records
@@ -344,6 +490,143 @@ func UpdateUserConfiguration(c *fiber.Ctx) error {
 	if err := tx.Model(&configDetail).Updates(configDetail).Error; err != nil {
 		tx.Rollback()
 		return c.Status(500).JSON(fiber.Map{"error": "failed to update configuration detail", "detail": err.Error()})
+	}
+
+	if len(req.ConfigurationDetail.NetworkModel.StationDetails) > 0 {
+		for _, station := range req.ConfigurationDetail.NetworkModel.StationDetails {
+			stationDetailID := station.StationDetailID
+			if stationDetailID == "" && station.StationID != "" {
+				stationDetailID = station.StationID
+			}
+			if stationDetailID == "" {
+				tx.Rollback()
+				return c.Status(400).JSON(fiber.Map{"error": "station_detail_id is required"})
+			}
+
+			var existingStation model_database.StationDetail
+			result := tx.Where("station_detail_id = ?", stationDetailID).Limit(1).Find(&existingStation)
+			if result.Error != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{"error": "failed to query station detail", "detail": result.Error.Error()})
+			}
+			if result.RowsAffected == 0 {
+				name := station.Name
+				if name == "" {
+					name = station.StationName
+				}
+				newStation := model_database.StationDetail{
+					StationDetailID: stationDetailID,
+					Name:            name,
+					Location: model_database.GeoPoint{
+						Type:        station.Location.Type,
+						Coordinates: station.Location.Coordinates,
+					},
+					Lat:          station.Lat,
+					Lon:          station.Lon,
+					StationIDOSM: station.StationIDOSM,
+				}
+				if err := tx.Create(&newStation).Error; err != nil {
+					tx.Rollback()
+					return c.Status(500).JSON(fiber.Map{"error": "failed to create station detail", "detail": err.Error()})
+				}
+			}
+		}
+	}
+
+	if len(req.ConfigurationDetail.NetworkModel.StationPairs) > 0 {
+		for _, pair := range req.ConfigurationDetail.NetworkModel.StationPairs {
+			routeBetweenID := pair.RouteBetweenID
+			if routeBetweenID == "" && pair.RouteBetween.RouteBetweenID != "" {
+				routeBetweenID = pair.RouteBetween.RouteBetweenID
+			}
+			if routeBetweenID == "" {
+				routeBetweenID = uuid.New().String()
+			}
+
+			var existingRouteBetween model_database.RouteBetween
+			result := tx.Where("route_between_id = ?", routeBetweenID).Limit(1).Find(&existingRouteBetween)
+			if result.Error != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{"error": "failed to query route between", "detail": result.Error.Error()})
+			}
+			if result.RowsAffected == 0 {
+				newRouteBetween := model_database.RouteBetween{
+					RouteBetweenID: routeBetweenID,
+					TravelTime:     pair.RouteBetween.TravelTime,
+					Distance:       pair.RouteBetween.Distance,
+				}
+				if err := tx.Create(&newRouteBetween).Error; err != nil {
+					tx.Rollback()
+					return c.Status(500).JSON(fiber.Map{"error": "failed to create route between", "detail": err.Error()})
+				}
+			}
+
+			stationPairID := pair.StationPairID
+			if stationPairID == "" {
+				stationPairID = uuid.New().String()
+			}
+
+			var existingPair model_database.StationPair
+			result = tx.Where("station_pair_id = ?", stationPairID).Limit(1).Find(&existingPair)
+			if result.Error != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{"error": "failed to query station pair", "detail": result.Error.Error()})
+			}
+			if result.RowsAffected == 0 {
+				newPair := model_database.StationPair{
+					StationPairID:  stationPairID,
+					FstStationID:   pair.FstStationID,
+					SndStationID:   pair.SndStationID,
+					RouteBetweenID: routeBetweenID,
+					NetworkModelID: networkModelID,
+				}
+				if err := tx.Create(&newPair).Error; err != nil {
+					tx.Rollback()
+					return c.Status(500).JSON(fiber.Map{"error": "failed to create station pair", "detail": err.Error()})
+				}
+			}
+		}
+	}
+
+	stationIDSet := make(map[string]struct{})
+	for _, alighting := range req.ConfigurationDetail.AlightingData {
+		if alighting.StationID != "" {
+			stationIDSet[alighting.StationID] = struct{}{}
+		}
+	}
+	for _, interArrival := range req.ConfigurationDetail.InterArrivalData {
+		if interArrival.StationID != "" {
+			stationIDSet[interArrival.StationID] = struct{}{}
+		}
+	}
+
+	if len(stationIDSet) > 0 {
+		stationIDs := make([]string, 0, len(stationIDSet))
+		for stationID := range stationIDSet {
+			stationIDs = append(stationIDs, stationID)
+		}
+
+		var existingStations []model_database.StationDetail
+		if err := tx.Where("station_detail_id IN ?", stationIDs).Find(&existingStations).Error; err != nil {
+			tx.Rollback()
+			return c.Status(500).JSON(fiber.Map{"error": "failed to query station details", "detail": err.Error()})
+		}
+
+		found := make(map[string]struct{}, len(existingStations))
+		for _, station := range existingStations {
+			found[station.StationDetailID] = struct{}{}
+		}
+
+		missing := make([]string, 0)
+		for stationID := range stationIDSet {
+			if _, ok := found[stationID]; !ok {
+				missing = append(missing, stationID)
+			}
+		}
+		if len(missing) > 0 {
+			tx.Rollback()
+			return c.Status(400).JSON(fiber.Map{"error": "station not found", "missing_station_ids": missing})
+		}
 	}
 
 	// 2. Delete old AlightingData and create new ones

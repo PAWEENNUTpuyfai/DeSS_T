@@ -12,7 +12,7 @@ import type {
   ConfigurationDetail,
 } from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
-import type { UserScenario } from "../../models/User";
+import type { UserConfiguration } from "../../models/User";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
 import { isDataFitResponse } from "../../models/DistributionFitModel";
 import HelpButton from "../HelpButton";
@@ -261,6 +261,20 @@ export default function ConfigurationFiles({
     }
   };
 
+  const downloadJson = (data: unknown, filename: string) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const submitSelected = async () => {
     if (usermode === "user") {
       // For user mode, capture map and create UserConfiguration
@@ -287,20 +301,98 @@ export default function ConfigurationFiles({
 
         // Upload cover image
         const uploadResponse = await uploadConfigurationCoverImage(mapImage);
-        const coverImageId = uploadResponse.cover_image_conf_id;
+        const coverImageId =
+          uploadResponse.cover_image_conf_id ||
+          (uploadResponse as { cover_img_id?: string }).cover_img_id ||
+          (uploadResponse as { cover_image_id?: string }).cover_image_id;
+        if (!coverImageId) {
+          throw new Error("Cover image upload did not return an id");
+        }
 
-        // Create UserScenario payload (API expects this structure)
-        const userScenario: UserScenario = {
-          user_scenario_id: makeId(),
+        // Build configuration detail payload (same shape as guest flow)
+        let alightRes: unknown = alightingResult ?? { DataFitResponse: [] };
+        let interRes: unknown = interarrivalResult ?? { DataFitResponse: [] };
+
+        if (alightingFile) {
+          const outA = await submitAlighting();
+          if (outA) alightRes = outA;
+        }
+
+        if (interarrivalFile) {
+          const outI = await submitInterarrival();
+          if (outI) interRes = outI;
+        }
+
+        let network: NetworkModel;
+        if (stationDetails && stationDetails.length > 0) {
+          try {
+            network = await buildNetworkModelFromStations(
+              stationDetails,
+              "guest_network",
+            );
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.error("Failed to build network - Full error:", err);
+            console.error("Error message:", errorMsg);
+            throw new Error(
+              "Failed to build network. Ensure the backend is running and try again.\n\nDetails: " +
+                errorMsg,
+            );
+          }
+        } else {
+          network = {
+            network_model_id: "guest_network",
+            StationPair: [],
+          };
+        }
+
+        const networkData = network as NetworkModel & {
+          StationPair?: StationPair[];
+        };
+
+        const normalizedStations = stationDetails.map((station, idx) => ({
+          ...station,
+          station_detail_id: station.station_detail_id || String(idx),
+          lat: station.lat ?? 0,
+          lon: station.lon ?? 0,
+        }));
+
+        const configNetworkModel: NetworkModel = {
+          ...network,
+          StationPair: networkData.StationPair || [],
+          Station_detail: normalizedStations,
+        };
+
+        const cfg: ConfigurationDetail = {
+          configuration_detail_id: configuration_detail_id,
+          network_model_id:
+            configNetworkModel.network_model_id || "guest_network",
+          network_model: configNetworkModel,
+          alighting_datas: toAlightingData(alightRes, normalizedStations),
+          interarrival_datas: toInterArrivalData(interRes, normalizedStations),
+        };
+
+        // Create UserConfiguration payload (API expects this structure)
+        const userConfigurationPayload: UserConfiguration = {
+          user_configuration_id: makeId(),
           name: configurationName,
           modify_date: new Date().toISOString(),
           create_by: user.google_id || user.email,
           cover_img_id: coverImageId,
-          scenario_detail_id: configuration_detail_id,
+          configuration_detail_id: configuration_detail_id,
+          configuration_detail: cfg,
         };
 
+        // Download request payload for debugging/audit
+        downloadJson(
+          userConfigurationPayload,
+          `createUserConfiguration-${Date.now()}.json`,
+        );
+
         // Call createUserConfiguration API
-        const userConfiguration = await createUserConfiguration(userScenario);
+        const userConfiguration = await createUserConfiguration(
+          userConfigurationPayload,
+        );
 
         alert(`Configuration "${configurationName}" saved successfully!`);
         console.log("Created UserConfiguration:", userConfiguration);

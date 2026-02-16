@@ -1,27 +1,23 @@
-import type {
-  UserScenario,
-  UserConfiguration,
-  CoverImageConf,
-} from "../../app/models/User";
+import type { UserConfiguration, CoverImageConf } from "../../app/models/User";
 import { API_BASE_URL } from "../config";
 
 export async function createUserConfiguration(
-  userScenario: UserScenario,
+  userConfiguration: UserConfiguration,
 ): Promise<UserConfiguration> {
   const response = await fetch(`${API_BASE_URL}/user-configuration`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(userScenario),
+    body: JSON.stringify(userConfiguration),
   });
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  const userConfiguration: UserConfiguration = await response.json();
-  return userConfiguration;
+  const result: UserConfiguration = await response.json();
+  return result;
 }
 
 export async function uploadConfigurationCoverImage(

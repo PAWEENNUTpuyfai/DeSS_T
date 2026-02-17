@@ -269,7 +269,7 @@ type StationPair struct {
 	RouteBetween RouteBetween  `gorm:"foreignKey:RouteBetweenID;references:RouteBetweenID;constraint:OnDelete:CASCADE;" json:"RouteBetween"`
 	NetworkModel NetworkModel  `gorm:"foreignKey:NetworkModelID;references:NetworkModelID;constraint:OnDelete:CASCADE;" json:"network_model,omitempty"`
 
-	Orders []Order `gorm:"foreignKey:StationPairID"`
+	Orders []Order `gorm:"foreignKey:StationPairID;references:StationPairID"`
 }
 
 // ------------------- ROUTE BETWEEN --------------------

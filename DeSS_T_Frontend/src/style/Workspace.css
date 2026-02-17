@@ -23,7 +23,7 @@
   padding: 18px 16px;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 70px - 48px);
+  height: calc(100vh - 90px);
 }
 
 .workspace-tab {
@@ -43,15 +43,31 @@
   text-align: center;
 }
 
+.workspace-tab:focus,
+.workspace-tab:focus-visible {
+  outline: none;
+}
+
 .workspace-tab + .workspace-tab {
   margin-top: 14px;
 }
+
+.workspace-tab:hover {
+  border-color: #81069e;
+} 
 
 .workspace-tab-active {
   background: #81069e;
   color: #ffffff;
   box-shadow: 0 6px 14px rgba(129, 6, 158, 0.25);
 }
+
+.workspace-tab-active:hover {
+  background: #81069e;
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(129, 6, 158, 0.25);
+}
+
 
 .workspace-sidebar-footer {
   margin-top: auto;
@@ -76,10 +92,10 @@
   background: #ffffff;
   border-radius: 24px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
-  padding: 24px 28px 80px;
-  padding-bottom: 600px;
+  padding: 24px 28px 40px;
   position: relative;
-  min-height: calc(100vh - 70px - 48px);
+  height: calc(100vh - 90px);
+  overflow: auto;
 }
 
 .workspace-header {
@@ -126,6 +142,16 @@
   cursor: pointer;
 }
 
+.workspace-filter:hover {
+  border-color: #81069e;
+}
+
+.workspace-filter:focus,
+.workspace-filter:focus-visible {
+  outline: none;
+}
+
+
 .workspace-filter-caret {
   border: solid #81069e;
   border-width: 0 2px 2px 0;
@@ -152,7 +178,6 @@
 
 .workspace-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
 }
 
 .workspace-card-thumb {
@@ -204,10 +229,6 @@
   align-items: center;
   cursor: pointer;
   box-shadow: 0 6px 14px rgba(129, 6, 158, 0.25);
-}
-
-.workspace-new-btn:hover {
-  background: #6b0b83;
 }
 
 .workspace-modal-overlay {

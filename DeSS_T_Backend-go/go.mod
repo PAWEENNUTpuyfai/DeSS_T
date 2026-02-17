@@ -47,4 +47,6 @@ require (
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
+	github.com/twpayne/go-geom v1.7.0 // indirect
+	github.com/twpayne/go-geom/encoding/wkb v1.7.0 // indirect
 )

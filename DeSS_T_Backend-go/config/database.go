@@ -14,26 +14,23 @@ import (
 )
 
 var DB *gorm.DB
-
-func ConnectDatabase() {
-	// โหลดไฟล์ .env
+func ConnectDatabase() (*gorm.DB, error) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("⚠️  Warning: .env file not found, using system environment variables")
 	}
 
-	// ดึงค่าจาก .env
 	host := os.Getenv("DB_HOST")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_NAME")
 	port := os.Getenv("DB_PORT")
 	schema := os.Getenv("DB_SCHEMA")
+
 	if schema == "" {
 		schema = "public"
 	}
 
-	// สร้าง DSN string
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=%s",
 		host, user, password, dbname, port, schema,
@@ -41,98 +38,239 @@ func ConnectDatabase() {
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("❌ Failed to connect database:", err)
-	}
-	if err := ensureSchema(db, schema); err != nil {
-		log.Fatal("❌ Failed to prepare schema:", err)
+		return nil, err
 	}
 
-	// ⭐ กำหนดว่าตารางไหนจะถูกสร้างขึ้น
-	// err = db.AutoMigrate(
-	// 	&models.User{},
-	// 	&models.PythonLog{},
-	// )
-	// Disable FK creation during migration, then add constraints explicitly.
-	prevDisableFK := db.Config.DisableForeignKeyConstraintWhenMigrating
-	db.Config.DisableForeignKeyConstraintWhenMigrating = true
+	return db, nil
+}
+func DropDatabase(db *gorm.DB, schema string) error {
+	log.Println("⚠️  Dropping schema...")
 
-	// Migrate in phases so FK tables only run after their dependencies exist.
-	if err = db.AutoMigrate(
-		// Core lookup tables first
+	if err := db.Exec(fmt.Sprintf(`
+		DROP SCHEMA IF EXISTS %s CASCADE;
+		CREATE SCHEMA %s;
+	`, schema, schema)).Error; err != nil {
+		return err
+	}
+
+	log.Println("✅ Schema recreated successfully")
+	return nil
+}
+func MigrateDatabase(db *gorm.DB, schema string) error {
+
+	// เปิด PostGIS
+	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS postgis;`).Error; err != nil {
+		return err
+	}
+
+	// AutoMigrate
+	if err := db.AutoMigrate(
+		&model_database.User{},
 		&model_database.CoverImageProject{},
 		&model_database.CoverImageConf{},
-		&model_database.StationDetail{},
-		&model_database.RouteBetween{},
-		// Network and transport roots
 		&model_database.NetworkModel{},
+		&model_database.RouteBetween{},
+		&model_database.StationDetail{},
 		&model_database.BusScenario{},
 		&model_database.RouteScenario{},
+		&model_database.ConfigurationDetail{},
 		&model_database.RoutePath{},
-	); err != nil {
-		log.Fatal("❌ AutoMigrate (base) failed:", err)
-	}
-
-	// Create configuration_details and users explicitly to avoid auto-migrating dependent tables.
-	if !db.Migrator().HasTable(&model_database.ConfigurationDetail{}) {
-		if err = db.Migrator().CreateTable(&model_database.ConfigurationDetail{}); err != nil {
-			log.Fatal("❌ CreateTable(configuration_details) failed:", err)
-		}
-	}
-	if !db.Migrator().HasTable(&model_database.User{}) {
-		if err = db.Migrator().CreateTable(&model_database.User{}); err != nil {
-			log.Fatal("❌ CreateTable(users) failed:", err)
-		}
-	}
-
-	if err = db.AutoMigrate(
-		// Transport dependents
 		&model_database.StationPair{},
-		&model_database.Order{},
 		&model_database.ScheduleData{},
 		&model_database.BusInformation{},
-		// Scenario detail and passenger data
 		&model_database.ScenarioDetail{},
+		&model_database.Order{},
 		&model_database.AlightingData{},
 		&model_database.InterArrivalData{},
-		// Scenario/publication wrappers
-		&model_database.UserScenario{},
-		&model_database.PublicScenario{},
 		&model_database.UserConfiguration{},
 		&model_database.PublicConfiguration{},
+		&model_database.UserScenario{},
+		&model_database.PublicScenario{},
 	); err != nil {
-		log.Fatal("❌ AutoMigrate (dependent) failed:", err)
-	}
-	if err := fixConfigurationDetailNetworkModelFK(db, schema); err != nil {
-		log.Fatal("❌ Fix configuration_details FK failed:", err)
-	}
-	if err := fixStationPairNetworkModelFK(db, schema); err != nil {
-		log.Fatal("❌ Fix station_pairs FK failed:", err)
-	}
-	if err := fixScenarioDetailConfigurationDetailFK(db, schema); err != nil {
-		log.Fatal("❌ Fix scenario_details FK failed:", err)
-	}
-	if err := fixUserConfigurationConfigurationDetailFK(db, schema); err != nil {
-		log.Fatal("❌ Fix user_configurations FK failed:", err)
-	}
-	if err := fixPublicConfigurationConfigurationDetailFK(db, schema); err != nil {
-		log.Fatal("❌ Fix public_configurations FK failed:", err)
-	}
-	if err := fixAlightingDataConfigurationDetailFK(db, schema); err != nil {
-		log.Fatal("❌ Fix alighting_data FK failed:", err)
-	}
-	if err := fixInterArrivalDataConfigurationDetailFK(db, schema); err != nil {
-		log.Fatal("❌ Fix inter_arrival_data FK failed:", err)
+		return err
 	}
 
-	db.Config.DisableForeignKeyConstraintWhenMigrating = prevDisableFK
-	if err := createForeignKeyConstraints(db); err != nil {
-		log.Fatal("❌ CreateConstraint failed:", err)
+	log.Println("✅ Migration complete")
+	return nil
+}
+func InitDatabase() {
+
+	db, err := ConnectDatabase()
+	if err != nil {
+		log.Fatal("❌ Failed to connect database:", err)
+	}
+
+	schema := os.Getenv("DB_SCHEMA")
+	if schema == "" {
+		schema = "public"
+	}
+
+	if os.Getenv("DB_DROP_ON_START") == "true" {
+		if err := DropDatabase(db, schema); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if err := MigrateDatabase(db, schema); err != nil {
+		log.Fatal(err)
 	}
 
 	DB = db
-	fmt.Println("✅ Migration complete")
 }
 
+// func ConnectDatabase() {
+// 	// โหลดไฟล์ .env
+// 	err := godotenv.Load()
+// 	if err != nil {
+// 		log.Println("⚠️  Warning: .env file not found, using system environment variables")
+// 	}
+
+// 	// ดึงค่าจาก .env
+// 	host := os.Getenv("DB_HOST")
+// 	user := os.Getenv("DB_USER")
+// 	password := os.Getenv("DB_PASSWORD")
+// 	dbname := os.Getenv("DB_NAME")
+// 	port := os.Getenv("DB_PORT")
+// 	schema := os.Getenv("DB_SCHEMA")
+// 	if schema == "" {
+// 		schema = "public"
+// 	}
+
+// 	// สร้าง DSN string
+// 	dsn := fmt.Sprintf(
+// 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=%s",
+// 		host, user, password, dbname, port, schema,
+// 	)
+
+// 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+// 	if err != nil {
+// 		log.Fatal("❌ Failed to connect database:", err)
+// 	}
+// 	if err := ensureSchema(db, schema); err != nil {
+// 		log.Fatal("❌ Failed to prepare schema:", err)
+// 	}
+// 	// ✅ เปิด PostGIS (ถ้ายังไม่มี)
+// 	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS postgis;`).Error; err != nil {
+// 		log.Fatal("❌ Failed to enable PostGIS:", err)
+// 	}
+
+// 	// Drop tables if DB_DROP_ON_START is set to "true"
+// 	dropOnStart := os.Getenv("DB_DROP_ON_START")
+// 	// DROP ก่อน
+// 	if dropOnStart == "true" {
+// 		if err := DropDatabase(db, schema); err != nil {
+// 			log.Fatal(err)
+// 		}
+// 	}
+
+// 	// 🔥 สร้าง extension หลัง schema ใหม่
+// 	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS postgis;`).Error; err != nil {
+// 		log.Fatal("❌ Failed to enable PostGIS:", err)
+// 	}
+
+// 	// 🔥 AutoMigrate เรียงถูกลำดับ
+// 	if err := db.AutoMigrate(
+// 		// =========================
+// 		// 🔹 ROOT (ไม่มี FK ไปใคร)
+// 		// =========================
+// 		&model_database.User{},
+// 		&model_database.CoverImageProject{},
+// 		&model_database.CoverImageConf{},
+// 		&model_database.NetworkModel{},
+// 		&model_database.RouteBetween{},
+// 		&model_database.StationDetail{},
+// 		&model_database.BusScenario{},
+// 		&model_database.RouteScenario{},
+
+// 		// =========================
+// 		// 🔹 LEVEL 2
+// 		// =========================
+// 		&model_database.ConfigurationDetail{},   // -> NetworkModel
+// 		&model_database.RoutePath{},             // -> RouteScenario
+
+// 		// =========================
+// 		// 🔹 LEVEL 3
+// 		// =========================
+// 		&model_database.StationPair{},           // -> StationDetail, RouteBetween, NetworkModel
+// 		&model_database.ScheduleData{},          // -> BusScenario, RoutePath
+// 		&model_database.BusInformation{},        // -> BusScenario, RoutePath
+
+// 		// =========================
+// 		// 🔹 LEVEL 4
+// 		// =========================
+// 		&model_database.ScenarioDetail{},        // -> BusScenario, RouteScenario, ConfigurationDetail
+
+// 		// =========================
+// 		// 🔹 LEVEL 5 (Leaf Data)
+// 		// =========================
+// 		&model_database.Order{},                 // -> RoutePath, StationPair
+// 		&model_database.AlightingData{},         // -> ConfigurationDetail, StationDetail
+// 		&model_database.InterArrivalData{},      // -> ConfigurationDetail, StationDetail
+
+// 		// =========================
+// 		// 🔹 LEVEL 6 (Top Layer Objects)
+// 		// =========================
+// 		&model_database.UserConfiguration{},     // -> User, CoverImageConf, ConfigurationDetail
+// 		&model_database.PublicConfiguration{},   // -> User, CoverImageConf, ConfigurationDetail
+// 		&model_database.UserScenario{},          // -> User, CoverImageProject, ScenarioDetail
+// 		&model_database.PublicScenario{},        // -> User, CoverImageProject, ScenarioDetail
+
+// 	); err != nil {
+// 		log.Fatal("❌ AutoMigrate failed:", err)
+// 	}
+
+// 	DB = db
+// 	fmt.Println("✅ Migration complete")
+// }
+// func DropDatabase(db *gorm.DB, schema string) error {
+//     log.Println("⚠️  Dropping schema...")
+
+//     if err := db.Exec(fmt.Sprintf(`
+//         DROP SCHEMA IF EXISTS %s CASCADE;
+//         CREATE SCHEMA %s;
+//     `, schema, schema)).Error; err != nil {
+//         return err
+//     }
+
+//     log.Println("✅ Schema recreated successfully")
+//     return nil
+// }
+
+
+// // DropDatabase drops all tables in the database
+// func DropDatabase(db *gorm.DB) error {
+//     log.Println("⚠️  Dropping all database tables...")
+    
+//     if err := db.Migrator().DropTable(
+//         &model_database.User{},
+//         &model_database.CoverImageProject{},
+//         &model_database.CoverImageConf{},
+//         &model_database.PublicScenario{},
+//         &model_database.UserScenario{},
+//         &model_database.ScenarioDetail{},
+//         &model_database.BusScenario{},
+//         &model_database.ScheduleData{},
+//         &model_database.BusInformation{},
+//         &model_database.RouteScenario{},
+//         &model_database.RoutePath{},
+//         &model_database.Order{},
+//         &model_database.UserConfiguration{},
+//         &model_database.PublicConfiguration{},
+//         &model_database.ConfigurationDetail{},
+//         &model_database.AlightingData{},
+//         &model_database.InterArrivalData{},
+//         &model_database.NetworkModel{},
+//         &model_database.StationDetail{},
+//         &model_database.StationPair{},
+//         &model_database.RouteBetween{},
+//     ); err != nil {
+//         log.Printf("❌ Error dropping tables: %v\n", err)
+//         return err
+//     }
+    
+//     log.Println("✅ All tables dropped successfully")
+//     return nil
+// }
 func createForeignKeyConstraints(db *gorm.DB) error {
 	migrator := db.Migrator()
 	constraints := []struct {

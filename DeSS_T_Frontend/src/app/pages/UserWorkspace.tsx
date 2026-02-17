@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 import Nav from "../components/NavBar";
 import CustomDropdown from "../components/CustomDropdown";
-import type { User } from "../models/User";
 import "../../style/Workspace.css";
 
 export default function UserWorkspace() {

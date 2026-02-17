@@ -9,9 +9,7 @@ import GuestDecision from "./components/GuestDecision";
 import Outputpage from "./pages/Outputpage";
 import UserWorkspace from "./pages/UserWorkspace";
 
-const GOOGLE_CLIENT_ID =
-  // "466533293342-57tvguaj5oupvsg4bbcac7ib7jmuia3p.apps.googleusercontent.com";
-  "466533293342-mk71aaaclge179pcpcis19sdjd1303mp.apps.googleusercontent.com"; //deployment
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function App() {
   return (

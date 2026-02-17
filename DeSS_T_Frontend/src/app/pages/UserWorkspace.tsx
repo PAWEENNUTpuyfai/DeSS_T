@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from "react-router-dom";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 import Nav from "../components/NavBar";
+import CustomDropdown from "../components/CustomDropdown";
 import type { User } from "../models/User";
 import "../../style/Workspace.css";
 
@@ -17,6 +18,58 @@ export default function UserWorkspace() {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configName, setConfigName] = useState("");
   const [showConfigMap, setShowConfigMap] = useState(false);
+
+  // Project creation states
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
+  const [selectedConfigName, setSelectedConfigName] = useState(
+    "Select configuration",
+  );
+
+  const configOptions = useMemo(() => {
+    if (!user) {
+      return [];
+    }
+
+    const configs = user.user_configurations ?? [];
+    const mockConfigs = [
+      {
+        id: "mock-config-1",
+        name: "Chiang Mai AM Peak",
+        date: new Date().toISOString(),
+        imageUrl: "",
+      },
+      {
+        id: "mock-config-2",
+        name: "Old Town Midday",
+        date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+        imageUrl: "",
+      },
+      {
+        id: "mock-config-3",
+        name: "Airport Corridor",
+        date: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+        imageUrl: "",
+      },
+    ];
+
+    if (configs.length === 0) {
+      return mockConfigs;
+    }
+
+    return configs.map((config) => ({
+      id: config.user_configuration_id,
+      name: config.name,
+      date: config.modify_date,
+      imageUrl: config.cover_image?.path_file,
+    }));
+  }, [user]);
+
+  const configOptionNames = useMemo(
+    () => configOptions.map((option) => option.name),
+    [configOptions],
+  );
 
   const cards = useMemo(() => {
     if (!user) {
@@ -106,6 +159,13 @@ export default function UserWorkspace() {
     navigate("/");
   };
 
+  const resetProjectModal = () => {
+    setShowProjectModal(false);
+    setProjectName("");
+    setSelectedConfigId(null);
+    setSelectedConfigName("Select configuration");
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen justify-center items-center bg-white">
@@ -153,7 +213,10 @@ export default function UserWorkspace() {
             className={`workspace-tab ${
               activeTab === "project" ? "workspace-tab-active" : ""
             }`}
-            onClick={() => setActiveTab("project")}
+            onClick={() => {
+              setActiveTab("project");
+              setShowConfigModal(false);
+            }}
           >
             My Project
           </button>
@@ -164,6 +227,7 @@ export default function UserWorkspace() {
             onClick={() => {
               setActiveTab("config");
               setShowConfigModal(false);
+              setShowProjectModal(false);
             }}
           >
             Configuration Data
@@ -272,7 +336,12 @@ export default function UserWorkspace() {
             onClick={() =>
               activeTab === "config"
                 ? setShowConfigModal(true)
-                : navigate("/guest/setup")
+                : (() => {
+                    setProjectName("");
+                    setSelectedConfigId(null);
+                    setSelectedConfigName("Select configuration");
+                    setShowProjectModal(true);
+                  })()
             }
           >
             + {activeTab === "config" ? "New Configuration" : "New Project"}
@@ -320,6 +389,83 @@ export default function UserWorkspace() {
                 className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
               >
                 Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Creation Modal */}
+      {showProjectModal && (
+        <div className="workspace-modal-overlay">
+          <div className="workspace-modal">
+            <h2 className="workspace-modal-title">New Project</h2>
+            <div className="workspace-modal-field">
+              <label className="workspace-modal-label" htmlFor="project-name">
+                Name :
+              </label>
+              <input
+                id="project-name"
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="Project name"
+                className="workspace-modal-input"
+                autoFocus
+              />
+            </div>
+            <div className="workspace-modal-field">
+              <label className="workspace-modal-label">
+                Configuration Data :
+              </label>
+              <div className="workspace-modal-dropdown">
+                {configOptionNames.length > 0 ? (
+                  <CustomDropdown
+                    options={configOptionNames}
+                    selectedValue={selectedConfigName}
+                    onChange={(value) => {
+                      const selected = configOptions.find(
+                        (option) => option.name === value,
+                      );
+                      setSelectedConfigName(value);
+                      setSelectedConfigId(selected?.id ?? null);
+                    }}
+                  />
+                ) : (
+                  <div className="workspace-modal-dropdown-disabled">
+                    No configuration data
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="workspace-modal-actions">
+              <button
+                onClick={resetProjectModal}
+                className="workspace-modal-btn workspace-modal-cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!projectName.trim()) {
+                    alert("Please enter a project name");
+                    return;
+                  }
+                  if (!selectedConfigId) {
+                    alert("Please select configuration data");
+                    return;
+                  }
+                  setShowProjectModal(false);
+                  navigate("/guest/setup", {
+                    state: {
+                      projectName: projectName.trim(),
+                      configurationId: selectedConfigId,
+                    },
+                  });
+                }}
+                className="workspace-modal-btn workspace-modal-submit"
+              >
+                Create New
               </button>
             </div>
           </div>

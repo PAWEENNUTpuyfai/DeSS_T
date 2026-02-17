@@ -136,6 +136,33 @@ export default function MapViewer({
     return null;
   }
 
+  function AutoResize() {
+    const map = useMap();
+
+    useEffect(() => {
+      const container = map.getContainer();
+
+      const invalidate = () => {
+        map.invalidateSize();
+      };
+
+      invalidate();
+
+      if (typeof ResizeObserver === "undefined" || !container) {
+        return undefined;
+      }
+
+      const observer = new ResizeObserver(() => {
+        window.setTimeout(invalidate, 0);
+      });
+
+      observer.observe(container);
+      return () => observer.disconnect();
+    }, [map]);
+
+    return null;
+  }
+
   return (
     <>
       <MapContainer
@@ -168,6 +195,7 @@ export default function MapViewer({
         ))}
 
         <UpdateMapView boundsProp={bounds} />
+        <AutoResize />
       </MapContainer>
     </>
   );

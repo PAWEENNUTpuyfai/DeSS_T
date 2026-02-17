@@ -206,6 +206,109 @@
   background: #6b0b83;
 }
 
+.workspace-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.workspace-modal {
+  width: min(520px, 100%);
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 26px 28px 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border: 2px solid #81069e;
+}
+
+.workspace-modal-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #3b3b3b;
+  margin: 0 0 18px;
+}
+
+.workspace-modal-field {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.workspace-modal-label {
+  min-width: 140px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #3b3b3b;
+}
+
+.workspace-modal-input {
+  flex: 1;
+  border: 2px solid #3b3b3b;
+  border-radius: 24px;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-family: "Lexend", sans-serif;
+  outline: none;
+}
+
+.workspace-modal-input:focus {
+  border-color: #81069e;
+}
+
+.workspace-modal-dropdown {
+  flex: 1;
+}
+
+.workspace-modal-dropdown-disabled {
+  width: 100%;
+  border: 2px solid #c2c2c2;
+  border-radius: 24px;
+  padding: 10px 16px;
+  color: #8b8b8b;
+  background: #f5f5f5;
+}
+
+.workspace-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.workspace-modal-btn {
+  border-radius: 22px;
+  padding: 8px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid #81069e;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.workspace-modal-cancel {
+  background: #ffffff;
+  color: #81069e;
+}
+
+.workspace-modal-cancel:hover {
+  background: #f4e9f7;
+}
+
+.workspace-modal-submit {
+  background: #81069e;
+  color: #ffffff;
+}
+
+.workspace-modal-submit:hover {
+  background: #6b0b83;
+}
+
 @media (max-width: 960px) {
   .workspace-body {
     flex-direction: column;
@@ -223,5 +326,14 @@
   .workspace-new-btn {
     right: 20px;
     bottom: 20px;
+  }
+
+  .workspace-modal-field {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workspace-modal-label {
+    min-width: auto;
   }
 }

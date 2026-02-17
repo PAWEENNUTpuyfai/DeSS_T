@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MapViewer from "../MapViewer";
 import Scenario from "../Scenario";
 import ConfigurationFiles from "./ConfigurationFiles";
@@ -19,6 +20,7 @@ export default function ConfigurationMap({
   usermode = "guest",
   configurationName,
 }: ConfigurationMapProps = {}) {
+  const navigate = useNavigate();
   // File upload state - cleared when going back
   const [submittedConfig, setSubmittedConfig] =
     useState<ConfigurationDetail | null>(null);
@@ -257,6 +259,8 @@ export default function ConfigurationMap({
       window.location.href = "/guest/decision";
       return;
     }
+
+    navigate("/user/workspace");
   };
 
   // Render GuestScenario if config submitted

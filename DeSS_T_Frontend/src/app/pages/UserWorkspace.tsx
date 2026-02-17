@@ -3,11 +3,10 @@ import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from "react-router-dom";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 import Nav from "../components/NavBar";
-import type { User } from "../models/User";
 import "../../style/Workspace.css";
 
 export default function UserWorkspace() {
-  const { user, logout, login: authLogin } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

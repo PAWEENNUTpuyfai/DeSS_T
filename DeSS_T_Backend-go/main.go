@@ -27,6 +27,13 @@ func main() {
 		fmt.Println("✅ ORS_API_KEY loaded successfully")
 	}
 
+	// Resolve upload directory (Docker uses UPLOAD_DIR; local defaults to ./uploads)
+	uploadDir := os.Getenv("UPLOAD_DIR")
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+		_ = os.Setenv("UPLOAD_DIR", uploadDir)
+	}
+
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
@@ -34,6 +41,9 @@ func main() {
 		AllowMethods: "GET,POST,OPTIONS",
 		AllowHeaders: "Content-Type",
 	}))
+
+	// Serve static files from uploads directory
+	app.Static("/uploads", uploadDir)
 
 	// Connect to Postgres (runs AutoMigrate)
 	config.ConnectDatabase()

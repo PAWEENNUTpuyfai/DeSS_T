@@ -23,11 +23,13 @@ type ConfigurationJSON struct {
 }
 
 type ConfigurationDetail struct {
-	ConfigurationDetailID string             `json:"configuration_detail_id"`
-	NetworkModelID        string             `json:"network_model_id"`
-	NetworkModel          NetworkModel       `json:"network_model"`
-	AlightingData         []AlightingData    `json:"alighting_datas"`
-	InterArrivalData      []InterArrivalData `json:"interarrival_datas"`
+	ConfigurationDetailID string                `json:"configuration_detail_id"`
+	NetworkModelID        string                `json:"network_model_id"`
+	NetworkModel          NetworkModel          `json:"network_model"`
+	AlightingData         []AlightingData       `json:"alighting_datas"`
+	InterArrivalData      []InterArrivalData    `json:"interarrival_datas"`
+	UserConfigurations    []UserConfiguration   `json:"user_configurations,omitempty"`
+	PublicConfigurations  []PublicConfiguration `json:"public_configurations,omitempty"`
 }
 
 // ======================================================
@@ -70,6 +72,7 @@ type StationPair struct {
 	NetworkModelID string `json:"network_model_id"`
 
 	RouteBetween RouteBetween `json:"RouteBetween"`
+	NetworkModel NetworkModel `json:"network_model,omitempty"`
 }
 
 // ======================================================
@@ -258,20 +261,19 @@ type CoverImageConf struct {
 // ======================================================
 
 type PublicScenario struct {
-	PublicScenarioID string              `json:"public_scenario_id"`
-	Name             string              `json:"name"`
-	Description      string              `json:"description"`
-	ModifyDate       string              `json:"modify_date"`
-	PublishDate      string              `json:"publish_date"`
-	CreateBy         string              `json:"create_by"`
-	PublishBy        string              `json:"publish_by"`
-	OriginFrom       string              `json:"origin_from"`
-	CoverImgID       string              `json:"cover_img_id"`
-	ScenarioDetailID string              `json:"scenario_detail_id"`
+	PublicScenarioID string `json:"public_scenario_id"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	ModifyDate       string `json:"modify_date"`
+	PublishDate      string `json:"publish_date"`
+	CreateBy         string `json:"create_by"`
+	PublishBy        string `json:"publish_by"`
+	OriginFrom       string `json:"origin_from"`
+	CoverImgID       string `json:"cover_img_id"`
+	ScenarioDetailID string `json:"scenario_detail_id"`
 
-	CoverImage       CoverImageProject   `json:"cover_image,omitempty"`
-	ScenarioDetail   ScenarioDetail      `json:"scenario_detail,omitempty"`
-
+	CoverImage     CoverImageProject `json:"cover_image,omitempty"`
+	ScenarioDetail ScenarioDetail    `json:"scenario_detail,omitempty"`
 }
 
 // ======================================================
@@ -324,13 +326,13 @@ type ScenarioListResponse struct {
 // ======================================================
 
 type UserConfiguration struct {
-	UserConfigurationID   string             `json:"user_configuration_id"`
-	Name                  string             `json:"name"`
-	ModifyDate            string             `json:"modify_date"`
-	CreateBy              string             `json:"create_by"`
-	CoverImgID            string             `json:"cover_img_id"`
-	ConfigurationDetailID string             `json:"configuration_detail_id"`
-	CoverImage            CoverImageConf     `json:"cover_image,omitempty"`
+	UserConfigurationID   string              `json:"user_configuration_id"`
+	Name                  string              `json:"name"`
+	ModifyDate            string              `json:"modify_date"`
+	CreateBy              string              `json:"create_by"`
+	CoverImgID            string              `json:"cover_img_id"`
+	ConfigurationDetailID string              `json:"configuration_detail_id"`
+	CoverImage            CoverImageConf      `json:"cover_image,omitempty"`
 	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail,omitempty"`
 }
 
@@ -339,17 +341,17 @@ type UserConfiguration struct {
 // ======================================================
 
 type PublicConfiguration struct {
-	PublicConfigurationID string             `json:"public_configuration_id"`
-	Name                  string             `json:"name"`
-	Description           string             `json:"description"`
-	ModifyDate            string             `json:"modify_date"`
-	PublishDate           string             `json:"publish_date"`
-	CoverImgID            string             `json:"cover_img_id"`
-	CreateBy              string             `json:"create_by"`
-	PublishBy             string             `json:"publish_by"`
-	OriginFrom            string             `json:"origin_from"`
-	ConfigurationDetailID string             `json:"configuration_detail_id"`
-	CoverImage            CoverImageConf     `json:"cover_image,omitempty"`
+	PublicConfigurationID string              `json:"public_configuration_id"`
+	Name                  string              `json:"name"`
+	Description           string              `json:"description"`
+	ModifyDate            string              `json:"modify_date"`
+	PublishDate           string              `json:"publish_date"`
+	CoverImgID            string              `json:"cover_img_id"`
+	CreateBy              string              `json:"create_by"`
+	PublishBy             string              `json:"publish_by"`
+	OriginFrom            string              `json:"origin_from"`
+	ConfigurationDetailID string              `json:"configuration_detail_id"`
+	CoverImage            CoverImageConf      `json:"cover_image,omitempty"`
 	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail,omitempty"`
 }
 
@@ -358,10 +360,10 @@ type PublicConfiguration struct {
 // ======================================================
 
 type CreateConfigurationRequest struct {
-	Name                  string             `json:"name"`
-	Description           string             `json:"description"`
-	IsPublic              bool               `json:"is_public"`
-	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail"`
+	Name                string              `json:"name"`
+	Description         string              `json:"description"`
+	IsPublic            bool                `json:"is_public"`
+	ConfigurationDetail ConfigurationDetail `json:"configuration_detail"`
 }
 
 // ======================================================
@@ -369,9 +371,9 @@ type CreateConfigurationRequest struct {
 // ======================================================
 
 type UpdateConfigurationRequest struct {
-	Name                  string             `json:"name"`
-	Description           string             `json:"description,omitempty"`
-	ConfigurationDetail   ConfigurationDetail `json:"configuration_detail,omitempty"`
+	Name                string              `json:"name"`
+	Description         string              `json:"description,omitempty"`
+	ConfigurationDetail ConfigurationDetail `json:"configuration_detail,omitempty"`
 }
 
 // ======================================================

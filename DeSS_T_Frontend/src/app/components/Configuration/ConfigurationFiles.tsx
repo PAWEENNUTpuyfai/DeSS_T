@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
@@ -12,9 +12,15 @@ import type {
   ConfigurationDetail,
 } from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
+import type { UserConfiguration } from "../../models/User";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
 import { isDataFitResponse } from "../../models/DistributionFitModel";
 import HelpButton from "../HelpButton";
+import { useAuth } from "../../contexts/useAuth";
+import {
+  uploadConfigurationCoverImage,
+  createUserConfiguration,
+} from "../../../utility/api/configuration";
 interface GuestConfigurationFilesProps {
   stationDetails: StationDetail[];
   mapBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
@@ -36,8 +42,11 @@ export default function ConfigurationFiles({
   onBackClick,
   onSubmit,
   usermode = "guest",
+  configurationName,
   configuration,
 }: GuestConfigurationFilesProps) {
+  const { user } = useAuth();
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const makeId = (): string => {
     try {
       if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -220,9 +229,183 @@ export default function ConfigurationFiles({
     }
   };
 
+  const captureMapImage = async (): Promise<File | null> => {
+    if (!mapContainerRef.current) return null;
+
+    try {
+      // Dynamically import html2canvas
+      const html2canvas = (await import("html2canvas")).default;
+
+      const canvas = await html2canvas(mapContainerRef.current, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+      });
+
+      // Convert canvas to blob
+      return new Promise<File | null>((resolve) => {
+        canvas.toBlob((blob: Blob | null) => {
+          if (blob) {
+            const file = new File([blob], `config-cover-${Date.now()}.png`, {
+              type: "image/png",
+            });
+            resolve(file);
+          } else {
+            resolve(null);
+          }
+        }, "image/png");
+      });
+    } catch (err) {
+      console.error("Failed to capture map image:", err);
+      return null;
+    }
+  };
+
+  const downloadJson = (data: unknown, filename: string) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const submitSelected = async () => {
     if (usermode === "user") {
-      // For user mode, do nothing on save click
+      // For user mode, capture map and create UserConfiguration
+      if (isSubmitting) return;
+
+      if (!user) {
+        alert("User not authenticated");
+        return;
+      }
+
+      if (!configurationName) {
+        alert("Configuration name is required");
+        return;
+      }
+
+      try {
+        setIsSubmitting(true);
+
+        // Capture map image
+        const mapImage = await captureMapImage();
+        if (!mapImage) {
+          throw new Error("Failed to capture map image");
+        }
+
+        // Upload cover image
+        const uploadResponse = await uploadConfigurationCoverImage(mapImage);
+        const coverImageId =
+          uploadResponse.cover_image_conf_id ||
+          (uploadResponse as { cover_img_id?: string }).cover_img_id ||
+          (uploadResponse as { cover_image_id?: string }).cover_image_id;
+        if (!coverImageId) {
+          throw new Error("Cover image upload did not return an id");
+        }
+
+        // Build configuration detail payload (same shape as guest flow)
+        let alightRes: unknown = alightingResult ?? { DataFitResponse: [] };
+        let interRes: unknown = interarrivalResult ?? { DataFitResponse: [] };
+
+        if (alightingFile) {
+          const outA = await submitAlighting();
+          if (outA) alightRes = outA;
+        }
+
+        if (interarrivalFile) {
+          const outI = await submitInterarrival();
+          if (outI) interRes = outI;
+        }
+
+        let network: NetworkModel;
+        if (stationDetails && stationDetails.length > 0) {
+          try {
+            network = await buildNetworkModelFromStations(
+              stationDetails,
+              "guest_network",
+            );
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.error("Failed to build network - Full error:", err);
+            console.error("Error message:", errorMsg);
+            throw new Error(
+              "Failed to build network. Ensure the backend is running and try again.\n\nDetails: " +
+                errorMsg,
+            );
+          }
+        } else {
+          network = {
+            network_model_id: "guest_network",
+            StationPair: [],
+          };
+        }
+
+        const networkData = network as NetworkModel & {
+          StationPair?: StationPair[];
+        };
+
+        const normalizedStations = stationDetails.map((station, idx) => ({
+          ...station,
+          station_detail_id: station.station_detail_id || String(idx),
+          lat: station.lat ?? 0,
+          lon: station.lon ?? 0,
+        }));
+
+        const configNetworkModel: NetworkModel = {
+          ...network,
+          StationPair: networkData.StationPair || [],
+          Station_detail: normalizedStations,
+        };
+
+        const cfg: ConfigurationDetail = {
+          configuration_detail_id: configuration_detail_id,
+          network_model_id:
+            configNetworkModel.network_model_id || "guest_network",
+          network_model: configNetworkModel,
+          alighting_datas: toAlightingData(alightRes, normalizedStations),
+          interarrival_datas: toInterArrivalData(interRes, normalizedStations),
+        };
+
+        // Create UserConfiguration payload (API expects this structure)
+        const userConfigurationPayload: UserConfiguration = {
+          user_configuration_id: makeId(),
+          name: configurationName,
+          modify_date: new Date().toISOString(),
+          create_by: user.google_id || user.email,
+          cover_img_id: coverImageId,
+          configuration_detail_id: configuration_detail_id,
+          configuration_detail: cfg,
+        };
+
+        // Download request payload for debugging/audit
+        downloadJson(
+          userConfigurationPayload,
+          `createUserConfiguration-${Date.now()}.json`,
+        );
+
+        // Call createUserConfiguration API
+        const userConfiguration = await createUserConfiguration(
+          userConfigurationPayload,
+        );
+
+        alert(`Configuration "${configurationName}" saved successfully!`);
+        console.log("Created UserConfiguration:", userConfiguration);
+
+        // Optionally call onSubmit with the configuration detail
+        // if needed for further processing
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        alert("Failed to save configuration: " + msg);
+      } finally {
+        setIsSubmitting(false);
+      }
+
       return;
     }
 
@@ -322,6 +505,7 @@ export default function ConfigurationFiles({
       <Nav
         usermode={usermode}
         inpage="Configuration"
+        configurationName={configurationName}
         onBackClick={onBackClick}
       />
       <main>
@@ -330,6 +514,8 @@ export default function ConfigurationFiles({
           <div className="flex gap-12 w-full h-full px-6 max-w-7xl mx-auto">
             {/* Left: Map */}
             <div
+              ref={mapContainerRef}
+              id="map-container"
               className="flex-1 border rounded-[25px] overflow-hidden my-8 ml-2"
               style={{ position: "relative", zIndex: 1 }}
             >

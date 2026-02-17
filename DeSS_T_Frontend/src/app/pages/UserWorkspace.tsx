@@ -1,31 +1,17 @@
 import { useMemo, useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from "react-router-dom";
-import { userLogin as userLoginAPI } from "../../utility/api/userLogin";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 import Nav from "../components/NavBar";
 import type { User } from "../models/User";
 import "../../style/Workspace.css";
-
-interface GoogleUserInfo {
-  email?: string;
-  name?: string;
-  picture?: string;
-  given_name?: string;
-  family_name?: string;
-  sub?: string;
-  iat?: number;
-  exp?: number;
-}
 
 export default function UserWorkspace() {
   const { user, logout, login: authLogin } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"project" | "config">(
-    "project",
-  );
+  const [activeTab, setActiveTab] = useState<"project" | "config">("project");
 
   // Configuration creation states
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -38,7 +24,33 @@ export default function UserWorkspace() {
     }
 
     if (activeTab === "config") {
-      return (user.user_configurations ?? []).map((config) => ({
+      const configs = user.user_configurations ?? [];
+      const mockConfigs = [
+        {
+          id: "mock-config-1",
+          name: "Chiang Mai AM Peak",
+          date: new Date().toISOString(),
+          imageUrl: "",
+        },
+        {
+          id: "mock-config-2",
+          name: "Old Town Midday",
+          date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+          imageUrl: "",
+        },
+        {
+          id: "mock-config-3",
+          name: "Airport Corridor",
+          date: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+          imageUrl: "",
+        },
+      ];
+
+      if (configs.length === 0) {
+        return mockConfigs;
+      }
+
+      return configs.map((config) => ({
         id: config.user_configuration_id,
         name: config.name,
         date: config.modify_date,
@@ -74,57 +86,20 @@ export default function UserWorkspace() {
   };
 
   useEffect(() => {
+    console.log("🔵 useEffect triggered - user:", user);
+
     // If user is already in AuthContext, no need to verify again
     if (user) {
+      console.log("✓ User already in AuthContext, skipping login");
       setLoading(false);
       return;
     }
 
-    // Otherwise, verify user with backend
-    const loginUser = async () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        const storedToken = localStorage.getItem("googleToken");
-
-        if (!storedUser || !storedToken) {
-          setError("No login information found");
-          setLoading(false);
-          return;
-        }
-
-        const googleUser: GoogleUserInfo = JSON.parse(storedUser);
-
-        // Prepare user data to send to backend
-        const userData: User = {
-          google_id: googleUser.sub || "",
-          name: googleUser.name || "",
-          email: googleUser.email || "",
-          picture_url: googleUser.picture || "",
-          access_token: storedToken,
-          refresh_token: "",
-          token_expires_at: new Date(
-            (googleUser.exp || 0) * 1000,
-          ).toISOString(),
-          last_login: new Date().toISOString(),
-          created_at: new Date((googleUser.iat || 0) * 1000).toISOString(),
-        };
-
-        // POST to backend and get user data back
-        const verifiedUser = await userLoginAPI(userData);
-        console.log("User verified:", verifiedUser);
-
-        // Save user data to auth context
-        authLogin(verifiedUser);
-        setLoading(false);
-      } catch (err) {
-        console.error("Login failed:", err);
-        setError("Failed to verify login");
-        setLoading(false);
-      }
-    };
-
-    loginUser();
-  }, [user, authLogin]);
+    // If no user, redirect to login
+    console.log("❌ No user in context, redirecting to home...");
+    setError("User not authenticated");
+    setLoading(false);
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -204,7 +179,9 @@ export default function UserWorkspace() {
           <div className="workspace-header">
             <div className="workspace-title">
               <span className="workspace-title-bar" />
-              <h2>{activeTab === "config" ? "Configuration Data" : "My Project"}</h2>
+              <h2>
+                {activeTab === "config" ? "Configuration Data" : "My Project"}
+              </h2>
             </div>
             <div className="workspace-filters">
               <button className="workspace-filter">

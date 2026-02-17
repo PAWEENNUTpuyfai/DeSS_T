@@ -2,7 +2,7 @@ package model_database
 
 import (
 	"database/sql/driver"
-	"fmt"
+	"encoding/json"
 	"time"
 )
 
@@ -17,37 +17,37 @@ type GeoLineString struct {
 	Coordinates [][2]float64 `json:"coordinates"`
 }
 
-// Value implements driver.Valuer for GORM (converts to WKT for PostGIS)
+// Value implements driver.Valuer for GORM (stores as JSONB)
 func (g GeoPoint) Value() (driver.Value, error) {
-	return fmt.Sprintf("SRID=4326;POINT(%f %f)", g.Coordinates[0], g.Coordinates[1]), nil
+	return json.Marshal(g)
 }
 
-// Scan implements sql.Scanner for GORM (converts from PostGIS to GeoPoint)
+// Scan implements sql.Scanner for GORM (loads from JSON/JSONB)
 func (g *GeoPoint) Scan(value interface{}) error {
-	// For now, just store the raw geometry - full parsing can be added later
-	return nil
+	return scanJSON(value, g)
 }
 
-// Value implements driver.Valuer for GORM (converts to WKT for PostGIS)
+// Value implements driver.Valuer for GORM (stores as JSONB)
 func (g GeoLineString) Value() (driver.Value, error) {
-	if len(g.Coordinates) == 0 {
-		return "SRID=4326;LINESTRING EMPTY", nil
-	}
-	wkt := "SRID=4326;LINESTRING("
-	for i, coord := range g.Coordinates {
-		if i > 0 {
-			wkt += ","
-		}
-		wkt += fmt.Sprintf("%f %f", coord[0], coord[1])
-	}
-	wkt += ")"
-	return wkt, nil
+	return json.Marshal(g)
 }
 
-// Scan implements sql.Scanner for GORM
+// Scan implements sql.Scanner for GORM (loads from JSON/JSONB)
 func (g *GeoLineString) Scan(value interface{}) error {
-	// For now, just store the raw geometry - full parsing can be added later
-	return nil
+	return scanJSON(value, g)
+}
+
+func scanJSON(value interface{}, dest interface{}) error {
+	switch v := value.(type) {
+	case nil:
+		return nil
+	case []byte:
+		return json.Unmarshal(v, dest)
+	case string:
+		return json.Unmarshal([]byte(v), dest)
+	default:
+		return nil
+	}
 }
 
 // ------------------- USER --------------------
@@ -62,10 +62,10 @@ type User struct {
 	LastLogin    time.Time `json:"last_login"`
 	CreatedAt    time.Time `json:"created_at"`
 
-	PublicScenarios      []PublicScenario      `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
-	UserScenarios        []UserScenario        `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
-	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
-	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	PublicScenarios      []PublicScenario      `gorm:"foreignKey:CreateBy;references:GoogleID"`
+	UserScenarios        []UserScenario        `gorm:"foreignKey:CreateBy;references:GoogleID"`
+	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:CreateBy;references:GoogleID"`
+	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:CreateBy;references:GoogleID"`
 }
 
 // ------------------- COVER IMAGE --------------------
@@ -89,11 +89,13 @@ type PublicScenario struct {
 	CreateBy         string    `json:"create_by" gorm:"column:create_by"`
 	PublishBy        string    `json:"publish_by" gorm:"column:publish_by"`
 	OriginFrom       string    `json:"origin_from" gorm:"column:origin_from"`
-	CoverImgID       string    `json:"cover_img" gorm:"column:cover_img"`
+	CoverImgID       *string   `json:"cover_img" gorm:"column:cover_img"`
 	ScenarioDetailID string    `json:"scenario_detail" gorm:"column:scenario_detail"`
 
-	CoverImage     CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
-	ScenarioDetail ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID"`
+	CoverImage     *CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
+	ScenarioDetail ScenarioDetail     `gorm:"foreignKey:ScenarioDetailID"`
+	CreateByUser   User               `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	PublishByUser  User               `gorm:"foreignKey:PublishBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- USER SCENARIO --------------------
@@ -102,11 +104,12 @@ type UserScenario struct {
 	Name             string    `json:"name"`
 	ModifyDate       time.Time `json:"modify_date"`
 	CreateBy         string    `json:"create_by" gorm:"column:create_by"`
-	CoverImgID       string    `json:"cover_img" gorm:"column:cover_img"`
+	CoverImgID       *string   `json:"cover_img" gorm:"column:cover_img"`
 	ScenarioDetailID string    `json:"scenario_detail" gorm:"column:scenario_detail"`
 
-	CoverImage     CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
-	ScenarioDetail ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID"`
+	CoverImage     *CoverImageProject `gorm:"foreignKey:CoverImgID;references:CoverImageProID;constraint:OnDelete:CASCADE;"`
+	ScenarioDetail ScenarioDetail     `gorm:"foreignKey:ScenarioDetailID"`
+	CreateByUser   User               `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- SCENARIO DETAIL --------------------
@@ -147,7 +150,8 @@ type BusInformation struct {
 	BusScenarioID    string  `json:"bus_scenario"`
 	RoutePathID      string  `json:"route_path"`
 
-	RoutePath *RoutePath `gorm:"constraint:OnDelete:CASCADE"`
+	RoutePath   *RoutePath   `gorm:"constraint:OnDelete:CASCADE"`
+	BusScenario *BusScenario `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ROUTE SCENARIO --------------------
@@ -157,11 +161,13 @@ type RouteScenario struct {
 
 // ------------------- ROUTE PATH --------------------
 type RoutePath struct {
-	RoutePathID     string `gorm:"primaryKey" json:"route_path_id"`
-	Name            string `json:"name"`
-	Color           string `json:"color"`
-	RouteScenarioID string `json:"route_scenario"`
-	Route           string `json:"route" gorm:"type:geometry(LINESTRING,4326)"`
+	RoutePathID     string        `gorm:"primaryKey" json:"route_path_id"`
+	Name            string        `json:"name"`
+	Color           string        `json:"color"`
+	RouteScenarioID string        `json:"route_scenario"`
+	Route           GeoLineString `json:"route" gorm:"type:jsonb"`
+
+	RouteScenario RouteScenario `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- ORDER --------------------
@@ -181,10 +187,12 @@ type UserConfiguration struct {
 	Name                  string    `json:"name"`
 	ModifyDate            time.Time `json:"modify_date"`
 	CreateBy              string    `json:"create_by" gorm:"column:create_by"`
-	CoverImgID            string    `json:"cover_img" gorm:"column:cover_img"`
+	CoverImgID            *string   `json:"cover_img" gorm:"column:cover_img"`
 	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail"`
 
-	CoverImage CoverImageConf `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	CoverImage          *CoverImageConf     `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+	CreateByUser        User                `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- PUBLIC CONFIGURATION --------------------
@@ -194,13 +202,16 @@ type PublicConfiguration struct {
 	Description           string    `json:"description"`
 	ModifyDate            time.Time `json:"modify_date"`
 	PublishDate           time.Time `json:"publish_date"`
-	CoverImgID            string    `json:"cover_img" gorm:"column:cover_img"`
+	CoverImgID            *string   `json:"cover_img" gorm:"column:cover_img"`
 	CreateBy              string    `json:"create_by" gorm:"column:create_by"`
 	PublishBy             string    `json:"publish_by" gorm:"column:publish_by"`
 	OriginFrom            string    `json:"origin_from" gorm:"column:origin_from"`
 	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail"`
 
-	CoverImage CoverImageConf `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	CoverImage          *CoverImageConf     `gorm:"foreignKey:CoverImgID;references:CoverImageConfID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+	CreateByUser        User                `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
+	PublishByUser       User                `gorm:"foreignKey:PublishBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- CONFIGURATION DETAIL --------------------
@@ -208,7 +219,11 @@ type ConfigurationDetail struct {
 	ConfigurationDetailID string `gorm:"primaryKey" json:"configuration_detail_id"`
 	NetworkModelID        string `json:"network_model" gorm:"column:network_model"`
 
-	NetworkModel NetworkModel `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;"`
+	NetworkModel         *NetworkModel         `gorm:"foreignKey:NetworkModelID;references:NetworkModelID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;"`
+	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`
+	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`
+	AlightingData        []AlightingData       `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`
+	InterArrivalData     []InterArrivalData    `gorm:"foreignKey:ConfigurationDetailID;references:ConfigurationDetailID"`
 }
 
 // ------------------- ALIGHTING DATA --------------------
@@ -220,7 +235,8 @@ type AlightingData struct {
 	ArgumentList          string `json:"argument_list" gorm:"column:argument_list"`
 	StationID             string `json:"station_id" gorm:"column:station_id"`
 
-	StationDetail StationDetail `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	StationDetail       StationDetail       `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- INTER ARRIVAL DATA --------------------
@@ -232,7 +248,8 @@ type InterArrivalData struct {
 	ArgumentList          string `json:"argument_list" gorm:"column:argument_list"`
 	StationID             string `json:"station_id" gorm:"column:station_id"`
 
-	StationDetail StationDetail `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	StationDetail       StationDetail       `gorm:"foreignKey:StationID;references:StationDetailID;constraint:OnDelete:CASCADE;"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
 }
 
 // ------------------- NETWORK MODEL --------------------
@@ -247,7 +264,7 @@ type StationDetail struct {
 	StationID       string   `json:"StationID" gorm:"-"` // API field (maps to StationDetailID)
 	Name            string   `json:"name"`
 	StationName     string   `json:"StationName" gorm:"-"` // API field (maps to Name)
-	Location        GeoPoint `json:"Location" gorm:"type:geometry(POINT,4326);column:location"`
+	Location        GeoPoint `json:"Location" gorm:"type:jsonb;column:location"`
 	Lat             float64  `json:"lat"`
 	Lon             float64  `json:"lon"`
 	StationIDOSM    string   `json:"station_id_osm"`
@@ -258,12 +275,13 @@ type StationPair struct {
 	StationPairID  string `gorm:"primaryKey" json:"StationPairID"`
 	FstStationID   string `json:"FstStation" gorm:"column:fst_station"`
 	SndStationID   string `json:"SndStation" gorm:"column:snd_station"`
-	RouteBetweenID string `json:"route_between_id" gorm:"column:route_between"`
+	RouteBetweenID string `json:"route_between_id" gorm:"column:route_between_id"`
 	NetworkModelID string `json:"network_model_id" gorm:"column:network_model"`
 
 	FstStation   StationDetail `gorm:"foreignKey:FstStationID;constraint:OnDelete:CASCADE;" json:"-"`
 	SndStation   StationDetail `gorm:"foreignKey:SndStationID;constraint:OnDelete:CASCADE;" json:"-"`
-	RouteBetween RouteBetween  `gorm:"foreignKey:RouteBetweenID;constraint:OnDelete:CASCADE;" json:"RouteBetween"`
+	RouteBetween RouteBetween  `gorm:"belongsTo;foreignKey:RouteBetweenID;references:RouteBetweenID;constraint:OnDelete:CASCADE;" json:"RouteBetween"`
+	NetworkModel NetworkModel  `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"network_model,omitempty"`
 }
 
 // ------------------- ROUTE BETWEEN --------------------

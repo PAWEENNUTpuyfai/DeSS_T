@@ -296,6 +296,7 @@ export default function ConfigurationMap({
       <Nav
         usermode={usermode}
         inpage="Configuration"
+        configurationName={configurationName}
         onBackClick={onBackClick}
       />
       <main>

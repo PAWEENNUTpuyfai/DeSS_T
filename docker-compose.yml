@@ -21,6 +21,9 @@ services:
         condition: service_started
     environment:
       DB_HOST: postgres
+      UPLOAD_DIR: /uploads
+    volumes:
+      - ./data/uploads:/uploads
 
   backend-python:
     image: paweennutpuyfai/dess-t-python:6.0

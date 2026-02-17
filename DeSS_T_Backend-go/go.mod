@@ -2,8 +2,6 @@ module DeSS_T_Backend-go
 
 go 1.24.0
 
-toolchain go1.24.10
-
 require (
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/joho/godotenv v1.5.1

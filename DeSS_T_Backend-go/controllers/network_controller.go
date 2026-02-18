@@ -3,14 +3,65 @@ package controllers
 import (
 	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
+
+type AreaCacheData struct {
+	AreaCode string `json:"area_code"`
+	AreaName string `json:"area_name"`
+	Bounds   struct {
+		MinLat float64 `json:"minLat"`
+		MaxLat float64 `json:"maxLat"`
+		MinLon float64 `json:"minLon"`
+		MaxLon float64 `json:"maxLon"`
+	} `json:"bounds"`
+	Stations []map[string]interface{} `json:"stations"`
+}
+
+// GetAreaCache อ่านข้อมูล area จากไฟล์ JSON
+func GetAreaCache(c *fiber.Ctx) error {
+	areaCode := c.Params("code")
+	if areaCode == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "area code required"})
+	}
+
+	// ตัวอย่าง: 189632187 เท่านั้น
+	if areaCode != "189632187" {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "area code not found in cache"})
+	}
+
+	// อ่านจากไฟล์ JSON
+	dataPath := filepath.Join("data", fmt.Sprintf("area_cache_%s.json", areaCode))
+	data, err := os.ReadFile(dataPath)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to read cache file"})
+	}
+
+	var cacheData AreaCacheData
+	if err := json.Unmarshal(data, &cacheData); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to parse cache file"})
+	}
+
+	// ส่งกลับในรูปแบบ frontend ต้องการ
+	return c.JSON(fiber.Map{
+		"bounds": fiber.Map{
+			"minLat": cacheData.Bounds.MinLat,
+			"maxLat": cacheData.Bounds.MaxLat,
+			"minLon": cacheData.Bounds.MinLon,
+			"maxLon": cacheData.Bounds.MaxLon,
+		},
+		"stations":   cacheData.Stations,
+		"from_cache": true,
+	})
+}
 
 type BuildNetworkRequest struct {
 	Stations    []map[string]interface{} `json:"stations"`

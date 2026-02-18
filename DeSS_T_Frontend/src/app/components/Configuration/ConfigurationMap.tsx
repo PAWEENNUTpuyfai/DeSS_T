@@ -183,33 +183,57 @@ export default function ConfigurationMap({
 
       try {
         const mapApi = await import("../../../utility/api/mapApi");
-        const bb = await mapApi.fetchAreaBounds(areaCode);
-        const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
 
-        const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-          station_detail_id: String(stop.id),
-          name: String(
-            typeof stop.tags?.name === "string"
-              ? stop.tags.name
-              : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
-          ),
-          location: {
-            type: "Point",
-            coordinates: [stop.lon, stop.lat],
-          },
-          lat: stop.lat,
-          lon: stop.lon,
-          station_id_osm: String(stop.id),
-        }));
+        // Use cached data for area 189632187
+        if (areaCode === "189632187") {
+          const cacheData = await mapApi.fetchAreaCache(areaCode);
+          const stationDetails: StationDetail[] = cacheData.stations.map((stop) => ({
+            station_detail_id: String(stop.id),
+            name: String(
+              typeof stop.tags?.name === "string"
+                ? stop.tags.name
+                : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
+            ),
+            location: {
+              type: "Point",
+              coordinates: [stop.lon, stop.lat],
+            },
+            lat: stop.lat,
+            lon: stop.lon,
+            station_id_osm: String(stop.id),
+          }));
 
-        setMapBounds({
-          minLat: bb.minlat,
-          maxLat: bb.maxlat,
-          minLon: bb.minlon,
-          maxLon: bb.maxlon,
-        });
-        setStationDetails(stationDetails);
-        // alert(`พบสถานีทั้งหมด ${stationDetails.length} แห่ง`);
+          setMapBounds(cacheData.bounds);
+          setStationDetails(stationDetails);
+        } else {
+          // Use API for other area codes
+          const bb = await mapApi.fetchAreaBounds(areaCode);
+          const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
+
+          const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
+            station_detail_id: String(stop.id),
+            name: String(
+              typeof stop.tags?.name === "string"
+                ? stop.tags.name
+                : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
+            ),
+            location: {
+              type: "Point",
+              coordinates: [stop.lon, stop.lat],
+            },
+            lat: stop.lat,
+            lon: stop.lon,
+            station_id_osm: String(stop.id),
+          }));
+
+          setMapBounds({
+            minLat: bb.minlat,
+            maxLat: bb.maxlat,
+            minLon: bb.minlon,
+            maxLon: bb.maxlon,
+          });
+          setStationDetails(stationDetails);
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         alert(msg ?? "โหลด area code ไม่สำเร็จ");

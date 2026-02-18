@@ -16,6 +16,28 @@ export type OverpassNode = {
   tags?: OverpassTags;
 };
 
+// ดึงข้อมูล area จากไฟล์ JSON บน backend (เร็วมาก)
+export async function fetchAreaCache(
+  areaCode: string,
+): Promise<{
+  bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
+  stations: OverpassNode[];
+  from_cache: boolean;
+}> {
+  const res = await fetch(`${API_BASE_URL}/area-cache/${areaCode}`);
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Area cache not found: ${error}`);
+  }
+
+  return (await res.json()) as {
+    bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
+    stations: OverpassNode[];
+    from_cache: boolean;
+  };
+}
+
 export async function fetchAreaBounds(areaCode: string): Promise<OverpassBounds> {
   const res = await fetch(`${API_BASE_URL}/network/area-bounds`, {
     method: "POST",

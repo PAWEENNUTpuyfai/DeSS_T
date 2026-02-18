@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 import Nav from "../components/NavBar";
 import CustomDropdown from "../components/CustomDropdown";
-import type { User } from "../models/User";
 import "../../style/Workspace.css";
 
 export default function UserWorkspace() {
@@ -364,7 +363,7 @@ export default function UserWorkspace() {
               value={configName}
               onChange={(e) => setConfigName(e.target.value)}
               placeholder="Configuration name"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-6 focus:outline-none focus:border-purple-500"
+              className="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 mb-6 focus:outline-none focus:border-purple-500"
               autoFocus
             />
             <div className="flex gap-3 justify-end">
@@ -410,7 +409,7 @@ export default function UserWorkspace() {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="Project name"
-                className="workspace-modal-input"
+                className="workspace-modal-input bg-white"
                 autoFocus
               />
             </div>

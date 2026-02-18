@@ -341,7 +341,7 @@ export default function ConfigurationFiles({
           }
         } else {
           network = {
-            network_model_id: "guest_network",
+            network_model_id: "",
             StationPair: [],
           };
         }
@@ -499,7 +499,11 @@ export default function ConfigurationFiles({
       <LoadingModal
         isOpen={loadingA || loadingI || isSubmitting}
         message={
-          isSubmitting ? "Applying configuration..." : "Processing files..."
+          isSubmitting
+            ? usermode === "user"
+              ? "Saving configuration..."
+              : "Applying configuration..."
+            : "Processing files..."
         }
       />
       <Nav
@@ -708,7 +712,9 @@ export default function ConfigurationFiles({
                   className="btn_primary ml-3"
                 >
                   {isSubmitting || loadingA || loadingI
-                    ? "Applying..."
+                    ? usermode === "user"
+                      ? "Saving..."
+                      : "Applying..."
                     : usermode === "user"
                       ? "Save"
                       : "Apply"}

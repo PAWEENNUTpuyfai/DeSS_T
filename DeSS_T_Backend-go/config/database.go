@@ -14,6 +14,99 @@ import (
 )
 
 var DB *gorm.DB
+
+func ConnectDatabase() {
+	// โหลด .env
+	if err := godotenv.Load(); err != nil {
+		log.Println("⚠️  .env not found, using system env")
+	}
+
+	host := os.Getenv("DB_HOST")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+	port := os.Getenv("DB_PORT")
+	schema := os.Getenv("DB_SCHEMA")
+
+	if schema == "" {
+		schema = "public"
+	}
+
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=%s",
+		host, user, password, dbname, port, schema,
+	)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("❌ Failed to connect database:", err)
+	}
+
+	// ============================
+	// ✅ Create Schema (ถ้ายังไม่มี)
+	// ============================
+	if err := db.Exec(fmt.Sprintf(
+		`CREATE SCHEMA IF NOT EXISTS %s`, schema,
+	)).Error; err != nil {
+		log.Fatalf("❌ Failed to create schema: %v", err)
+	}
+
+	// ============================
+	// ✅ Enable PostGIS (ถ้ายังไม่มี)
+	// ============================
+	if err := db.Exec(
+		`CREATE EXTENSION IF NOT EXISTS postgis`,
+	).Error; err != nil {
+		log.Fatal("❌ Failed to enable PostGIS:", err)
+	}
+
+	// ============================
+	// ✅ AutoMigrate (ปลอดภัยอยู่แล้ว)
+	// ============================
+	if err := db.AutoMigrate(
+		&model_database.User{},
+		&model_database.CoverImageProject{},
+		&model_database.CoverImageConf{},
+		&model_database.NetworkModel{},
+		&model_database.RouteBetween{},
+		&model_database.StationDetail{},
+		&model_database.BusScenario{},
+		&model_database.RouteScenario{},
+		&model_database.ConfigurationDetail{},
+		&model_database.RoutePath{},
+		&model_database.StationPair{},
+		&model_database.ScheduleData{},
+		&model_database.BusInformation{},
+		&model_database.ScenarioDetail{},
+		&model_database.Order{},
+		&model_database.AlightingData{},
+		&model_database.InterArrivalData{},
+		&model_database.UserConfiguration{},
+		&model_database.PublicConfiguration{},
+		&model_database.UserScenario{},
+		&model_database.PublicScenario{},
+	); err != nil {
+		log.Fatal("❌ AutoMigrate failed:", err)
+	}
+
+	DB = db
+	fmt.Println("✅ Migration complete")
+}
+
+func DropDatabase(db *gorm.DB, schema string) error {
+    log.Println("⚠️  Dropping schema...")
+
+    if err := db.Exec(fmt.Sprintf(`
+        DROP SCHEMA IF EXISTS %s CASCADE;
+        CREATE SCHEMA %s;
+    `, schema, schema)).Error; err != nil {
+        return err
+    }
+
+    log.Println("✅ Schema recreated successfully")
+    return nil
+}
+
 // func ConnectDatabase() (*gorm.DB, error) {
 // 	err := godotenv.Load()
 // 	if err != nil {
@@ -188,119 +281,3 @@ var DB *gorm.DB
 // 	log.Println("✅ PostGIS enabled")
 // 	return nil
 // }
-func ConnectDatabase() {
-	// โหลดไฟล์ .env
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("⚠️  Warning: .env file not found, using system environment variables")
-	}
-
-	// ดึงค่าจาก .env
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
-	schema := os.Getenv("DB_SCHEMA")
-	if schema == "" {
-		schema = "public"
-	}
-
-	// สร้าง DSN string
-	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=%s",
-		host, user, password, dbname, port, schema,
-	)
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal("❌ Failed to connect database:", err)
-	}
-
-	// ✅ เปิด PostGIS (ถ้ายังไม่มี)
-	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS postgis;`).Error; err != nil {
-		log.Fatal("❌ Failed to enable PostGIS:", err)
-	}
-
-	// Drop tables if DB_DROP_ON_START is set to "true"
-	dropOnStart := os.Getenv("DB_DROP_ON_START")
-	// DROP ก่อน
-	if dropOnStart == "true" {
-		if err := DropDatabase(db, schema); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// 🔥 สร้าง extension หลัง schema ใหม่
-	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS postgis;`).Error; err != nil {
-		log.Fatal("❌ Failed to enable PostGIS:", err)
-	}
-
-	// 🔥 AutoMigrate เรียงถูกลำดับ
-	if err := db.AutoMigrate(
-		// =========================
-		// 🔹 ROOT (ไม่มี FK ไปใคร)
-		// =========================
-		&model_database.User{},
-		&model_database.CoverImageProject{},
-		&model_database.CoverImageConf{},
-		&model_database.NetworkModel{},
-		&model_database.RouteBetween{},
-		&model_database.StationDetail{},
-		&model_database.BusScenario{},
-		&model_database.RouteScenario{},
-
-		// =========================
-		// 🔹 LEVEL 2
-		// =========================
-		&model_database.ConfigurationDetail{},   // -> NetworkModel
-		&model_database.RoutePath{},             // -> RouteScenario
-
-		// =========================
-		// 🔹 LEVEL 3
-		// =========================
-		&model_database.StationPair{},           // -> StationDetail, RouteBetween, NetworkModel
-		&model_database.ScheduleData{},          // -> BusScenario, RoutePath
-		&model_database.BusInformation{},        // -> BusScenario, RoutePath
-
-		// =========================
-		// 🔹 LEVEL 4
-		// =========================
-		&model_database.ScenarioDetail{},        // -> BusScenario, RouteScenario, ConfigurationDetail
-
-		// =========================
-		// 🔹 LEVEL 5 (Leaf Data)
-		// =========================
-		&model_database.Order{},                 // -> RoutePath, StationPair
-		&model_database.AlightingData{},         // -> ConfigurationDetail, StationDetail
-		&model_database.InterArrivalData{},      // -> ConfigurationDetail, StationDetail
-
-		// =========================
-		// 🔹 LEVEL 6 (Top Layer Objects)
-		// =========================
-		&model_database.UserConfiguration{},     // -> User, CoverImageConf, ConfigurationDetail
-		&model_database.PublicConfiguration{},   // -> User, CoverImageConf, ConfigurationDetail
-		&model_database.UserScenario{},          // -> User, CoverImageProject, ScenarioDetail
-		&model_database.PublicScenario{},        // -> User, CoverImageProject, ScenarioDetail
-
-	); err != nil {
-		log.Fatal("❌ AutoMigrate failed:", err)
-	}
-
-	DB = db
-	fmt.Println("✅ Migration complete")
-}
-func DropDatabase(db *gorm.DB, schema string) error {
-    log.Println("⚠️  Dropping schema...")
-
-    if err := db.Exec(fmt.Sprintf(`
-        DROP SCHEMA IF EXISTS %s CASCADE;
-        CREATE SCHEMA %s;
-    `, schema, schema)).Error; err != nil {
-        return err
-    }
-
-    log.Println("✅ Schema recreated successfully")
-    return nil
-}
-

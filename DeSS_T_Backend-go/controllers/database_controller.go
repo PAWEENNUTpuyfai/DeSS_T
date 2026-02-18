@@ -1,18 +1,10 @@
 package controllers
 
 import (
-	"DeSS_T_Backend-go/config"
-	"DeSS_T_Backend-go/model_database"
 	"DeSS_T_Backend-go/models"
-	"errors"
-	// "fmt"
-	// "os"
-	// "path/filepath"
-	"time"
+	"DeSS_T_Backend-go/services"
 
 	"github.com/gofiber/fiber/v2"
-	// "github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 func CreateGoogleUser(c *fiber.Ctx) error {
@@ -21,136 +13,40 @@ func CreateGoogleUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
 
-	// Check if user exists by GoogleID
-	var existingUser model_database.User
-	result := config.DB.First(&existingUser, "google_id = ?", userInput.GoogleID)
-	if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return c.Status(500).JSON(fiber.Map{"error": "failed to query user", "detail": result.Error.Error()})
-	}
-
-	if result.Error == nil {
-		// User exists - update token and check for changes in Name, Email, Picture
-		updateData := map[string]interface{}{
-			"access_token":  userInput.AccessToken,
-			"refresh_token": userInput.RefreshToken,
-			"token_expires": parseStringToTime(userInput.TokenExpires),
-			"last_login":    parseStringToTime(userInput.LastLogin),
-		}
-
-		// Check and update Name, Email, Picture if they changed
-		if existingUser.Name != userInput.Name {
-			updateData["name"] = userInput.Name
-		}
-		if existingUser.Email != userInput.Email {
-			updateData["email"] = userInput.Email
-		}
-		if existingUser.Picture != userInput.Picture {
-			updateData["picture"] = userInput.Picture
-		}
-
-		config.DB.Model(&existingUser).Updates(updateData)
-		return c.JSON(existingUser)
-	}
-
-	// User doesn't exist - create new user
-	newUser := model_database.User{
-		GoogleID:     userInput.GoogleID,
-		Name:         userInput.Name,
-		Email:        userInput.Email,
-		Picture:      userInput.Picture,
-		AccessToken:  userInput.AccessToken,
-		RefreshToken: userInput.RefreshToken,
-		TokenExpires: parseStringToTime(userInput.TokenExpires),
-		LastLogin:    parseStringToTime(userInput.LastLogin),
-		CreatedAt:    parseStringToTime(userInput.CreatedAt),
-	}
-
-	if err := config.DB.Create(&newUser).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "failed to create user", "detail": err.Error()})
-	}
-	return c.JSON(newUser)
-}
-
-// Helper function to parse string to time
-func parseStringToTime(dateStr string) time.Time {
-	if dateStr == "" {
-		return time.Now()
-	}
-	parsedTime, err := time.Parse(time.RFC3339, dateStr)
+	user, err := services.CreateOrUpdateGoogleUser(userInput)
 	if err != nil {
-		return time.Now()
+		return c.Status(500).JSON(fiber.Map{"error": "failed to save user", "detail": err.Error()})
 	}
-	return parsedTime
+	return c.JSON(user)
 }
 
 func GetGoogleUsers(c *fiber.Ctx) error {
-	var users []model_database.User
-	config.DB.Find(&users)
+	users, err := services.GetGoogleUsers()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to fetch users", "detail": err.Error()})
+	}
 	return c.JSON(users)
 }
 
-// // UploadConfigurationCoverImg อัปโหลดรูปปกสำหรับการกำหนดค่า และเก็บลงฐานข้อมูล
-// func UploadConfigurationCoverImg(c *fiber.Ctx) error {
-// 	uploadDir := os.Getenv("UPLOAD_DIR")
-// 	if uploadDir == "" {
-// 		uploadDir = "./uploads"
-// 	}
-// 	resolvedUploadDir, err := filepath.Abs(uploadDir)
-// 	if err != nil {
-// 		return c.Status(500).JSON(fiber.Map{"error": "cannot resolve upload dir", "detail": err.Error()})
-// 	}
+// UploadConfigurationCoverImg อัปโหลดรูปปกสำหรับการกำหนดค่า และเก็บลงฐานข้อมูล
+func UploadConfigurationCoverImg(c *fiber.Ctx) error {
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "file missing"})
+	}
 
-// 	if err := os.MkdirAll(resolvedUploadDir, 0o755); err != nil {
-// 		return c.Status(500).JSON(fiber.Map{"error": "cannot create upload dir", "detail": err.Error()})
-// 	}
+	response, err := services.SaveConfigurationCoverImage(
+		fileHeader,
+		c.Protocol(),
+		c.Hostname(),
+		c.SaveFile,
+	)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to upload cover image", "detail": err.Error()})
+	}
 
-// 	f, err := c.FormFile("file")
-// 	if err != nil {
-// 		return c.Status(400).JSON(fiber.Map{"error": "file missing"})
-// 	}
-
-// 	baseName := filepath.Base(f.Filename)
-// 	ext := filepath.Ext(baseName)
-// 	if ext == "" {
-// 		ext = ".bin"
-// 	}
-
-// 	fileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-// 	savePath := filepath.Join(resolvedUploadDir, fileName)
-
-// 	if err := c.SaveFile(f, savePath); err != nil {
-// 		return c.Status(500).JSON(fiber.Map{"error": "cannot save file", "detail": err.Error()})
-// 	}
-
-// 	// Generate cover image ID
-// 	coverImageID := uuid.New().String()
-
-// 	// Save to database
-// 	coverImage := model_database.CoverImageConf{
-// 		CoverImageConfID: coverImageID,
-// 		PathFile:         fileName,
-// 	}
-
-// 	if err := config.DB.Create(&coverImage).Error; err != nil {
-// 		// Delete uploaded file if database insert fails
-// 		os.Remove(savePath)
-// 		return c.Status(500).JSON(fiber.Map{"error": "failed to save to database", "detail": err.Error()})
-// 	}
-
-// 	// Build public URL
-// 	scheme := "http"
-// 	if c.Protocol() == "https" {
-// 		scheme = "https"
-// 	}
-// 	baseURL := fmt.Sprintf("%s://%s", scheme, c.Hostname())
-// 	fileURL := fmt.Sprintf("%s/uploads/%s", baseURL, fileName)
-
-// 	return c.Status(201).JSON(fiber.Map{
-// 		"cover_image_id": coverImageID,
-// 		"path_file":      fileName,
-// 		"url":            fileURL,
-// 	})
-// }
+	return c.Status(201).JSON(response)
+}
 
 // func GetUserConfigurations(c *fiber.Ctx) error {
 // 	userID := c.Params("user_id")

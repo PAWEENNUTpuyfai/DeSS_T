@@ -8,6 +8,7 @@ import GuestSetup from "./pages/GuestSetup";
 import GuestDecision from "./components/GuestDecision";
 import Outputpage from "./pages/Outputpage";
 import UserWorkspace from "./pages/UserWorkspace";
+import WorkspaceCommunity from "./pages/WorkspaceCommunity";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -23,6 +24,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <UserWorkspace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/user/workspace/community"
+              element={
+                <ProtectedRoute>
+                  <WorkspaceCommunity />
                 </ProtectedRoute>
               }
             />

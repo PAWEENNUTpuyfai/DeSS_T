@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from "react-router-dom";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
-import Nav from "../components/NavBar";
+import UserNavBar from "../components/UserNavBar";
 import CustomDropdown from "../components/CustomDropdown";
 import "../../style/Workspace.css";
 
@@ -25,6 +25,12 @@ export default function UserWorkspace() {
   const [selectedConfigName, setSelectedConfigName] = useState(
     "Select configuration",
   );
+
+  // Filter states
+  const [fileFilter, setFileFilter] = useState("All Files");
+  const [sortFilter, setSortFilter] = useState("Date Asc");
+  const fileFilterOptions = ["All Files", "Public", "Private"];
+  const sortFilterOptions = ["Date Asc", "Date Desc", "Name"];
 
   const configOptions = useMemo(() => {
     if (!user) {
@@ -200,8 +206,7 @@ export default function UserWorkspace() {
 
   return (
     <div className="workspace-page">
-      <Nav
-        usermode="user"
+      <UserNavBar
         inpage="Workspace"
         userAvatarUrl={user.picture_url}
         userName={user.name}
@@ -247,57 +252,16 @@ export default function UserWorkspace() {
               </h2>
             </div>
             <div className="workspace-filters">
-              <button className="workspace-filter">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M3 5H21M6 12H18M10 19H14"
-                    stroke="#81069E"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                All Files
-                <span className="workspace-filter-caret" />
-              </button>
-              <button className="workspace-filter">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M8 6L4 10L8 14"
-                    stroke="#81069E"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M4 10H16"
-                    stroke="#81069E"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M16 18H20"
-                    stroke="#81069E"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                Date Asc
-                <span className="workspace-filter-caret" />
-              </button>
+              <CustomDropdown
+                options={fileFilterOptions}
+                selectedValue={fileFilter}
+                onChange={setFileFilter}
+              />
+              <CustomDropdown
+                options={sortFilterOptions}
+                selectedValue={sortFilter}
+                onChange={setSortFilter}
+              />
             </div>
           </div>
 

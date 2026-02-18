@@ -75,44 +75,74 @@ export default function ConfigurationMap({
 
       try {
         const mapApi = await import("../../../utility/api/mapApi");
-        const bb = await mapApi.fetchAreaBounds(areaCode);
+        
+        // Use cached data for area 189632187
+        if (areaCode === "189632187") {
+          const cacheData = await mapApi.fetchAreaCache(areaCode);
+          // Convert cache format to OSM API format
+          const busStopsData = cacheData.stations.map((stop) => ({
+            id: Number(stop.station_detail_id),
+            tags: { name: stop.name },
+            lat: stop.lat,
+            lon: stop.lon,
+          }));
 
-        // Fetch bus stops within the administrative area (use area query to avoid extra outside stops)
-        const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
+          const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
+            station_detail_id: String(stop.id),
+            name: String(
+              typeof stop.tags?.name === "string"
+                ? stop.tags.name
+                : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
+            ),
+            location: {
+              type: "Point",
+              coordinates: [stop.lon, stop.lat],
+            },
+            lat: stop.lat,
+            lon: stop.lon,
+          }));
 
-        // Build NetworkGraph with bus stops (StationDetail format)
-        const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-          station_detail_id: String(stop.id),
-          name: String(
-            typeof stop.tags?.name === "string"
-              ? stop.tags.name
-              : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
-          ),
-          location: {
-            type: "Point",
-            coordinates: [stop.lon, stop.lat],
-          },
-          lat: stop.lat,
-          lon: stop.lon,
-          station_id_osm: String(stop.id),
-        }));
+          setMapBounds(cacheData.bounds);
+          setStationDetails(stationDetails);
+          setMapConfirmed(true);
+        } else {
+          // Use API for other area codes
+          const bb = await mapApi.fetchAreaBounds(areaCode);
+          const busStopsData = await mapApi.fetchBusStopsInArea(areaCode);
 
-        setMapBounds({
-          minLat: bb.minlat,
-          maxLat: bb.maxlat,
-          minLon: bb.minlon,
-          maxLon: bb.maxlon,
-        });
+          const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
+            station_detail_id: String(stop.id),
+            name: String(
+              typeof stop.tags?.name === "string"
+                ? stop.tags.name
+                : (stop.tags?.name ?? `Bus Stop ${stop.id}`),
+            ),
+            location: {
+              type: "Point",
+              coordinates: [stop.lon, stop.lat],
+            },
+            lat: stop.lat,
+            lon: stop.lon,
+            station_id_osm: String(stop.id),
+          }));
 
-        // Validate if stations were found
-        if (stationDetails.length === 0) {
-          alert("ไม่พบสถานีรถเมล์ในพื้นที่นี้ กรุณาเลือกพื้นที่อื่น");
-          setLoadingStops(false);
-          return;
+          setMapBounds({
+            minLat: bb.minlat,
+            maxLat: bb.maxlat,
+            minLon: bb.minlon,
+            maxLon: bb.maxlon,
+          });
+
+          // Validate if stations were found
+          if (stationDetails.length === 0) {
+            alert("ไม่พบสถานีรถเมล์ในพื้นที่นี้ กรุณาเลือกพื้นที่อื่น");
+            setLoadingStops(false);
+            return;
+          }
+
+          setStationDetails(stationDetails);
+          setMapConfirmed(true);
         }
-
-        setStationDetails(stationDetails);
-        setMapConfirmed(true);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         alert(msg ?? "โหลด area code ไม่สำเร็จ");
@@ -135,7 +165,7 @@ export default function ConfigurationMap({
       ]);
 
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-        station_detail_id: String(stop.id),
+        station_detail_id: String(stop.id || stop.tags?.name),
         name: String(
           typeof stop.tags?.name === "string"
             ? stop.tags.name
@@ -187,7 +217,15 @@ export default function ConfigurationMap({
         // Use cached data for area 189632187
         if (areaCode === "189632187") {
           const cacheData = await mapApi.fetchAreaCache(areaCode);
-          const stationDetails: StationDetail[] = cacheData.stations.map((stop) => ({
+          // Convert cache format to OSM API format
+          const busStopsData = cacheData.stations.map((stop) => ({
+            id: Number(stop.station_detail_id),
+            tags: { name: stop.name },
+            lat: stop.lat,
+            lon: stop.lon,
+          }));
+
+          const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
             station_detail_id: String(stop.id),
             name: String(
               typeof stop.tags?.name === "string"
@@ -200,7 +238,6 @@ export default function ConfigurationMap({
             },
             lat: stop.lat,
             lon: stop.lon,
-            station_id_osm: String(stop.id),
           }));
 
           setMapBounds(cacheData.bounds);
@@ -252,7 +289,7 @@ export default function ConfigurationMap({
       ]);
 
       const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
-        station_detail_id: String(stop.id),
+        station_detail_id: String(stop.id || stop.tags?.name),
         name: String(
           typeof stop.tags?.name === "string"
             ? stop.tags.name

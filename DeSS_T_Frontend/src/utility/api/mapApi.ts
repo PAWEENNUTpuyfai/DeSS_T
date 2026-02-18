@@ -16,12 +16,20 @@ export type OverpassNode = {
   tags?: OverpassTags;
 };
 
+export type CacheStation = {
+  station_detail_id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  station_id_osm?: string;
+};
+
 // ดึงข้อมูล area จากไฟล์ JSON บน backend (เร็วมาก)
 export async function fetchAreaCache(
   areaCode: string,
 ): Promise<{
   bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
-  stations: OverpassNode[];
+  stations: CacheStation[];
   from_cache: boolean;
 }> {
   const res = await fetch(`${API_BASE_URL}/area-cache/${areaCode}`);
@@ -33,7 +41,7 @@ export async function fetchAreaCache(
 
   return (await res.json()) as {
     bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number };
-    stations: OverpassNode[];
+    stations: CacheStation[];
     from_cache: boolean;
   };
 }

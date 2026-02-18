@@ -47,7 +47,7 @@ func main() {
 
 	// Connect to Postgres (runs AutoMigrate)
 	config.ConnectDatabase()
-
+	// config.InitDatabase() // drops tables on start (for development only)
 	// seed.SeedData() // insert initial data
 
 

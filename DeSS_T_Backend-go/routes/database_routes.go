@@ -24,7 +24,7 @@ func DatabaseRoutes(app *fiber.App) {
 
     //configuration-details
     // api.Get("/configuration-details/:id", controllers.GetConfigurationDetails)
-    api.Post("/upload/configuration-cover-img", controllers.UploadConfigurationCoverImg)
+    // api.Post("/upload/configuration-cover-img", controllers.UploadConfigurationCoverImg)
 
     // // //public-scenarios
     // // api.Get("/public-scenarios/:user_id", controllers.GetPublicScenarios)

@@ -5,13 +5,13 @@ import (
 	"DeSS_T_Backend-go/model_database"
 	"DeSS_T_Backend-go/models"
 	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
+	// "fmt"
+	// "os"
+	// "path/filepath"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
+	// "github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -89,88 +89,88 @@ func GetGoogleUsers(c *fiber.Ctx) error {
 	return c.JSON(users)
 }
 
-// UploadConfigurationCoverImg อัปโหลดรูปปกสำหรับการกำหนดค่า และเก็บลงฐานข้อมูล
-func UploadConfigurationCoverImg(c *fiber.Ctx) error {
-	uploadDir := os.Getenv("UPLOAD_DIR")
-	if uploadDir == "" {
-		uploadDir = "./uploads"
-	}
-	resolvedUploadDir, err := filepath.Abs(uploadDir)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "cannot resolve upload dir", "detail": err.Error()})
-	}
+// // UploadConfigurationCoverImg อัปโหลดรูปปกสำหรับการกำหนดค่า และเก็บลงฐานข้อมูล
+// func UploadConfigurationCoverImg(c *fiber.Ctx) error {
+// 	uploadDir := os.Getenv("UPLOAD_DIR")
+// 	if uploadDir == "" {
+// 		uploadDir = "./uploads"
+// 	}
+// 	resolvedUploadDir, err := filepath.Abs(uploadDir)
+// 	if err != nil {
+// 		return c.Status(500).JSON(fiber.Map{"error": "cannot resolve upload dir", "detail": err.Error()})
+// 	}
 
-	if err := os.MkdirAll(resolvedUploadDir, 0o755); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "cannot create upload dir", "detail": err.Error()})
-	}
+// 	if err := os.MkdirAll(resolvedUploadDir, 0o755); err != nil {
+// 		return c.Status(500).JSON(fiber.Map{"error": "cannot create upload dir", "detail": err.Error()})
+// 	}
 
-	f, err := c.FormFile("file")
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "file missing"})
-	}
+// 	f, err := c.FormFile("file")
+// 	if err != nil {
+// 		return c.Status(400).JSON(fiber.Map{"error": "file missing"})
+// 	}
 
-	baseName := filepath.Base(f.Filename)
-	ext := filepath.Ext(baseName)
-	if ext == "" {
-		ext = ".bin"
-	}
+// 	baseName := filepath.Base(f.Filename)
+// 	ext := filepath.Ext(baseName)
+// 	if ext == "" {
+// 		ext = ".bin"
+// 	}
 
-	fileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-	savePath := filepath.Join(resolvedUploadDir, fileName)
+// 	fileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+// 	savePath := filepath.Join(resolvedUploadDir, fileName)
 
-	if err := c.SaveFile(f, savePath); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "cannot save file", "detail": err.Error()})
-	}
+// 	if err := c.SaveFile(f, savePath); err != nil {
+// 		return c.Status(500).JSON(fiber.Map{"error": "cannot save file", "detail": err.Error()})
+// 	}
 
-	// Generate cover image ID
-	coverImageID := uuid.New().String()
+// 	// Generate cover image ID
+// 	coverImageID := uuid.New().String()
 
-	// Save to database
-	coverImage := model_database.CoverImageConf{
-		CoverImageConfID: coverImageID,
-		PathFile:         fileName,
-	}
+// 	// Save to database
+// 	coverImage := model_database.CoverImageConf{
+// 		CoverImageConfID: coverImageID,
+// 		PathFile:         fileName,
+// 	}
 
-	if err := config.DB.Create(&coverImage).Error; err != nil {
-		// Delete uploaded file if database insert fails
-		os.Remove(savePath)
-		return c.Status(500).JSON(fiber.Map{"error": "failed to save to database", "detail": err.Error()})
-	}
+// 	if err := config.DB.Create(&coverImage).Error; err != nil {
+// 		// Delete uploaded file if database insert fails
+// 		os.Remove(savePath)
+// 		return c.Status(500).JSON(fiber.Map{"error": "failed to save to database", "detail": err.Error()})
+// 	}
 
-	// Build public URL
-	scheme := "http"
-	if c.Protocol() == "https" {
-		scheme = "https"
-	}
-	baseURL := fmt.Sprintf("%s://%s", scheme, c.Hostname())
-	fileURL := fmt.Sprintf("%s/uploads/%s", baseURL, fileName)
+// 	// Build public URL
+// 	scheme := "http"
+// 	if c.Protocol() == "https" {
+// 		scheme = "https"
+// 	}
+// 	baseURL := fmt.Sprintf("%s://%s", scheme, c.Hostname())
+// 	fileURL := fmt.Sprintf("%s/uploads/%s", baseURL, fileName)
 
-	return c.Status(201).JSON(fiber.Map{
-		"cover_image_id": coverImageID,
-		"path_file":      fileName,
-		"url":            fileURL,
-	})
-}
+// 	return c.Status(201).JSON(fiber.Map{
+// 		"cover_image_id": coverImageID,
+// 		"path_file":      fileName,
+// 		"url":            fileURL,
+// 	})
+// }
 
-func GetUserConfigurations(c *fiber.Ctx) error {
-	userID := c.Params("user_id")
-	if userID == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "user_id is required"})
-	}
+// func GetUserConfigurations(c *fiber.Ctx) error {
+// 	userID := c.Params("user_id")
+// 	if userID == "" {
+// 		return c.Status(400).JSON(fiber.Map{"error": "user_id is required"})
+// 	}
 
-	var userConfigurations []model_database.UserConfiguration
-	result := config.DB.
-		Where("create_by = ?", userID).
-		Preload("CoverImage").
-		Preload("ConfigurationDetail").
-		Find(&userConfigurations)
+// 	var userConfigurations []model_database.UserConfiguration
+// 	result := config.DB.
+// 		Where("create_by = ?", userID).
+// 		Preload("CoverImage").
+// 		Preload("ConfigurationDetail").
+// 		Find(&userConfigurations)
 
-	if result.Error != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "failed to fetch user configurations", "detail": result.Error.Error()})
-	}
+// 	if result.Error != nil {
+// 		return c.Status(500).JSON(fiber.Map{"error": "failed to fetch user configurations", "detail": result.Error.Error()})
+// 	}
 
-	return c.JSON(userConfigurations)
-}
+// 	return c.JSON(userConfigurations)
+// }
 
 // // CreateUserConfiguration สร้าง UserConfiguration พร้อม ConfigurationDetail ลงฐานข้อมูล
 // func CreateUserConfiguration(c *fiber.Ctx) error {

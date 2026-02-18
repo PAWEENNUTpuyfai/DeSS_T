@@ -18,3 +18,8 @@
   border: 3px solid #81069e;
   border-radius: 35px;
 }
+.dropdown-divider {
+  height: 1px;
+  background-color: #81069e;
+  margin: 0;
+}

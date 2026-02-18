@@ -1,8 +1,5 @@
 import { API_BASE_URL } from "../config";
-import type {
-  StationDetail,
-  NetworkModel,
-} from "../../app/models/Network";
+import type { StationDetail, NetworkModel } from "../../app/models/Network";
 
 /**
  * Build a NetworkModel from an array of StationDetail using backend API.
@@ -10,7 +7,7 @@ import type {
  */
 export async function buildNetworkModelFromStations(
   stations: StationDetail[],
-  networkName = "guest_network"
+  networkName = "guest_network",
 ): Promise<NetworkModel> {
   if (!stations || stations.length === 0) {
     return { Network_model: networkName, Station_detail: [], StationPair: [] };
@@ -39,26 +36,27 @@ export async function buildNetworkModelFromStations(
     .map((s, idx): StationPayload | null => {
       const lat = toNum(s.lat);
       const lon = toNum(s.lon);
-      const coordSource =
-        (s.Location as { coordinates?: unknown })?.coordinates;
-      const lonFromLoc = Array.isArray(coordSource) ? toNum(coordSource[0]) : undefined;
-      const latFromLoc = Array.isArray(coordSource) ? toNum(coordSource[1]) : undefined;
+      const coordSource = (s.Location as { coordinates?: unknown })
+        ?.coordinates;
+      const lonFromLoc = Array.isArray(coordSource)
+        ? toNum(coordSource[0])
+        : undefined;
+      const latFromLoc = Array.isArray(coordSource)
+        ? toNum(coordSource[1])
+        : undefined;
 
       const finalLat = lat ?? latFromLoc;
       const finalLon = lon ?? lonFromLoc;
       if (finalLat === undefined || finalLon === undefined) return null;
 
-      const rawId =
-        s.station_detail_id ||
-        s.StationID ||
-        s.station_id_osm;
+      const rawId = s.station_detail_id || s.StationID || s.station_id_osm;
 
-      const stationId = rawId || `${finalLat.toFixed(6)},${finalLon.toFixed(6)}` || `station-${idx}`;
-      const stationName =
-        s.name ||
-        s.StationName ||
+      const stationId =
         rawId ||
-        `Station ${idx + 1}`;
+        `${finalLat.toFixed(6)},${finalLon.toFixed(6)}` ||
+        `station-${idx}`;
+      const stationName =
+        s.name || s.StationName || rawId || `Station ${idx + 1}`;
 
       return {
         station_detail_id: String(stationId), // Include this for backend mapping
@@ -88,7 +86,12 @@ export async function buildNetworkModelFromStations(
       signal: controller.signal,
     });
   } catch (err) {
-    if (err && typeof err === "object" && "name" in err && (err as { name?: string }).name === "AbortError") {
+    if (
+      err &&
+      typeof err === "object" &&
+      "name" in err &&
+      (err as { name?: string }).name === "AbortError"
+    ) {
       throw new Error("Network build request timed out. Please try again.");
     }
     throw err;
@@ -98,11 +101,22 @@ export async function buildNetworkModelFromStations(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Backend API error: ${res.status} ${res.statusText} ${text}`);
+    throw new Error(
+      `Backend API error: ${res.status} ${res.statusText} ${text}`,
+    );
   }
 
-  const data = await res.json();
-  return data as NetworkModel;
+  const data = (await res.json()) as NetworkModel;
+
+  // Filter out redundant network_model field from StationPair objects
+  if (data.StationPair && Array.isArray(data.StationPair)) {
+    data.StationPair = data.StationPair.map((pair) => {
+      const { network_model, ...clean } = pair as any;
+      return clean;
+    });
+  }
+
+  return data;
 }
 
 export default buildNetworkModelFromStations;

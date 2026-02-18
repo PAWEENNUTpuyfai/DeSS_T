@@ -84,7 +84,7 @@ export default function LandingPage() {
             className="h-[50px] my-2"
           />
           {/* Google Login with Custom Button Overlay */}
-          <div className="relative my-4">
+          <div className="google-login-wrapper relative my-4">
             {/* Custom Pretty Button (Visual Layer) */}
             <div className="google-login flex items-center justify-center gap-8 pointer-events-none">
               <svg
@@ -107,13 +107,13 @@ export default function LandingPage() {
             {/* Real Google Login Button (Hidden but Clickable) - Scaled Up */}
             <div
               ref={googleButtonRef}
-              className="absolute inset-0 opacity-0 flex items-center justify-center"
-              style={{ transform: "scale(3)", transformOrigin: "center" }}
+              className="google-login-real absolute inset-0 flex items-center justify-center"
             >
               <GoogleLogin
                 onSuccess={handleCredentialResponse}
                 onError={handleGoogleLoginError}
-                width="400"
+                width="370"
+                size="large"
               />
             </div>
           </div>

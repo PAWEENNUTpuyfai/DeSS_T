@@ -128,6 +128,7 @@ type ScenarioDetail struct {
 	ScenarioDetailID string `json:"scenario_detail_id"`
 	BusScenarioID    string `json:"bus_scenario_id"`
 	RouteScenarioID  string `json:"route_scenario_id"`
+	ConfigurationDetailID string `json:"configuration_detail_id"`
 
 	BusScenario   BusScenario   `json:"bus_scenario"`
 	RouteScenario RouteScenario `json:"route_scenario"`
@@ -194,7 +195,7 @@ type AlightingData struct {
 // ======================================================
 
 type InterArrivalData struct {
-	InterArrivalDataID    string `json:"interarrival_data_id"`
+	InterArrivalDataID    string `json:"inter_arrival_data_id"`
 	ConfigurationDetailID string `json:"configuration_detail_id"`
 	TimePeriod            string `json:"time_period"`
 	Distribution          string `json:"distribution"`

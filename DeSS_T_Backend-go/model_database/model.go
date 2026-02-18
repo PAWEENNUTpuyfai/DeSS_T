@@ -4,8 +4,6 @@ import (
 	// "database/sql/driver"
 	// "fmt"
 	"time"
-
-
 )
 
 // ------------------- USER --------------------
@@ -57,7 +55,7 @@ type PublicScenario struct {
 	CoverImgID       *string   `json:"cover_img" gorm:"column:cover_img_id"`
 	ScenarioDetailID string    `json:"scenario_detail" gorm:"column:scenario_detail_id"`
 
-	CoverImage     *CoverImageProject `gorm:"foreignKey:CoverImgID;constraint:OnDelete:CASCADE;"`
+	CoverImage     *CoverImageProject `gorm:"foreignKey:CoverImgID;constraint:OnDelete:CASCADE;" json:"cover_image"`
 	CreateByUser   User               `gorm:"foreignKey:CreateBy;constraint:OnDelete:CASCADE;"`
 	PublishByUser  User               `gorm:"foreignKey:PublishBy;constraint:OnDelete:CASCADE;"`
 	ScenarioDetail ScenarioDetail     `gorm:"foreignKey:ScenarioDetailID;constraint:OnDelete:CASCADE;"`
@@ -133,17 +131,20 @@ type RouteScenario struct {
 
 // ------------------- ROUTE PATH --------------------
 type RoutePath struct {
-	ID     string        `gorm:"primaryKey" json:"route_path_id"`
-	Name            string        `json:"name"`
-	Color           string        `json:"color"`
-	RouteScenarioID string        `json:"route_scenario_id"`
-	Route 			string 		  `json:"route" gorm:"type:geometry(LineString,4326)"`
+    ID              string         `gorm:"primaryKey" json:"route_path_id"`
+    Name            string         `json:"name"`
+    Color           string         `json:"color"`
+    RouteScenarioID string         `json:"route_scenario_id"`
+    
+   // ✅ แก้ไขตรงนี้: ใช้ <-:false
+    Route           string         `gorm:"column:route;type:geometry(LineString,4326);<-:false" json:"-"`
+    // ✅ ฟิลด์สำหรับรับค่าจาก JSON (GeoJSON Object)
+    RouteJSON       LineStringData `gorm:"-" json:"route"`
 
-	RouteScenario RouteScenario `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
-
-	Orders []Order `gorm:"foreignKey:RoutePathID"`
-	ScheduleDatas []ScheduleData `gorm:"foreignKey:RoutePathID"`
-	BusInformations []BusInformation `gorm:"foreignKey:RoutePathID"`
+    RouteScenario   *RouteScenario  `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;" json:"-"`
+    Orders          []Order        `gorm:"foreignKey:RoutePathID"`
+    ScheduleDatas   []ScheduleData `gorm:"foreignKey:RoutePathID"`
+    BusInformations []BusInformation `gorm:"foreignKey:RoutePathID"`
 }
 
 // ------------------- ORDER --------------------
@@ -163,12 +164,12 @@ type UserConfiguration struct {
 	Name                  string    `json:"name"`
 	ModifyDate            time.Time `json:"modify_date"`
 	CreateBy              string    `json:"create_by" gorm:"column:create_by"`
-	CoverImgID            *string   `json:"cover_img" gorm:"column:cover_img_id"`
-	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail_id"`
+	CoverImgID            *string   `json:"cover_img_id" gorm:"column:cover_img_id"`
+	ConfigurationDetailID string    `json:"configuration_detail_id" gorm:"column:configuration_detail_id"`
 
-	CoverImage          *CoverImageConf     `gorm:"foreignKey:CoverImgID;constraint:OnDelete:CASCADE;"`
-	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
-	CreateByUser        User                `gorm:"foreignKey:CreateBy;constraint:OnDelete:CASCADE;"`
+	CoverImage          *CoverImageConf     `gorm:"foreignKey:CoverImgID;constraint:OnDelete:CASCADE;" json:"cover_image"`
+	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;" json:"configuration_detail"`
+	CreateByUser        User                `gorm:"foreignKey:CreateBy;constraint:OnDelete:CASCADE;" json:"create_by_user"`
 
 	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:ConfigurationDetailID"`
 }
@@ -180,10 +181,10 @@ type PublicConfiguration struct {
 	Description           string    `json:"description"`
 	ModifyDate            time.Time `json:"modify_date"`
 	PublishDate           time.Time `json:"publish_date"`
-	CoverImgID            *string   `json:"cover_img" gorm:"column:cover_img_id"`
+	CoverImgID            *string   `json:"cover_img_id" gorm:"column:cover_img_id"`
 	CreateBy              string    `json:"create_by" gorm:"column:create_by"`
 	PublishBy             string    `json:"publish_by" gorm:"column:publish_by"`
-	ConfigurationDetailID string    `json:"configuration_detail" gorm:"column:configuration_detail_id"`
+	ConfigurationDetailID string    `json:"configuration_detail_id" gorm:"column:configuration_detail_id"`
 
 	CoverImage          *CoverImageConf     `gorm:"foreignKey:CoverImgID;constraint:OnDelete:CASCADE;"`
 	ConfigurationDetail ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
@@ -193,10 +194,10 @@ type PublicConfiguration struct {
 
 // ------------------- CONFIGURATION DETAIL --------------------
 type ConfigurationDetail struct {
-	ID string `gorm:"primaryKey" json:"configuration_detail_id"`
-	NetworkModelID        string `json:"network_model" gorm:"column:network_model_id"`
+	ID 					  string `gorm:"primaryKey" json:"configuration_detail_id"`
+	NetworkModelID        string `json:"network_model_id" gorm:"column:network_model_id"`
 
-	NetworkModel         NetworkModel         `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;"`
+	NetworkModel         NetworkModel         `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE,OnUpdate:CASCADE;" json:"network_model"`
 	
 	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:ConfigurationDetailID"`
 	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:ConfigurationDetailID"`
@@ -210,7 +211,7 @@ type AlightingData struct {
 	ID       string `gorm:"primaryKey" json:"alighting_data_id"`
 	ConfigurationDetailID string `json:"configuration_detail_id" gorm:"column:configuration_detail_id"`
 	TimePeriod            string `json:"time_period" gorm:"column:time_period"`
-	Distribution          string `json:"distribution_name" gorm:"column:distribution_name"`
+	Distribution          string `json:"distribution" gorm:"column:distribution_name"`
 	ArgumentList          string `json:"argument_list" gorm:"column:argument_list"`
 	StationDetailID       string `json:"station_id" gorm:"column:station_detail_id"`
 
@@ -220,10 +221,10 @@ type AlightingData struct {
 
 // ------------------- INTER ARRIVAL DATA --------------------
 type InterArrivalData struct {
-	ID                    string `gorm:"primaryKey" json:"interarrival_data_id"`
+	ID                    string `gorm:"primaryKey" json:"inter_arrival_data_id"`
 	ConfigurationDetailID string `json:"configuration_detail_id" gorm:"column:configuration_detail_id"`
 	TimePeriod            string `json:"time_period" gorm:"column:time_period"`
-	Distribution          string `json:"distribution_name" gorm:"column:distribution_name"`
+	Distribution          string `json:"distribution" gorm:"column:distribution_name"`
 	ArgumentList          string `json:"argument_list" gorm:"column:argument_list"`
 	StationDetailID       string `json:"station_id" gorm:"column:station_detail_id"`
 
@@ -233,23 +234,32 @@ type InterArrivalData struct {
 
 // ------------------- NETWORK MODEL --------------------
 type NetworkModel struct {
-	ID string `gorm:"primaryKey" json:"network_model_id"`
+	ID 						   string `gorm:"primaryKey" json:"network_model_id"`
 	NetworkModelName           string `json:"Network_model" gorm:"column:network_model_name"` // API response only (not stored in DB)
-
-	ConfigurationDetails []ConfigurationDetail `gorm:"foreignKey:NetworkModelID"`
-	StationPairs        []StationPair        `gorm:"foreignKey:NetworkModelID"`
+	
+	ConfigurationDetails []ConfigurationDetail `gorm:"foreignKey:NetworkModelID" json:"configuration_detail"`
+	StationPairs        []StationPair        `gorm:"foreignKey:NetworkModelID" json:"StationPair"`
+	StationDetails      []StationDetail      `gorm:"foreignKey:NetworkModelID" json:"station_detail"`
 }
 
 // ------------------- STATION DETAIL --------------------
 type StationDetail struct {
-	ID string   `gorm:"primaryKey" json:"station_detail_id"`
+	ID 				string   `gorm:"primaryKey" json:"station_detail_id"`
 	Name            string   `json:"name" gorm:"column:station_name"`
-	Location 		string 	 `json:"location" gorm:"type:geometry(Point,4326);column:location"`
+	NetworkModelID   string   `json:"network_model_id" gorm:"column:network_model_id"`
+	// ✅ แก้ไขตรงนี้: ใช้ <-:false
+    // หมายความว่า: สร้างคอลัมน์ location type geometry นะ แต่ห้าม GORM เขียนข้อมูลลงไปเอง (เราจะใช้ tx.Exec เขียนเอง)
+    LocationDB     string  `gorm:"column:location;type:geometry(Point,4326);<-:false" json:"-"`
+    // ✅ ฟิลด์สำหรับรับค่าจาก JSON (ต้องตรงกับที่ Frontend ส่งมา)
+    // ใช้ gorm:"-" เพื่อไม่ให้ GORM พยายามบันทึกฟิลด์นี้ลงคอลัมน์เอง
+    LocationJSON   LocationData `gorm:"-" json:"location"`
+
 	Lat             float64  `json:"lat" gorm:"column:lat"`
 	Lon             float64  `json:"lon" gorm:"column:lon"`
 	StationIDOSM    string   `json:"station_id_osm" gorm:"column:station_id_osm"`
 
-// ✅ แก้ไขตรงนี้: ลบ references ออก
+	// ✅ แก้ไขตรงนี้: ลบ references ออก
+	NetworkModel	 NetworkModel      `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"network_model"`
     StationPairsAsFst []StationPair    `gorm:"foreignKey:FstStationID"`
     StationPairsAsSnd []StationPair    `gorm:"foreignKey:SndStationID"`
     AlightingData     []AlightingData  `gorm:"foreignKey:StationDetailID"` 
@@ -267,7 +277,7 @@ type StationPair struct {
 	FstStation   StationDetail `gorm:"foreignKey:FstStationID;constraint:OnDelete:CASCADE;" json:"-"`
 	SndStation   StationDetail `gorm:"foreignKey:SndStationID;constraint:OnDelete:CASCADE;" json:"-"`
 	RouteBetween RouteBetween  `gorm:"foreignKey:RouteBetweenID;constraint:OnDelete:CASCADE;" json:"RouteBetween"`
-	NetworkModel NetworkModel  `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"network_model,omitempty"`
+	NetworkModel NetworkModel  `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"network_model"`
 
 	Orders []Order `gorm:"foreignKey:StationPairID"`
 }
@@ -279,4 +289,16 @@ type RouteBetween struct {
 	Distance       float64 `json:"Distance" gorm:"column:distance"`
 
 	StationPairs []StationPair `gorm:"foreignKey:RouteBetweenID"`
+}
+
+// โครงสร้างรับ GeoJSON จาก Frontend
+type LocationData struct {
+    Type        string    `json:"type"`
+    Coordinates []float64 `json:"coordinates"`
+}
+
+// โครงสร้างรับ GeoJSON LineString จาก Frontend
+type LineStringData struct {
+    Type        string      `json:"type"`
+    Coordinates [][]float64 `json:"coordinates"` // Array ของพิกัด [lon, lat]
 }

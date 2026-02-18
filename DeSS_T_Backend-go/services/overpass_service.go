@@ -32,7 +32,7 @@ type OverpassResponse struct {
 // FetchAreaBounds queries Overpass API to get bounds from area code
 func FetchAreaBounds(areaCode string) (*OverpassBounds, error) {
 	query := fmt.Sprintf(`
-		[out:json][timeout:60];
+		[out:json][timeout:180];
 		area(%s)->.searchArea;
 		(
 			node["highway"="bus_stop"](area.searchArea);
@@ -43,7 +43,7 @@ func FetchAreaBounds(areaCode string) (*OverpassBounds, error) {
 	// Retry a few times with backoff. If still failing, return safe default bounds
 	// so the frontend can continue.
 	for attempt := 0; attempt < 3; attempt++ {
-		client := &http.Client{Timeout: 70 * time.Second}
+		client := &http.Client{Timeout: 200 * time.Second}
 		resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
 		if err == nil {
 			data, readErr := ioutil.ReadAll(resp.Body)
@@ -87,7 +87,7 @@ func FetchAreaBounds(areaCode string) (*OverpassBounds, error) {
 // FetchBusStops queries Overpass API to get bus stops within bounds
 func FetchBusStops(minLat, minLon, maxLat, maxLon float64) ([]OverpassNode, error) {
 	query := fmt.Sprintf(`
-		[out:json][timeout:25];
+		[out:json][timeout:90];
 		node["highway"="bus_stop"](%f,%f,%f,%f);
 		out body;
 	`, minLat, minLon, maxLat, maxLon)
@@ -113,14 +113,14 @@ func FetchBusStops(minLat, minLon, maxLat, maxLon float64) ([]OverpassNode, erro
 // FetchBusStopsInArea queries Overpass API to get bus stops in a specific area
 func FetchBusStopsInArea(areaCode string) ([]OverpassNode, error) {
 	query := fmt.Sprintf(`
-		[out:json][timeout:60];
+		[out:json][timeout:180];
 		area(%s)->.searchArea;
 		node["highway"="bus_stop"](area.searchArea);
 		out body;
 	`, areaCode)
 
 	for attempt := 0; attempt < 2; attempt++ {
-		client := &http.Client{Timeout: 70 * time.Second}
+		client := &http.Client{Timeout: 200 * time.Second}
 		resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
 		if err == nil {
 			data, readErr := ioutil.ReadAll(resp.Body)
@@ -178,7 +178,7 @@ type OverpassGeometryResponse struct {
 // FetchAreaGeometry queries Overpass API to get area polygon geometry
 func FetchAreaGeometry(areaCode string) ([][][2]float64, error) {
 	query := fmt.Sprintf(`
-		[out:json][timeout:60];
+		[out:json][timeout:180];
 		area(%s)->.searchArea;
 		(
 			rel(area.searchArea)["boundary"="administrative"];
@@ -188,7 +188,7 @@ func FetchAreaGeometry(areaCode string) ([][][2]float64, error) {
 	`, areaCode)
 
 	for attempt := 0; attempt < 3; attempt++ {
-		client := &http.Client{Timeout: 70 * time.Second}
+		client := &http.Client{Timeout: 200 * time.Second}
 		resp, err := client.Post(OVERPASS_URL, "text/plain", bytes.NewBufferString(query))
 		if err == nil {
 			data, readErr := ioutil.ReadAll(resp.Body)

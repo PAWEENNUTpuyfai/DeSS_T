@@ -5,6 +5,7 @@ export interface ScenarioDetail {
   scenario_detail_id: string;
   bus_scenario_id: string;
   route_scenario_id: string;
+  configuration_detail_id: string;
   bus_scenario?: BusScenario;
   route_scenario?: RouteScenario;
 }

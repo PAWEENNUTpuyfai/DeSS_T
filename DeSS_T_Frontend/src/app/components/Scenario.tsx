@@ -700,6 +700,7 @@ export default function Scenario({
         route_scenario_id: routeScenario.route_scenario_id,
         bus_scenario: busScenario,
         route_scenario: routeScenario,
+        configuration_detail_id: configuration.configuration_detail_id,
       };
 
       const simulationRequest: ProjectSimulationRequest = {

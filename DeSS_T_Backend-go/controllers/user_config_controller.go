@@ -7,6 +7,7 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	"DeSS_T_Backend-go/models"   
 )
 
 func CreateUserConfiguration(c *fiber.Ctx) error {
@@ -57,25 +58,106 @@ func GetConfigurationDetail(c *fiber.Ctx) error {
 		})
 	}
 
-	// 2. เรียก Service เพื่อดึงข้อมูล
-	result, err := services.GetConfigurationDetailByID(configDetailID)
+	// 2. ดึงข้อมูลจากฐานข้อมูลผ่าน Service (ใช้ข้อมูลจาก model_database ที่ดึงด้วย Preload)
+	dbResult, err := services.GetConfigurationDetailByID(configDetailID)
 	if err != nil {
-		// หากหาข้อมูลไม่พบ (Record Not Found)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error": "ไม่พบข้อมูล Configuration Detail นี้ในระบบ",
 			})
 		}
-		
-		// กรณี Error อื่นๆ จาก Database
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":  "เกิดข้อผิดพลาดในการดึงข้อมูล",
 			"detail": err.Error(),
 		})
 	}
 
-	// 3. ส่งข้อมูลกลับไปในรูปแบบ JSON ตามโครงสร้างที่กำหนด
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"configuration_detail": result,
-	})
+	// 3. 🛠 MAPPING: จาก model_database ไปยังโครงสร้าง models (DTO) เพื่อให้ JSON คลีน 100%
+	
+	// --- Map Station Details (ที่อยู่ใน Network Model) ---
+	var stationDetails []models.StationDetail
+	for _, sd := range dbResult.NetworkModel.StationDetails {
+		stationDetails = append(stationDetails, models.StationDetail{
+			StationDetailID: sd.ID,
+			Name:            sd.Name,
+			Lat:             sd.Lat,
+			Lon:             sd.Lon,
+			StationIDOSM:    sd.StationIDOSM,
+			Location: models.GeoPoint{
+				Type:        "Point",
+				Coordinates: [2]float64{sd.Lon, sd.Lat},
+			},
+		})
+	}
+
+	// --- Map Station Pairs (พร้อมข้อมูล RouteBetween) ---
+	var stationPairs []models.StationPair
+	for _, sp := range dbResult.NetworkModel.StationPairs {
+		stationPairs = append(stationPairs, models.StationPair{
+			StationPairID:  sp.ID,
+			FstStationID:   sp.FstStationID,
+			SndStationID:   sp.SndStationID,
+			RouteBetweenID: sp.RouteBetweenID,
+			NetworkModelID: sp.NetworkModelID,
+			RouteBetween: models.RouteBetween{
+				RouteBetweenID: sp.RouteBetween.ID,
+				TravelTime:     sp.RouteBetween.TravelTime,
+				Distance:       sp.RouteBetween.Distance,
+			},
+			// สังเกตว่าเราไม่ใส่ NetworkModel ลงไปในนี้แล้ว เพื่อป้องกัน Recursive JSON และทำให้ข้อมูลสะอาดขึ้น
+		})
+	}
+
+	// --- Map Network Model (หุ้ม StationPairs และ StationDetails ไว้) ---
+	networkModel := models.NetworkModel{
+		NetworkModelID: dbResult.NetworkModel.ID,
+		Name:           dbResult.NetworkModel.NetworkModelName,
+		StationPairs:   stationPairs,
+		StationDetails: stationDetails,
+	}
+
+	// --- Map Alighting Data (ข้อมูลคนลง) ---
+	var alightingData []models.AlightingData
+	for _, ad := range dbResult.AlightingData {
+		alightingData = append(alightingData, models.AlightingData{
+			AlightingDataID:       ad.ID,
+			ConfigurationDetailID: ad.ConfigurationDetailID,
+			TimePeriod:            ad.TimePeriod,
+			Distribution:          ad.Distribution,
+			ArgumentList:          ad.ArgumentList,
+			StationID:             ad.StationDetailID,
+			
+		})
+	}
+
+	// --- Map InterArrival Data (ข้อมูลเวลาระหว่างรถเข้า) ---
+	var interArrivalData []models.InterArrivalData
+	for _, ia := range dbResult.InterArrivalData {
+		interArrivalData = append(interArrivalData, models.InterArrivalData{
+			InterArrivalDataID:    ia.ID,
+			ConfigurationDetailID: ia.ConfigurationDetailID,
+			TimePeriod:            ia.TimePeriod,
+			Distribution:          ia.Distribution,
+			ArgumentList:          ia.ArgumentList,
+			StationID:             ia.StationDetailID,
+			
+		})
+	}
+
+	// --- ประกอบร่าง Response ขั้นสุดท้ายเข้าไปใน ConfigurationDetail ---
+	responseDetail := models.ConfigurationDetail{
+		ConfigurationDetailID: dbResult.ID,
+		NetworkModelID:        dbResult.NetworkModelID,
+		NetworkModel:          networkModel,
+		AlightingData:         alightingData,
+		InterArrivalData:      interArrivalData,
+	}
+
+	// 4. ห่อหุ้มด้วย Struct ระดับบนสุด (ROOT CONFIGURATION)
+	finalResponse := models.ConfigurationJSON{
+		Configuration: responseDetail,
+	}
+
+	// ส่งกลับเป็น JSON
+	return c.Status(fiber.StatusOK).JSON(finalResponse)
 }

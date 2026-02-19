@@ -28,8 +28,8 @@ type ConfigurationDetail struct {
 	NetworkModel          NetworkModel          `json:"network_model"`
 	AlightingData         []AlightingData       `json:"alighting_datas"`
 	InterArrivalData      []InterArrivalData    `json:"interarrival_datas"`
-	UserConfigurations    []UserConfiguration   `json:"user_configurations,omitempty"`
-	PublicConfigurations  []PublicConfiguration `json:"public_configurations,omitempty"`
+	// UserConfigurations    []UserConfiguration   `json:"user_configurations,omitempty"`
+	// PublicConfigurations  []PublicConfiguration `json:"public_configurations,omitempty"`
 }
 
 // ======================================================
@@ -42,7 +42,7 @@ type NetworkModel struct {
 
 	StationPairs   []StationPair   `json:"StationPair,omitempty"`
 	StationDetails []StationDetail `json:"Station_detail,omitempty"`
-	RouteScenario  RouteScenario   `json:"route_scenario,omitempty"`
+	// RouteScenario  RouteScenario   `json:"route_scenario,omitempty"`
 }
 
 // ======================================================
@@ -72,7 +72,7 @@ type StationPair struct {
 	NetworkModelID string `json:"network_model_id"`
 
 	RouteBetween RouteBetween `json:"RouteBetween"`
-	NetworkModel NetworkModel `json:"network_model,omitempty"`
+	// NetworkModel NetworkModel `json:"network_model,omitempty"`
 }
 
 // ======================================================
@@ -105,6 +105,7 @@ type RoutePath struct {
 	Route       string `json:"route"`
 
 	Orders []Order `json:"orders"`
+
 }
 
 // ======================================================
@@ -155,7 +156,7 @@ type ScheduleData struct {
 	RoutePathID    string `json:"route_path_id"`
 	BusScenarioID  string `json:"bus_scenario_id"`
 
-	RoutePath RoutePath `json:"route_path_detail"`
+	// RoutePath RoutePath `json:"route_path_detail"`
 }
 
 // ======================================================
@@ -172,7 +173,7 @@ type BusInformation struct {
 	BusScenarioID    string  `json:"bus_scenario_id"`
 	RoutePathID      string  `json:"route_path_id"`
 
-	RoutePath RoutePath `json:"route_path_detail"`
+	// RoutePath RoutePath `json:"route_path_detail"`
 }
 
 // ======================================================
@@ -187,7 +188,7 @@ type AlightingData struct {
 	ArgumentList          string `json:"argument_list"`
 	StationID             string `json:"station_id"`
 
-	StationDetail StationDetail `json:"station_detail"`
+	// StationDetail StationDetail `json:"station_detail"`
 }
 
 // ======================================================
@@ -202,7 +203,7 @@ type InterArrivalData struct {
 	ArgumentList          string `json:"argument_list"`
 	StationID             string `json:"station_id"`
 
-	StationDetail StationDetail `json:"station_detail"`
+	// StationDetail StationDetail `json:"station_detail"`
 }
 
 // ======================================================

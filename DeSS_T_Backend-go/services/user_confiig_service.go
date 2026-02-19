@@ -4,6 +4,7 @@ import (
 	"DeSS_T_Backend-go/config"
 	"DeSS_T_Backend-go/model_database"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/google/uuid"
@@ -11,45 +12,57 @@ import (
 )
 
 func SaveUserConfiguration(input model_database.UserConfiguration) (model_database.UserConfiguration, error) {
-	// ใช้ Transaction เพื่อความปลอดภัยของข้อมูล
+	// 🟢 [DEBUG] เช็คข้อมูลที่รับมาจาก JSON ก่อนเข้า Transaction
+	log.Println("--- DEBUG: START SAVE USER CONFIGURATION ---")
+	log.Printf("📦 Network Model Name: %s", input.ConfigurationDetail.NetworkModel.NetworkModelName)
+	log.Printf("📍 Stations count: %d", len(input.ConfigurationDetail.NetworkModel.StationDetails))
+	log.Printf("📉 Alighting Data count: %d", len(input.ConfigurationDetail.AlightingData))
+	log.Printf("📈 InterArrival Data count: %d", len(input.ConfigurationDetail.InterArrivalData))
+
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
 
-		// --- 1. Generate New IDs (เหมือนเดิม) ---
+		// --- 1. Generate New IDs ---
 		input.ID = uuid.New().String()
-		input.ConfigurationDetail.ID = uuid.New().String()
-		input.ConfigurationDetailID = input.ConfigurationDetail.ID
+		configDetail := &input.ConfigurationDetail
+		configDetail.ID = uuid.New().String()
+		input.ConfigurationDetailID = configDetail.ID
 
-		netModel := &input.ConfigurationDetail.NetworkModel
+		netModel := &configDetail.NetworkModel
 		netModel.ID = uuid.New().String()
-		input.ConfigurationDetail.NetworkModelID = netModel.ID
+		configDetail.NetworkModelID = netModel.ID
 
-		// ✅ --- 2. บันทึก Network Model Header (เฉพาะตัวมันเอง) ---
-		// ใช้ Omit("StationPairs", "StationDetails") เพื่อไม่ให้ GORM แอบบันทึกลูกที่ยังจัดการ ID ไม่เสร็จ
-		if err := tx.Omit("StationPairs", "StationDetails").Create(netModel).Error; err != nil {
+		log.Printf("🆔 New ConfigDetail ID: %s", configDetail.ID)
+		log.Printf("🆔 New NetworkModel ID: %s", netModel.ID)
+
+		// --- 2. บันทึก Network Model ---
+		if err := tx.Select("ID", "NetworkModelName").Create(netModel).Error; err != nil {
 			return fmt.Errorf("failed to create network model: %w", err)
 		}
 
-		// --- 3. บันทึก StationDetails (Geometry: Point) ---
+		// --- 3. บันทึก StationDetails & Build ID Map ---
 		stationIDMap := make(map[string]string)
 		for i := range netModel.StationDetails {
-			station := &netModel.StationDetails[i]
-			oldID := station.ID
+			s := &netModel.StationDetails[i]
+			oldID := s.ID
 			newID := uuid.New().String()
 			stationIDMap[oldID] = newID
 
-			station.ID = newID
-			station.NetworkModelID = netModel.ID 
-			
-			lon := station.LocationJSON.Coordinates[0]
-			lat := station.LocationJSON.Coordinates[1]
-			pointWKT := fmt.Sprintf("POINT(%f %f)", lon, lat)
+			// [DEBUG] เช็คพิกัดว่าอ่านจาก JSON ได้ไหม
+			if len(s.LocationJSON.Coordinates) < 2 {
+				return fmt.Errorf("station [%d] %s: coordinates are missing in JSON", i, s.Name)
+			}
 
-			query := `
-				INSERT INTO station_details (id, station_name, network_model_id, lat, lon, station_id_osm, location)
-				VALUES (?, ?, ?, ?, ?, ?, ST_GeomFromText(?, 4326))`
-			
-			if err := tx.Exec(query, station.ID, station.Name, station.NetworkModelID, station.Lat, station.Lon, station.StationIDOSM, pointWKT).Error; err != nil {
-				return fmt.Errorf("failed to save station %s: %w", station.Name, err)
+			log.Printf("📍 Mapping Station [%d]: (Old) %s -> (New) %s | Name: %s", i, oldID, newID, s.Name)
+
+			s.ID = newID
+			s.NetworkModelID = netModel.ID
+
+			pointWKT := fmt.Sprintf("POINT(%f %f)", s.LocationJSON.Coordinates[0], s.LocationJSON.Coordinates[1])
+			query := `INSERT INTO station_details (id, station_name, network_model_id, lat, lon, station_id_osm, location)
+                      VALUES (?, ?, ?, ?, ?, ?, ST_GeomFromText(?, 4326))`
+
+			if err := tx.Exec(query, s.ID, s.Name, s.NetworkModelID, s.Lat, s.Lon, s.StationIDOSM, pointWKT).Error; err != nil {
+				return fmt.Errorf("failed to save station %s: %w", s.Name, err)
 			}
 		}
 
@@ -59,35 +72,86 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 			pair.ID = uuid.New().String()
 			pair.NetworkModelID = netModel.ID
 
-			// ✅ สำคัญ: เปลี่ยน ID สถานีให้เป็น ID ใหม่ที่บันทึกลง DB ไปแล้ว
-			if newFst, ok := stationIDMap[pair.FstStationID]; ok {
-				pair.FstStationID = newFst
-			}
-			if newSnd, ok := stationIDMap[pair.SndStationID]; ok {
-				pair.SndStationID = newSnd
+			newFst, ok1 := stationIDMap[pair.FstStationID]
+			newSnd, ok2 := stationIDMap[pair.SndStationID]
+
+			if !ok1 || !ok2 {
+				return fmt.Errorf("station_pair [%d]: fst(%s) or snd(%s) not found in map", i, pair.FstStationID, pair.SndStationID)
 			}
 
-			// RouteBetween
+			pair.FstStationID = newFst
+			pair.SndStationID = newSnd
 			pair.RouteBetween.ID = uuid.New().String()
+
 			if err := tx.Create(&pair.RouteBetween).Error; err != nil {
 				return err
 			}
 			pair.RouteBetweenID = pair.RouteBetween.ID
 
-			// บันทึก StationPair (ตอนนี้ FstStationID และ SndStationID ถูกต้องแล้ว)
-			if err := tx.Create(pair).Error; err != nil {
-				return fmt.Errorf("failed to save station pair %s: %w", pair.ID, err)
+			if err := tx.Omit("FstStation", "SndStation", "NetworkModel").Create(pair).Error; err != nil {
+				return fmt.Errorf("failed to save station pair: %w", err)
 			}
 		}
 
-		// --- 5. จัดการ RoutePaths ใน Scenario (Geometry: LineString) ---
-		if input.ConfigurationDetail.ScenarioDetails != nil {
-			for i := range input.ConfigurationDetail.ScenarioDetails {
-				sd := &input.ConfigurationDetail.ScenarioDetails[i]
-				sd.ID = uuid.New().String()
-				sd.ConfigurationDetailID = input.ConfigurationDetail.ID
+		// --- 5. บันทึก Configuration Detail ---
+		if err := tx.Omit("AlightingData", "InterArrivalData", "ScenarioDetails", "NetworkModel").Create(configDetail).Error; err != nil {
+			return fmt.Errorf("failed to create config detail: %w", err)
+		}
 
-				// จัดการ RouteScenario ภายใน ScenarioDetail
+		// --- 6. บันทึก Alighting Data (Check Mapping) ---
+		for i := range configDetail.AlightingData {
+			d := &configDetail.AlightingData[i]
+			d.ID = uuid.New().String()
+			d.ConfigurationDetailID = configDetail.ID
+
+			oldStationID := d.StationDetailID
+			newStationID, ok := stationIDMap[oldStationID]
+
+			// [DEBUG] Log รายตัว
+			log.Printf("📉 Alighting [%d]: Looking for Station ID (Old): '%s'", i, oldStationID)
+
+			if !ok || newStationID == "" {
+				return fmt.Errorf("alighting_data [%d]: station_id '%s' not found. Check if 'station_id' in JSON matches station id in NetworkModel", i, oldStationID)
+			}
+
+			log.Printf("📉 Alighting [%d]: Successfully Mapped to (New): %s", i, newStationID)
+			d.StationDetailID = newStationID
+
+			if err := tx.Omit("StationDetail", "ConfigurationDetail").Create(d).Error; err != nil {
+				return fmt.Errorf("failed to create alighting data: %w", err)
+			}
+		}
+
+		// --- 7. บันทึก InterArrival Data (Check Mapping) ---
+		for i := range configDetail.InterArrivalData {
+			d := &configDetail.InterArrivalData[i]
+			d.ID = uuid.New().String()
+			d.ConfigurationDetailID = configDetail.ID
+
+			oldStationID := d.StationDetailID
+			newStationID, ok := stationIDMap[oldStationID]
+
+			log.Printf("📈 InterArrival [%d]: Looking for Station ID (Old): '%s'", i, oldStationID)
+
+			if !ok || newStationID == "" {
+				return fmt.Errorf("inter_arrival_data [%d]: station_id '%s' not found", i, oldStationID)
+			}
+
+			log.Printf("📈 InterArrival [%d]: Successfully Mapped to (New): %s", i, newStationID)
+			d.StationDetailID = newStationID
+
+			if err := tx.Omit("StationDetail", "ConfigurationDetail").Create(d).Error; err != nil {
+				return fmt.Errorf("failed to create inter arrival data: %w", err)
+			}
+		}
+
+		// --- 8. Scenario Details & Route Paths ---
+		if configDetail.ScenarioDetails != nil {
+			for i := range configDetail.ScenarioDetails {
+				sd := &configDetail.ScenarioDetails[i]
+				sd.ID = uuid.New().String()
+				sd.ConfigurationDetailID = configDetail.ID
+
 				rs := &sd.RouteScenario
 				rs.ID = uuid.New().String()
 				sd.RouteScenarioID = rs.ID
@@ -97,75 +161,76 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 					rp.ID = uuid.New().String()
 					rp.RouteScenarioID = rs.ID
 
-					// แปลง Coordinates เป็น LineString WKT
+					if len(rp.RouteJSON.Coordinates) == 0 {
+						log.Printf("⚠️ Warning: RoutePath %s has no coordinates", rp.Name)
+						continue
+					}
+
 					var points []string
 					for _, coord := range rp.RouteJSON.Coordinates {
 						points = append(points, fmt.Sprintf("%f %f", coord[0], coord[1]))
 					}
 					lineWKT := fmt.Sprintf("LINESTRING(%s)", strings.Join(points, ","))
 
-					query := `
-						INSERT INTO route_paths (id, name, color, route_scenario_id, route)
-						VALUES (?, ?, ?, ?, ST_GeomFromText(?, 4326))`
-
+					query := `INSERT INTO route_paths (id, name, color, route_scenario_id, route) VALUES (?, ?, ?, ?, ST_GeomFromText(?, 4326))`
 					if err := tx.Exec(query, rp.ID, rp.Name, rp.Color, rp.RouteScenarioID, lineWKT).Error; err != nil {
 						return fmt.Errorf("failed to save route path %s: %w", rp.Name, err)
 					}
 				}
 
-				if err := tx.Create(rs).Error; err != nil {
-					return err
-				}
-				
-				// ต้องมี BusScenario ด้วยตามความสัมพันธ์
+				if err := tx.Create(rs).Error; err != nil { return err }
 				sd.BusScenario.ID = uuid.New().String()
-				if err := tx.Create(&sd.BusScenario).Error; err != nil {
-					return err
-				}
+				if err := tx.Create(&sd.BusScenario).Error; err != nil { return err }
 				sd.BusScenarioID = sd.BusScenario.ID
-
-				if err := tx.Create(sd).Error; err != nil {
-					return err
-				}
+				if err := tx.Create(sd).Error; err != nil { return err }
 			}
 		}
 
-		// --- 6. บันทึกข้อมูล AlightingData & InterArrivalData ---
-		for i := range input.ConfigurationDetail.AlightingData {
-			data := &input.ConfigurationDetail.AlightingData[i]
-			data.ID = uuid.New().String()
-			data.ConfigurationDetailID = input.ConfigurationDetail.ID
-			if newStation, ok := stationIDMap[data.StationDetailID]; ok {
-				data.StationDetailID = newStation
-			}
-			if err := tx.Create(data).Error; err != nil {
-				return err
-			}
-		}
-
-		for i := range input.ConfigurationDetail.InterArrivalData {
-			data := &input.ConfigurationDetail.InterArrivalData[i]
-			data.ID = uuid.New().String()
-			data.ConfigurationDetailID = input.ConfigurationDetail.ID
-			if newStation, ok := stationIDMap[data.StationDetailID]; ok {
-				data.StationDetailID = newStation
-			}
-			if err := tx.Create(data).Error; err != nil {
-				return err
-			}
-		}
-
-		// --- 7. บันทึก Configuration Detail & User Configuration (Final) ---
-		if err := tx.Create(&input.ConfigurationDetail).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Create(&input).Error; err != nil {
+		// --- 9. Final: Save UserConfiguration ---
+		if err := tx.Omit("ConfigurationDetail", "CoverImage", "CreateByUser").Create(&input).Error; err != nil {
 			return err
 		}
 
 		return nil
 	})
 
+	if err != nil {
+		log.Printf("❌ TRANSACTION FAILED: %v", err)
+	} else {
+		log.Println("✅ TRANSACTION SUCCESS: All data saved successfully")
+	}
+
 	return input, err
+}
+func GetConfigurationDetailByID(configDetailID string) (model_database.ConfigurationDetail, error) {
+	var configDetail model_database.ConfigurationDetail
+
+	// 🔍 ใช้ Preload เพื่อดึงข้อมูลลูกและหลานที่เกี่ยวข้องทั้งหมด
+	err := config.DB.
+		Preload("NetworkModel").                            // ดึง Network Model
+		Preload("NetworkModel.StationPairs").               // ดึง StationPair ที่อยู่ใน NetworkModel
+		Preload("NetworkModel.StationPairs.RouteBetween").  // ดึง RouteBetween ที่อยู่ใน StationPair
+		Preload("NetworkModel.StationDetails").             // ดึง StationDetail
+		Preload("AlightingData").                           // ดึงข้อมูล Alighting
+		Preload("InterArrivalData").                        // ดึงข้อมูล InterArrival
+		First(&configDetail, "id = ?", configDetailID).Error // ค้นหาด้วย ID
+
+	if err != nil {
+		return configDetail, fmt.Errorf("query failed: %w", err)
+	}
+
+	// 🛠 Post-Processing: ประกอบร่าง LocationJSON ให้ StationDetail
+	// เนื่องจากใน DB เราเก็บแยกเป็น Lat, Lon และ PostGIS Geometry
+	// Frontend ต้องการ JSON Object { "type": "Point", "coordinates": [...] }
+	for i := range configDetail.NetworkModel.StationDetails {
+		station := &configDetail.NetworkModel.StationDetails[i]
+		
+		// นำ Lat, Lon ที่มีอยู่แล้วมาประกอบเข้า LocationJSON
+		station.LocationJSON = model_database.LocationData{
+			Type:        "Point",
+			Coordinates: []float64{station.Lon, station.Lat}, // [Lon, Lat] ตามมาตรฐาน GeoJSON
+		}
+	}
+
+	return configDetail, nil
 }

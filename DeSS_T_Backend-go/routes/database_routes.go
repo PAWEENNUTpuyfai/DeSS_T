@@ -23,7 +23,7 @@ func DatabaseRoutes(app *fiber.App) {
     // api.Delete("/user-configuration/:id",controllers.DeleteUserConfiguration)
 
     //configuration-details
-    // api.Get("/configuration-details/:id", controllers.GetConfigurationDetails)
+    api.Get("/configuration-details/:id", controllers.GetConfigurationDetail)
     api.Post("/upload/configuration-cover-img", controllers.UploadConfigurationCoverImg)
 
     // // //public-scenarios

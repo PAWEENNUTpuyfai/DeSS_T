@@ -183,7 +183,7 @@ export default function WorkspaceCommunity() {
                 />
               </div>
             </div>
-
+ 
             <div className="projects-grid">
               {filteredData.map((project) => (
                 <div key={project.id} className="project-card">

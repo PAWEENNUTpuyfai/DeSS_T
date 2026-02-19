@@ -28,15 +28,10 @@ export default function UserNavBar({
     setShowConfirm(false);
   };
 
-  const handleWorkspaceCommunityClick = () => {
-    navigate("/user/workspace/community");
-  };
-
   const handleUserNameClick = () => {
     navigate("/user/workspace");
   };
 
-  const isCommunityRoute = location.pathname === "/user/workspace/community";
   const isWorkspaceRoute = location.pathname === "/user/workspace";
 
   return (
@@ -97,7 +92,7 @@ export default function UserNavBar({
               Workspace community
             </span>
           </div>
-
+ 
           {/* Right: Profile Avatar */}
           <div className="nav-user" style={{ flexShrink: 0 }}>
             {userAvatarUrl && (

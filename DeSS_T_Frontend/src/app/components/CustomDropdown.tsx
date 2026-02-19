@@ -71,7 +71,7 @@ export default function CustomDropdown({
         onClick={() => setIsOpen(!isOpen)}
         className={`main-btn text-dropdown ${heightClass} ${fontSizeClass} flex items-center justify-between px-4`}
         style={{ height: heightStyle, fontSize: fontSizeStyle }}
-      >
+      > 
         <span className="py-2 px-4">
           {icon && <span className="mr-2">{icon}</span>}
           {selectedValue}

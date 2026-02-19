@@ -416,7 +416,7 @@ export default function UserWorkspace() {
                 placeholder="Project name"
                 className="workspace-modal-input bg-white"
                 autoFocus
-              />
+              /> 
             </div>
             <div className="workspace-modal-field">
               <label className="workspace-modal-label">

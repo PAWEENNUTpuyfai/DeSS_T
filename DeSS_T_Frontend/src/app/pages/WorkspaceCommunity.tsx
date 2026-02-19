@@ -177,6 +177,9 @@ export default function WorkspaceCommunity() {
                   options={sortOptions}
                   selectedValue={sortOrder === "asc" ? "Date Asc" : "Date Desc"}
                   onChange={(value) => setSortOrder(value === "Date Asc" ? "asc" : "desc")}
+                  width="min-w-[120px]"
+                  height="h-[40px]"
+                  fontSize="text-lg"
                 />
               </div>
             </div>

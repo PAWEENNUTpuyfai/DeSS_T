@@ -274,11 +274,17 @@ export default function UserWorkspace() {
                 options={fileFilterOptions}
                 selectedValue={fileFilter}
                 onChange={setFileFilter}
+                width="min-w-[120px]"
+                height="h-[40px]"
+                fontSize="text-lg"
               />
               <CustomDropdown
                 options={sortFilterOptions}
                 selectedValue={sortFilter}
                 onChange={setSortFilter}
+                width="min-w-[120px]"
+                height="h-[40px]"
+                fontSize="text-lg"
               />
             </div>
           </div>
@@ -349,7 +355,7 @@ export default function UserWorkspace() {
 
       {/* Configuration Name Modal */}
       {showConfigModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Create New Configuration
@@ -428,6 +434,9 @@ export default function UserWorkspace() {
                       setSelectedConfigName(value);
                       setSelectedConfigId(selected?.detail_id ?? null);
                     }}
+                    width="min-w-[160px]"
+                    height="h-[45px]"
+                    fontSize="text-lg"
                   />
                 ) : (
                   <div className="workspace-modal-dropdown-disabled">

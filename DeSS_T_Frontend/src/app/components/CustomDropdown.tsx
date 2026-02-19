@@ -13,6 +13,9 @@ interface CustomDropdownProps {
   onChange: (value: string) => void;
   isGrouped?: boolean;
   icon?: string;
+  width?: string; // e.g. "200px", "100%", "w-64"
+  height?: string; // e.g. "60px", "40px"
+  fontSize?: string; // e.g. "text-sm", "text-lg", "16px"
 }
 
 export default function CustomDropdown({
@@ -22,6 +25,9 @@ export default function CustomDropdown({
   onChange,
   isGrouped = false,
   icon = "",
+  width = "min-w-[200px]",
+  height = "h-[60px]",
+  fontSize = "text-lg",
 }: CustomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -46,17 +52,25 @@ export default function CustomDropdown({
     setIsOpen(false);
   };
 
-  const allOptions = isGrouped ? groups.flatMap(g => g.options) : options;
+  // Determine if width/height are Tailwind classes or CSS values
+  const widthClass = width.startsWith("w-") || width.includes("min-w") ? width : "";
+  const widthStyle = !widthClass ? width : undefined;
+  const heightClass = height.startsWith("h-") ? height : "";
+  const heightStyle = !heightClass ? height : undefined;
+  const fontSizeClass = fontSize.startsWith("text-") ? fontSize : "";
+  const fontSizeStyle = !fontSizeClass ? fontSize : undefined;
 
   return (
     <div
       ref={dropdownRef}
-      className="relative inline-block min-w-[200px] z-[7000]"
+      className={`relative inline-block z-[7000] ${widthClass}`}
+      style={{ width: widthStyle }}
     >
       {/* Main Button */}
       <span
         onClick={() => setIsOpen(!isOpen)}
-        className="main-btn text-dropdown h-[60px] flex items-center justify-between px-4"
+        className={`main-btn text-dropdown ${heightClass} ${fontSizeClass} flex items-center justify-between px-4`}
+        style={{ height: heightStyle, fontSize: fontSizeStyle }}
       >
         <span className="py-2 px-4">
           {icon && <span className="mr-2">{icon}</span>}
@@ -92,7 +106,8 @@ export default function CustomDropdown({
                     <span
                       key={option}
                       onClick={() => handleSelect(option)}
-                      className={`w-full text-left px-6 py-2 text-[#C296CD] text-lg font-medium hover:bg-gray-50 transition-colors flex items-center block`}
+                      className={`w-full text-left px-6 py-2 text-[#C296CD] ${fontSizeClass} font-medium hover:bg-gray-50 transition-colors flex items-center`}
+                      style={{ fontSize: fontSizeStyle }}
                     >
                       {selectedValue === option && (
                         <span className="mr-3 text-[#81069e]">•</span>
@@ -111,7 +126,8 @@ export default function CustomDropdown({
                 <li key={option}>
                   <span
                     onClick={() => handleSelect(option)}
-                    className={`w-full text-left px-6 py-1 text-[#C296CD] text-lg font-medium hover:bg-gray-50 transition-colors flex items-center `}
+                    className={`w-full text-left px-6 py-1 text-[#C296CD] ${fontSizeClass} font-medium hover:bg-gray-50 transition-colors flex items-center `}
+                    style={{ fontSize: fontSizeStyle }}
                   >
                     {selectedValue === option && (
                       <span className="mr-3 text-[#81069e]">•</span>

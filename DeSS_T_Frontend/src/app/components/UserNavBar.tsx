@@ -84,14 +84,13 @@ export default function UserNavBar({
 
             {/* Workspace Community */}
             <span
-              onClick={handleWorkspaceCommunityClick}
               style={{
                 fontSize: "16px",
-                color: "#81069e",
+                color: "#9ca3af",
                 fontWeight: "600",
-                cursor: "pointer",
+                cursor: "not-allowed",
                 paddingBottom: "8px",
-                borderBottom: isCommunityRoute ? "3px solid #81069e" : "none",
+                opacity: 0.6,
                 transition: "border-bottom 0.3s ease",
               }}
             >

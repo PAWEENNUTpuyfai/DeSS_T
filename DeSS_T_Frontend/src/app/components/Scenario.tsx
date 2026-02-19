@@ -211,7 +211,7 @@ export default function Scenario({
     color: string;
     stations: string[];
     segments: RouteSegment[];
-    orders: Order[]; // Order objects connecting StationPairs in sequence
+    orders: Order[];
     hidden: boolean;
     locked: boolean;
     maxDistance: number;
@@ -1545,7 +1545,7 @@ export default function Scenario({
                       <p className="text-[20px] text-[#323232]">
                         Simulation Period :
                       </p>
-                      <div className="time-inputs p-2 px-4 text-[#C296CD] ml-3 my-2 h-[60px] flex items-center">
+                      <div className="time-inputs p-2 px-4 text-[#C296CD] ml-3 my-2 h-[60px] flex items-center text-lg">
                         <input
                           type="number"
                           min={0}
@@ -1554,10 +1554,10 @@ export default function Scenario({
                           onChange={(e) =>
                             setSimStartHour(Number(e.target.value))
                           }
-                          className="border p-2 rounded w-10"
+                          className="border p-2 rounded w-10 text-lg"
                         />
-                        <span>:00</span>
-                        <span className="mx-2">-</span>
+                        <span className="text-lg">:00</span>
+                        <span className="mx-2 text-lg">-</span>
                         <input
                           type="number"
                           min={1}
@@ -1566,9 +1566,9 @@ export default function Scenario({
                           onChange={(e) =>
                             setSimEndHour(Number(e.target.value))
                           }
-                          className="border p-2 rounded w-10"
+                          className="border p-2 rounded w-10 text-lg"
                         />
-                        <span>:00</span>
+                        <span className="text-lg">:00</span>
                       </div>
                     </div>
 
@@ -1579,6 +1579,7 @@ export default function Scenario({
                           options={timeSlotOptions}
                           selectedValue={timeSlot}
                           onChange={setTimeSlot}
+                          fontSize="text-lg"
                         />
                       </div>
                     </div>

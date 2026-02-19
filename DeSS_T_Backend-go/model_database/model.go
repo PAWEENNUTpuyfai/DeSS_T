@@ -202,8 +202,8 @@ type ConfigurationDetail struct {
 	UserConfigurations   []UserConfiguration   `gorm:"foreignKey:ConfigurationDetailID"`
 	PublicConfigurations []PublicConfiguration `gorm:"foreignKey:ConfigurationDetailID"`
 	ScenarioDetails      []ScenarioDetail      `gorm:"foreignKey:ConfigurationDetailID"`
-	AlightingData        []AlightingData       `gorm:"foreignKey:ConfigurationDetailID"`
-	InterArrivalData     []InterArrivalData    `gorm:"foreignKey:ConfigurationDetailID"`
+	AlightingData         []AlightingData       `gorm:"foreignKey:ConfigurationDetailID" json:"alighting_datas"`
+    InterArrivalData      []InterArrivalData    `gorm:"foreignKey:ConfigurationDetailID" json:"interarrival_datas"`	
 }
 
 // ------------------- ALIGHTING DATA --------------------
@@ -262,8 +262,8 @@ type StationDetail struct {
 	NetworkModel	 NetworkModel      `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"network_model"`
     StationPairsAsFst []StationPair    `gorm:"foreignKey:FstStationID"`
     StationPairsAsSnd []StationPair    `gorm:"foreignKey:SndStationID"`
-    AlightingData     []AlightingData  `gorm:"foreignKey:StationDetailID"` 
-    InterArrivalData  []InterArrivalData `gorm:"foreignKey:StationDetailID"`
+	AlightingData         []AlightingData       `gorm:"foreignKey:StationDetailID" json:"alighting_datas"`
+    InterArrivalData      []InterArrivalData    `gorm:"foreignKey:StationDetailID" json:"interarrival_datas"`
 }
 
 // ------------------- STATION PAIR --------------------

@@ -23,11 +23,11 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 
 		// --- 1. Generate New IDs ---
 		input.ID = uuid.New().String()
-		configDetail := &input.ConfigurationDetail
+		configDetail := input.ConfigurationDetail
 		configDetail.ID = uuid.New().String()
 		input.ConfigurationDetailID = configDetail.ID
 
-		netModel := &configDetail.NetworkModel
+		netModel := configDetail.NetworkModel
 		netModel.ID = uuid.New().String()
 		configDetail.NetworkModelID = netModel.ID
 
@@ -153,7 +153,7 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 				sd.ID = uuid.New().String()
 				sd.ConfigurationDetailID = configDetail.ID
 
-				rs := &sd.RouteScenario
+				rs := sd.RouteScenario
 				rs.ID = uuid.New().String()
 				sd.RouteScenarioID = rs.ID
 
@@ -247,4 +247,33 @@ func GetUserConfigurationsByUserID(userID string) ([]model_database.UserConfigur
 		Find(&userConfigs).Error
 
 	return userConfigs, err
+}
+
+func DeleteUserConfigurationByID(configID string) error {
+	// 1. ค้นหาข้อมูลก่อนว่ามีอยู่จริงหรือไม่ เพื่อเอา ConfigurationDetailID มาด้วย
+	var userConfig model_database.UserConfiguration
+	if err := config.DB.First(&userConfig, "id = ?", configID).Error; err != nil {
+		return err // จะคืนค่า gorm.ErrRecordNotFound ถ้าไม่เจอข้อมูล
+	}
+
+	// 2. ใช้ Transaction ในการลบ เพื่อความปลอดภัย
+	err := config.DB.Transaction(func(tx *gorm.DB) error {
+		// 2.1 ลบตัว User Configuration (ตารางหลัก)
+		if err := tx.Delete(&userConfig).Error; err != nil {
+			return err
+		}
+
+		// 2.2 ลบ Configuration Detail (ตัวแม่ของ Network และ Data ต่างๆ)
+		// การลบตรงนี้จะไปทริกเกอร์ OnDelete:CASCADE ทำให้ข้อมูลลูกๆ โดนลบตามไปด้วย (Clean up)
+		if userConfig.ConfigurationDetailID != "" {
+			if err := tx.Where("id = ?", userConfig.ConfigurationDetailID).
+				Delete(&model_database.ConfigurationDetail{}).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	return err
 }

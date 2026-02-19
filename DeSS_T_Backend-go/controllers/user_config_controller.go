@@ -226,3 +226,35 @@ func GetUserConfigurations(c *fiber.Ctx) error {
 		"user_configurations": responseList,
 	})
 }
+
+func DeleteUserConfiguration(c *fiber.Ctx) error {
+	// 1. รับค่า ID จาก Parameter ใน URL
+	configID := c.Params("id")
+	if configID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ต้องระบุ ID ของ User Configuration ที่ต้องการลบ",
+		})
+	}
+
+	// 2. ส่งต่อให้ Service ทำหน้าที่ลบข้อมูลและจัดการ Database
+	err := services.DeleteUserConfigurationByID(configID)
+	if err != nil {
+		// กรณีที่ 1: หาข้อมูลไม่เจอ (อาจจะโดนลบไปแล้ว หรือส่ง ID ผิด)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "ไม่พบข้อมูลที่ต้องการลบในระบบ",
+			})
+		}
+
+		// กรณีที่ 2: Error ขัดข้องจาก Database
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":  "เกิดข้อผิดพลาดในการลบข้อมูล",
+			"detail": err.Error(),
+		})
+	}
+
+	// 3. แจ้งผลลัพธ์การลบสำเร็จ
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ลบข้อมูล User Configuration สำเร็จเรียบร้อย",
+	})
+}

@@ -20,7 +20,7 @@ func DatabaseRoutes(app *fiber.App) {
     api.Get("/user-configurations/:user_id", controllers.GetUserConfigurations)
     api.Post("/user-configuration", controllers.CreateUserConfiguration)
     // api.Put("/user-configuration/:id",controllers.UpdateUserConfiguration)
-    // api.Delete("/user-configuration/:id",controllers.DeleteUserConfiguration)
+    api.Delete("/user-configuration/:id",controllers.DeleteUserConfiguration)
 
     //configuration-details
     api.Get("/configuration-details/:id", controllers.GetConfigurationDetail)

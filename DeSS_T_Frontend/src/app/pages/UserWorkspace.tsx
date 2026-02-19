@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 import UserNavBar from "../components/UserNavBar";
 import CustomDropdown from "../components/CustomDropdown";
+import type { UserConfiguration } from "../models/User";
+import { getUserConfigurations } from "../../utility/api/configuration";
 import "../../style/Workspace.css";
 
 export default function UserWorkspace() {
@@ -12,6 +14,10 @@ export default function UserWorkspace() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"project" | "config">("project");
+  const [userConfigurations, setUserConfigurations] = useState<
+    UserConfiguration[]
+  >([]);
+  const [configsError, setConfigsError] = useState<string | null>(null);
 
   // Configuration creation states
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -37,39 +43,13 @@ export default function UserWorkspace() {
       return [];
     }
 
-    const configs = user.user_configurations ?? [];
-    const mockConfigs = [
-      {
-        id: "mock-config-1",
-        name: "Chiang Mai AM Peak",
-        date: new Date().toISOString(),
-        imageUrl: "",
-      },
-      {
-        id: "mock-config-2",
-        name: "Old Town Midday",
-        date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-        imageUrl: "",
-      },
-      {
-        id: "mock-config-3",
-        name: "Airport Corridor",
-        date: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-        imageUrl: "",
-      },
-    ];
-
-    if (configs.length === 0) {
-      return mockConfigs;
-    }
-
-    return configs.map((config) => ({
+    return userConfigurations.map((config) => ({
       id: config.user_configuration_id,
       name: config.name,
       date: config.modify_date,
       imageUrl: config.cover_image?.path_file,
     }));
-  }, [user]);
+  }, [user, userConfigurations]);
 
   const configOptionNames = useMemo(
     () => configOptions.map((option) => option.name),
@@ -82,33 +62,7 @@ export default function UserWorkspace() {
     }
 
     if (activeTab === "config") {
-      const configs = user.user_configurations ?? [];
-      const mockConfigs = [
-        {
-          id: "mock-config-1",
-          name: "Chiang Mai AM Peak",
-          date: new Date().toISOString(),
-          imageUrl: "",
-        },
-        {
-          id: "mock-config-2",
-          name: "Old Town Midday",
-          date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-          imageUrl: "",
-        },
-        {
-          id: "mock-config-3",
-          name: "Airport Corridor",
-          date: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-          imageUrl: "",
-        },
-      ];
-
-      if (configs.length === 0) {
-        return mockConfigs;
-      }
-
-      return configs.map((config) => ({
+      return userConfigurations.map((config) => ({
         id: config.user_configuration_id,
         name: config.name,
         date: config.modify_date,
@@ -122,7 +76,7 @@ export default function UserWorkspace() {
       date: scenario.modify_date,
       imageUrl: scenario.cover_image?.path_file,
     }));
-  }, [user, activeTab]);
+  }, [user, userConfigurations, activeTab]);
 
   const formatDate = (date?: string) => {
     if (!date) {
@@ -157,6 +111,37 @@ export default function UserWorkspace() {
     console.log("❌ No user in context, redirecting to home...");
     setError("User not authenticated");
     setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const userId = user.google_id || user.email;
+    if (!userId) {
+      setConfigsError("Missing user id for configurations");
+      return;
+    }
+
+    let isMounted = true;
+    setConfigsError(null);
+
+    getUserConfigurations(userId)
+      .then((configs) => {
+        if (!isMounted) return;
+        setUserConfigurations(configs ?? []);
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        const msg = err instanceof Error ? err.message : String(err);
+        setConfigsError(msg);
+        setUserConfigurations([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   const handleLogout = () => {
@@ -265,6 +250,11 @@ export default function UserWorkspace() {
             </div>
           </div>
 
+          {activeTab === "config" && configsError && (
+            <div className="text-red-600 mb-3">
+              Failed to load configurations: {configsError}
+            </div>
+          )}
           <div className="workspace-cards">
             {cards.length === 0 ? (
               <div className="workspace-empty">

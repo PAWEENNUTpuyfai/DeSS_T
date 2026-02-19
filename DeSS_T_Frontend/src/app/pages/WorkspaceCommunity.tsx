@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import UserNavBar from "../components/UserNavBar";
 import Nav from "../components/NavBar";
+import CustomDropdown from "../components/CustomDropdown";
 import "../../style/Workspace.css";
 import "../../style/community.css";
-
-type TabType = "public" | "configuration";
 
 interface Project {
   id: string;
@@ -20,63 +19,29 @@ export default function WorkspaceCommunity() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>("public");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [expandedSections, setExpandedSections] = useState({
+    osm: true,
+    upload: true,
+  });
+
+  const sortOptions = ["Date Asc", "Date Desc"];
 
   // Mock data
   const [publicProjects] = useState<Project[]>([
-    {
-      id: "1",
-      name: "CMU Work 1",
-      author: "By Tonnam Anuwat",
-      thumbnail: "map-thumbnail",
-      date: "Jan 24, 2024",
-    },
-    {
-      id: "2",
-      name: "CMU Work 2",
-      author: "By Tonnam Anuwat",
-      thumbnail: "map-thumbnail",
-      date: "Jan 24, 2024",
-    },
-    {
-      id: "3",
-      name: "CMU Work 3",
-      author: "By Tonnam Anuwat",
-      thumbnail: "map-thumbnail",
-      date: "Jan 24, 2024",
-    },
-    {
-      id: "4",
-      name: "CMU Work 4",
-      author: "By Tonnam Anuwat",
-      thumbnail: "map-thumbnail",
-      date: "Jan 24, 2024",
-    },
-  ]);
-
-  const [configurationData] = useState<Project[]>([
-    {
-      id: "c1",
-      name: "Configuration 1",
-      author: "By User",
-      thumbnail: "config-thumbnail",
-    },
-    {
-      id: "c2",
-      name: "Configuration 2",
-      author: "By User",
-      thumbnail: "config-thumbnail",
-    },
-    {
-      id: "c3",
-      name: "Configuration 3",
-      author: "By User",
-      thumbnail: "config-thumbnail",
-    },
+    { id: "1", name: "CMU Work 1", author: "By Tonnam Anuwat", thumbnail: "map" },
+    { id: "2", name: "CMU Work 2", author: "By Tonnam Anuwat", thumbnail: "map" },
+    { id: "3", name: "CMU Work 3", author: "By Tonnam Anuwat", thumbnail: "map" },
+    { id: "4", name: "CMU Work 4", author: "By Tonnam Anuwat", thumbnail: "map" },
+    { id: "5", name: "Work test 1", author: "By Mindtssawora", thumbnail: "map" },
+    { id: "6", name: "Demo", author: "By Fuyfai Paweennul", thumbnail: "map" },
+    { id: "7", name: "My Public Work", author: "By Tonnam Anuwat", thumbnail: "map" },
+    { id: "8", name: "CMU", author: "By PDF", thumbnail: "map" },
   ]);
 
   useEffect(() => {
-    if (user || !loading) {
+    if (user) {
       setLoading(false);
       return;
     }
@@ -93,11 +58,21 @@ export default function WorkspaceCommunity() {
     );
   }
 
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
   const handleBackClick = () => {
     navigate(-1);
   };
 
-  const displayData = activeTab === "public" ? publicProjects : configurationData;
+  const displayData = publicProjects;
+  const filteredData = displayData.filter((project) =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   return (
     <div className="workspace-page">
@@ -114,60 +89,105 @@ export default function WorkspaceCommunity() {
 
       <div className="community-container">
         {/* Left Sidebar */}
-        <aside className="community-sidebar">
-          <div className="community-sidebar-section">
-            <h3 className="sidebar-title">
-              🗺️ OpenStreetMap Information
-            </h3>
-            <div className="sidebar-filters">
-              <label>Max Latitude</label>
-              <label>Max Longitude</label>
-              <label>Min Latitude</label>
-              <label>Min Longitude</label>
+        <aside className="workspace-sidebar">
+          <div className="sidebar-extra-space">
+            {/* OpenStreetMap Information */}
+            <div className="sidebar-card-header-only">
+              <button
+                className="sidebar-card-header-button"
+                onClick={() => toggleSection("osm")}
+              >
+                <span className={`toggle-arrow ${expandedSections.osm ? "open" : ""}`}>
+                  ▼
+                </span>
+                🗺️ OpenStreetMap
+              </button>
             </div>
+            {expandedSections.osm && (
+              <div className="sidebar-card-content-only">
+                <label>Max Latitude</label>
+                <label>Max Longitude</label>
+                <label>Min Latitude</label>
+                <label>Min Longitude</label>
+              </div>
+            )}
+
+            {/* Upload Period */}
+            <div className="sidebar-card-header-only">
+              <button
+                className="sidebar-card-header-button"
+                onClick={() => toggleSection("upload")}
+              >
+                <span className={`toggle-arrow ${expandedSections.upload ? "open" : ""}`}>
+                  ▼
+                </span>
+                📅 Upload Period
+              </button>
+            </div>
+            {expandedSections.upload && (
+              <div className="sidebar-card-content-only">
+                <div className="calendar-placeholder">
+                  <div className="calendar-header">JANUARY 2022</div>
+                  <div className="calendar-grid">
+                    <div>M</div>
+                    <div>T</div>
+                    <div>W</div>
+                    <div>Th</div>
+                    <div>F</div>
+                    <div>S</div>
+                    <div>Su</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="community-sidebar-section">
-            <h3 className="sidebar-title">📅 Upload Period</h3>
-            <div className="calendar-placeholder">
-              {/* Calendar widget would go here */}
-              <p>Select date range</p>
-            </div>
+          <div className="workspace-sidebar-footer">
+            {user && (
+              <button
+                className="workspace-logout"
+                onClick={() => navigate("/")}
+              >
+                Logout
+              </button>
+            )}
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className="community-main">
-          {/* Tab Navigation */}
-          <div className="tab-navigation">
-            <button
-              className={`tab-button ${activeTab === "public" ? "active" : ""}`}
-              onClick={() => setActiveTab("public")}
-            >
-              Public Project
-            </button>
-            <button
-              className={`tab-button ${activeTab === "configuration" ? "active" : ""}`}
-              onClick={() => setActiveTab("configuration")}
-            >
-              Configuration Data
-            </button>
-          </div>
-
-          {/* Content Area */}
+        <main className="workspace-main community-main">
+          {/* Projects Grid with Search */}
           <div className="community-content">
+            {/* Search and Filter Bar */}
+            <div className="search-filter-bar">
+              <div className="search-input-wrapper">
+                <span className="search-icon">🔍</span>
+                <input
+                  type="text"
+                  placeholder="Search by project name ...."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input"
+                />
+                <button className="clear-btn">✕</button>
+              </div>
+              <div className="filter-buttons">
+                <button className="filter-btn">⚙️</button>
+                <CustomDropdown
+                  options={sortOptions}
+                  selectedValue={sortOrder === "asc" ? "Date Asc" : "Date Desc"}
+                  onChange={(value) => setSortOrder(value === "Date Asc" ? "asc" : "desc")}
+                />
+              </div>
+            </div>
+
             <div className="projects-grid">
-              {displayData.map((project) => (
+              {filteredData.map((project) => (
                 <div key={project.id} className="project-card">
-                  <div className="project-thumbnail">
-                    {/* Placeholder for thumbnail */}
-                  </div>
+                  <div className="project-thumbnail"></div>
                   <div className="project-info">
                     <h3 className="project-name">{project.name}</h3>
                     <p className="project-author">{project.author}</p>
-                    {project.date && (
-                      <p className="project-date">{project.date}</p>
-                    )}
                   </div>
                 </div>
               ))}

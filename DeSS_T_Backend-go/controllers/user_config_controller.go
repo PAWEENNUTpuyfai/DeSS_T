@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"DeSS_T_Backend-go/model_database"
+	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
-	"log"
 	"errors"
+	"log"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-	"DeSS_T_Backend-go/models"   
 )
 
 func CreateUserConfiguration(c *fiber.Ctx) error {
@@ -160,4 +162,67 @@ func GetConfigurationDetail(c *fiber.Ctx) error {
 
 	// ส่งกลับเป็น JSON
 	return c.Status(fiber.StatusOK).JSON(finalResponse)
+}
+
+func GetUserConfigurations(c *fiber.Ctx) error {
+	// 1. รับค่า user_id จาก Parameter
+	userID := c.Params("user_id")
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ต้องระบุ user_id",
+		})
+	}
+
+	// 2. ดึงข้อมูลจากฐานข้อมูล (ตอนนี้ Service จะเบาและเร็วมาก)
+	dbConfigs, err := services.GetUserConfigurationsByUserID(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":  "เกิดข้อผิดพลาดในการดึงข้อมูลรายการ Configuration",
+			"detail": err.Error(),
+		})
+	}
+
+	// 3. 🛠 MAPPING: จาก DB Model แปลงเป็น DTO Model
+	var responseList []models.UserConfiguration
+
+	for _, dbConf := range dbConfigs {
+		// --- จัดการ Cover Image ---
+		var coverImage models.CoverImageConf
+		var coverImgIDStr string
+		
+		if dbConf.CoverImage != nil {
+			// ถ้ามีข้อมูลรูปภาพ ให้ Map id และ path_file
+			coverImgIDStr = dbConf.CoverImage.ID
+			coverImage = models.CoverImageConf{
+				CoverImageConfID: dbConf.CoverImage.ID,
+				PathFile:         dbConf.CoverImage.PathFile,
+			}
+		} else if dbConf.CoverImgID != nil {
+			coverImgIDStr = *dbConf.CoverImgID
+		}
+
+		// --- ประกอบร่าง User Configuration DTO ---
+		dto := models.UserConfiguration{
+			UserConfigurationID:   dbConf.ID,
+			Name:                  dbConf.Name,
+			ModifyDate:            dbConf.ModifyDate.Format(time.RFC3339), // แปลงเป็น ISO String
+			CreateBy:              dbConf.CreateBy,
+			CoverImgID:            coverImgIDStr,
+			ConfigurationDetailID: dbConf.ConfigurationDetailID,
+			CoverImage:            coverImage, 
+			// ❌ สังเกตว่าเราไม่ประกาศ ConfigurationDetail ตรงนี้เลย
+			// เนื่องจากใน models มี `omitempty` อยู่ ฟิลด์นี้จะไม่ถูกแสดงใน JSON ผลลัพธ์
+		}
+
+		responseList = append(responseList, dto)
+	}
+
+	// 4. ถ้าไม่มีข้อมูล จะคืนค่ากลับเป็น Array ว่าง [] เพื่อให้ Frontend ไม่เจอปัญหา null
+	if responseList == nil {
+		responseList = []models.UserConfiguration{}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"user_configurations": responseList,
+	})
 }

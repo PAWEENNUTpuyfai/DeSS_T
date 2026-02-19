@@ -17,7 +17,7 @@ func DatabaseRoutes(app *fiber.App) {
     // api.Delete("/public-configuration/:id", controllers.DeletePublicConfiguration)
 
     //user-configurations
-    // api.Get("/user-configurations/:user_id", controllers.GetUserConfigurations)
+    api.Get("/user-configurations/:user_id", controllers.GetUserConfigurations)
     api.Post("/user-configuration", controllers.CreateUserConfiguration)
     // api.Put("/user-configuration/:id",controllers.UpdateUserConfiguration)
     // api.Delete("/user-configuration/:id",controllers.DeleteUserConfiguration)

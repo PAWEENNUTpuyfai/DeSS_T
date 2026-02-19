@@ -13,11 +13,11 @@ import (
 
 func SaveUserConfiguration(input model_database.UserConfiguration) (model_database.UserConfiguration, error) {
 	// 🟢 [DEBUG] เช็คข้อมูลที่รับมาจาก JSON ก่อนเข้า Transaction
-	log.Println("--- DEBUG: START SAVE USER CONFIGURATION ---")
-	log.Printf("📦 Network Model Name: %s", input.ConfigurationDetail.NetworkModel.NetworkModelName)
-	log.Printf("📍 Stations count: %d", len(input.ConfigurationDetail.NetworkModel.StationDetails))
-	log.Printf("📉 Alighting Data count: %d", len(input.ConfigurationDetail.AlightingData))
-	log.Printf("📈 InterArrival Data count: %d", len(input.ConfigurationDetail.InterArrivalData))
+	// log.Println("--- DEBUG: START SAVE USER CONFIGURATION ---")
+	// log.Printf("📦 Network Model Name: %s", input.ConfigurationDetail.NetworkModel.NetworkModelName)
+	// log.Printf("📍 Stations count: %d", len(input.ConfigurationDetail.NetworkModel.StationDetails))
+	// log.Printf("📉 Alighting Data count: %d", len(input.ConfigurationDetail.AlightingData))
+	// log.Printf("📈 InterArrival Data count: %d", len(input.ConfigurationDetail.InterArrivalData))
 
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
 
@@ -31,8 +31,8 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 		netModel.ID = uuid.New().String()
 		configDetail.NetworkModelID = netModel.ID
 
-		log.Printf("🆔 New ConfigDetail ID: %s", configDetail.ID)
-		log.Printf("🆔 New NetworkModel ID: %s", netModel.ID)
+		// log.Printf("🆔 New ConfigDetail ID: %s", configDetail.ID)
+		// log.Printf("🆔 New NetworkModel ID: %s", netModel.ID)
 
 		// --- 2. บันทึก Network Model ---
 		if err := tx.Select("ID", "NetworkModelName").Create(netModel).Error; err != nil {
@@ -52,7 +52,7 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 				return fmt.Errorf("station [%d] %s: coordinates are missing in JSON", i, s.Name)
 			}
 
-			log.Printf("📍 Mapping Station [%d]: (Old) %s -> (New) %s | Name: %s", i, oldID, newID, s.Name)
+			// log.Printf("📍 Mapping Station [%d]: (Old) %s -> (New) %s | Name: %s", i, oldID, newID, s.Name)
 
 			s.ID = newID
 			s.NetworkModelID = netModel.ID
@@ -108,13 +108,13 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 			newStationID, ok := stationIDMap[oldStationID]
 
 			// [DEBUG] Log รายตัว
-			log.Printf("📉 Alighting [%d]: Looking for Station ID (Old): '%s'", i, oldStationID)
+			// log.Printf("📉 Alighting [%d]: Looking for Station ID (Old): '%s'", i, oldStationID)
 
 			if !ok || newStationID == "" {
 				return fmt.Errorf("alighting_data [%d]: station_id '%s' not found. Check if 'station_id' in JSON matches station id in NetworkModel", i, oldStationID)
 			}
 
-			log.Printf("📉 Alighting [%d]: Successfully Mapped to (New): %s", i, newStationID)
+			// log.Printf("📉 Alighting [%d]: Successfully Mapped to (New): %s", i, newStationID)
 			d.StationDetailID = newStationID
 
 			if err := tx.Omit("StationDetail", "ConfigurationDetail").Create(d).Error; err != nil {
@@ -131,13 +131,14 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 			oldStationID := d.StationDetailID
 			newStationID, ok := stationIDMap[oldStationID]
 
-			log.Printf("📈 InterArrival [%d]: Looking for Station ID (Old): '%s'", i, oldStationID)
+			// [DEBUG] Log รายตัว
+			// log.Printf("📈 InterArrival [%d]: Looking for Station ID (Old): '%s'", i, oldStationID)
 
 			if !ok || newStationID == "" {
 				return fmt.Errorf("inter_arrival_data [%d]: station_id '%s' not found", i, oldStationID)
 			}
 
-			log.Printf("📈 InterArrival [%d]: Successfully Mapped to (New): %s", i, newStationID)
+			// log.Printf("📈 InterArrival [%d]: Successfully Mapped to (New): %s", i, newStationID)
 			d.StationDetailID = newStationID
 
 			if err := tx.Omit("StationDetail", "ConfigurationDetail").Create(d).Error; err != nil {
@@ -233,4 +234,17 @@ func GetConfigurationDetailByID(configDetailID string) (model_database.Configura
 	}
 
 	return configDetail, nil
+}
+
+
+// ดึงรายการ User Configuration ทั้งหมดของ User คนนั้น (แบบไม่ต้องเอา Detail)
+func GetUserConfigurationsByUserID(userID string) ([]model_database.UserConfiguration, error) {
+	var userConfigs []model_database.UserConfiguration
+
+	err := config.DB.
+		Preload("CoverImage"). // ✅ ดึงมาแค่ CoverImage เพื่อเอา path_file ก็พอ
+		Where("create_by = ?", userID).
+		Find(&userConfigs).Error
+
+	return userConfigs, err
 }

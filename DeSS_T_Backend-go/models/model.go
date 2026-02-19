@@ -102,7 +102,7 @@ type RoutePath struct {
 	RoutePathID string `json:"route_path_id"`
 	Name        string `json:"name"`
 	Color       string `json:"color"`
-	Route       string `json:"route"`
+	Route       GeoLineString `json:"route"`
 
 	Orders []Order `json:"orders"`
 

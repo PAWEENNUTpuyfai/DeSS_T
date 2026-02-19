@@ -48,6 +48,25 @@ func UploadConfigurationCoverImg(c *fiber.Ctx) error {
 	return c.Status(201).JSON(response)
 }
 
+func UploadScenarioCoverImg(c *fiber.Ctx) error {
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "file missing"})
+	}
+
+	response, err := services.SaveScenarioCoverImage(
+		fileHeader,
+		c.Protocol(),
+		c.Hostname(),
+		c.SaveFile,
+	)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to upload cover image", "detail": err.Error()})
+	}
+
+	return c.Status(201).JSON(response)
+}
+
 // func GetUserConfigurations(c *fiber.Ctx) error {
 // 	userID := c.Params("user_id")
 // 	if userID == "" {

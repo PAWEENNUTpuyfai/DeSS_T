@@ -227,7 +227,7 @@ export default function ConfigurationDetailPage() {
                         return Array.from(timePeriods).sort().map((timePeriod) => {
                           const alighting = filteredAlighting1.find(d => d.time_period === timePeriod);
                           const interarrival = filteredInterarrival1.find(d => d.time_period === timePeriod);
-                          
+                           
                           return (
                             <div key={timePeriod} className="border-b pb-3 last:border-b-0">
                               <h4 className="font-semibold text-purple-600 mb-2">Time Period : {timePeriod}</h4>

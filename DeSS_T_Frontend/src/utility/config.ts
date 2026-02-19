@@ -5,3 +5,4 @@ export const API_BASE_URL = "http://localhost:8080/api";
 // export const API_BASE_URL = "http://backend-go:8080/api";
 // export const API_BASE_URL = "/api";
 
+export const IMG_BASE_URL = `http://localhost:8080/uploads`;

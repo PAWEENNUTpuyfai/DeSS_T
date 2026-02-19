@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
@@ -45,6 +46,7 @@ export default function ConfigurationFiles({
   configurationName,
   configuration,
 }: GuestConfigurationFilesProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const makeId = (): string => {
@@ -261,19 +263,19 @@ export default function ConfigurationFiles({
     }
   };
 
-  const downloadJson = (data: unknown, filename: string) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
+  // const downloadJson = (data: unknown, filename: string) => {
+  //   const blob = new Blob([JSON.stringify(data, null, 2)], {
+  //     type: "application/json",
+  //   });
+  //   const url = URL.createObjectURL(blob);
+  //   const a = document.createElement("a");
+  //   a.href = url;
+  //   a.download = filename;
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   a.remove();
+  //   URL.revokeObjectURL(url);
+  // };
 
   const submitSelected = async () => {
     if (usermode === "user") {
@@ -384,10 +386,10 @@ export default function ConfigurationFiles({
         };
 
         // Download request payload for debugging/audit
-        downloadJson(
-          userConfigurationPayload,
-          `createUserConfiguration-${Date.now()}.json`,
-        );
+        // downloadJson(
+        //   userConfigurationPayload,
+        //   `createUserConfiguration-${Date.now()}.json`,
+        // );
 
         // Call createUserConfiguration API
         const userConfiguration = await createUserConfiguration(
@@ -396,6 +398,7 @@ export default function ConfigurationFiles({
 
         alert(`Configuration "${configurationName}" saved successfully!`);
         console.log("Created UserConfiguration:", userConfiguration);
+        navigate("/user/workspace");
 
         // Optionally call onSubmit with the configuration detail
         // if needed for further processing

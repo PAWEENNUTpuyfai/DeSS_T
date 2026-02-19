@@ -7,6 +7,7 @@ import CustomDropdown from "../components/CustomDropdown";
 import type { UserConfiguration } from "../models/User";
 import { getUserConfigurations } from "../../utility/api/configuration";
 import "../../style/Workspace.css";
+import { IMG_BASE_URL } from "../../utility/config";
 
 export default function UserWorkspace() {
   const { user, logout } = useAuth();
@@ -267,7 +268,7 @@ export default function UserWorkspace() {
                     className="workspace-card-thumb"
                     style={
                       card.imageUrl
-                        ? { backgroundImage: `url(${card.imageUrl})` }
+                        ? { backgroundImage: `url(${IMG_BASE_URL}/${card.imageUrl})` }
                         : undefined
                     }
                   />

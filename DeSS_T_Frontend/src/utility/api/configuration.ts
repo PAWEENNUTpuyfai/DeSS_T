@@ -24,6 +24,7 @@ export async function createUserConfiguration(
 export async function getUserConfigurations(
   userId: string,
 ): Promise<UserConfiguration[]> {
+  console.log(`Fetching user configurations for user ID: ${userId}`);
   const response = await fetch(
     `${API_BASE_URL}/user-configurations/${encodeURIComponent(userId)}`,
   );
@@ -32,8 +33,23 @@ export async function getUserConfigurations(
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  const result: UserConfiguration[] = await response.json();
-  return result;
+  const result: unknown = await response.json();
+  if (Array.isArray(result)) {
+    return result;
+  }
+
+  if (
+    result &&
+    typeof result === "object" &&
+    Array.isArray((result as { user_configurations?: unknown }).user_configurations)
+  ) {
+    return (result as { user_configurations: UserConfiguration[] })
+      .user_configurations;
+  }
+
+  console.log(result);
+
+  return [];
 }
 
 export async function uploadConfigurationCoverImage(
@@ -63,9 +79,7 @@ export async function getConfigurationDetail(
   configurationDetailId: string,
 ): Promise<ConfigurationDetail> {
   const response = await fetch(
-    `${API_BASE_URL}/configuration-details/${encodeURIComponent(
-      configurationDetailId,
-    )}`,
+    `${API_BASE_URL}/configuration-details/${configurationDetailId}`,
   );
 
   if (!response.ok) {

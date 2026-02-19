@@ -181,7 +181,7 @@ export default function ConfigurationDetailPage() {
               <h2>Configuration Details</h2>
             </div>
           </div>
-
+ 
           <div className="px-3 max-w-[98%] mx-auto">
             {/* Main Layout: Data Panel 1 (25%) - Map (50%) - Data Panel 2 (25%) */}
             <div className="flex gap-4 h-[calc(70vh-80px)] mb-6">

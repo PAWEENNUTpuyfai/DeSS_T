@@ -31,7 +31,6 @@ import type { PaserSchedule } from "../models/ScheduleModel";
 import type { UserScenario } from "../models/User";
 import { downloadJson } from "../../utility/helpers";
 import {
-  createUserScenario,
   uploadScenarioCoverImage,
 } from "../../utility/api/scenario";
 import { useAuth } from "../contexts/useAuth";
@@ -44,7 +43,6 @@ export default function Scenario({
   onBack,
   projectName,
   usermode = "guest",
-  scenario,
 }: {
   configuration: ConfigurationDetail;
   configurationName?: string;
@@ -1526,7 +1524,7 @@ export default function Scenario({
                                           </svg>
                                           Show less
                                         </span>
-                                      </>
+                                      </> 
                                     ) : (
                                       <span
                                         role="button"

@@ -14,7 +14,7 @@ import type {
 import type { NetworkModel } from "../../models/Network";
 import type { UserConfiguration } from "../../models/User";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
-import { isDataFitResponse } from "../../models/DistributionFitModel";
+import { isDataFitResponse } from "../../models/DistriButionFitModel";
 import HelpButton from "../HelpButton";
 import { useAuth } from "../../contexts/useAuth";
 import {

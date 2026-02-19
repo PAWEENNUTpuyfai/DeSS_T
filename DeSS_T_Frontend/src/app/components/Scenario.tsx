@@ -1064,8 +1064,8 @@ export default function Scenario({
 
       downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
 
-      // const result = await createUserScenario(userScenario);
-      // console.log("Scenario saved successfully:", result);
+      const result = await createUserScenario(userScenario);
+      console.log("Scenario saved successfully:", result);
       alert("Scenario saved successfully!");
 
       // Call onBack after saving

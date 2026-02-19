@@ -7,7 +7,12 @@ interface NavProps {
   usermode: "guest" | "user";
   configurationName?: string;
   projectName?: string;
-  inpage?: "Configuration" | "Project" | "Output" | "Workspace";
+  inpage?:
+    | "Configuration"
+    | "Project"
+    | "Output"
+    | "Workspace"
+    | "configuration-detail";
   onBackClick?: () => void;
   userAvatarUrl?: string;
   userName?: string;
@@ -26,7 +31,9 @@ export default function Nav({
   const navigate = useNavigate();
 
   const handleConfirmLeave = () => {
-    if (usermode === "user") {
+    if (inpage === "configuration-detail") {
+      navigate("/user/workspace");
+    } else if (usermode === "user") {
       navigate("/");
     } else {
       onBackClick?.();
@@ -59,11 +66,11 @@ export default function Nav({
             className="nav-icon"
             style={{ cursor: usermode === "guest" ? "pointer" : "default" }}
             onClick={() => {
-              if (!onBackClick) {
+              if (inpage === "configuration-detail") {
+                handleConfirmLeave();
+              } else if (!onBackClick) {
                 return;
-              }
-
-              if (inpage === "Output") {
+              } else if (inpage === "Output") {
                 handleConfirmLeave();
               } else {
                 setShowConfirm(true);
@@ -108,6 +115,8 @@ export default function Nav({
               )
             ) : inpage === "Output" ? (
               "Simulation results"
+            ) : inpage === "configuration-detail" ? (
+              "Configuration Details"
             ) : (
               <>
                 Simulation results-{" "}
@@ -116,10 +125,7 @@ export default function Nav({
             )}
           </h1>
           {usermode === "guest" ? (
-            <button
-              className="login-btn mr-8"
-              onClick={() => navigate("/")}
-            >
+            <button className="login-btn mr-8" onClick={() => navigate("/")}>
               Login
             </button>
           ) : (

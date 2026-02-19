@@ -2,10 +2,15 @@ import { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from "react-router-dom";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
+import Scenario from "../components/Scenario";
 import UserNavBar from "../components/UserNavBar";
 import CustomDropdown from "../components/CustomDropdown";
 import type { UserConfiguration } from "../models/User";
-import { getUserConfigurations } from "../../utility/api/configuration";
+import type { ConfigurationDetail } from "../models/Configuration";
+import {
+  getUserConfigurations,
+  getConfigurationDetail,
+} from "../../utility/api/configuration";
 import "../../style/Workspace.css";
 import { IMG_BASE_URL } from "../../utility/config";
 
@@ -33,6 +38,12 @@ export default function UserWorkspace() {
     "Select configuration",
   );
 
+  // Scenario states
+  const [showScenario, setShowScenario] = useState(false);
+  const [scenarioConfig, setScenarioConfig] =
+    useState<ConfigurationDetail | null>(null);
+  const [scenarioLoading, setScenarioLoading] = useState(false);
+
   // Filter states
   const [fileFilter, setFileFilter] = useState("All Files");
   const [sortFilter, setSortFilter] = useState("Date Asc");
@@ -46,6 +57,7 @@ export default function UserWorkspace() {
 
     return userConfigurations.map((config) => ({
       id: config.user_configuration_id,
+      detail_id: config.configuration_detail_id,
       name: config.name,
       date: config.modify_date,
       imageUrl: config.cover_image?.path_file,
@@ -68,6 +80,7 @@ export default function UserWorkspace() {
         name: config.name,
         date: config.modify_date,
         imageUrl: config.cover_image?.path_file,
+        detail_id: config.configuration_detail_id,
       }));
     }
 
@@ -76,6 +89,7 @@ export default function UserWorkspace() {
       name: scenario.name,
       date: scenario.modify_date,
       imageUrl: scenario.cover_image?.path_file,
+      detail_id: scenario.scenario_detail_id,
     }));
   }, [user, userConfigurations, activeTab]);
 
@@ -190,6 +204,24 @@ export default function UserWorkspace() {
     return <ConfigurationMap usermode="user" configurationName={configName} />;
   }
 
+  // Show Scenario if user created new project
+  if (showScenario && scenarioConfig && projectName) {
+    return (
+      <Scenario
+        configuration={scenarioConfig}
+        configurationName={selectedConfigName}
+        projectName={projectName}
+        usermode="user"
+        onBack={() => {
+          setShowScenario(false);
+          setScenarioConfig(null);
+          setProjectName("");
+          resetProjectModal();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="workspace-page">
       <UserNavBar
@@ -263,12 +295,24 @@ export default function UserWorkspace() {
               </div>
             ) : (
               cards.map((card) => (
-                <div key={card.id} className="workspace-card">
+                <div
+                  key={card.id}
+                  className="workspace-card cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => {
+                    if (activeTab === "config") {
+                      navigate(`/configuration/${card.detail_id}`);
+                    } else {
+                      navigate(`/scenario/${card.detail_id}`);
+                    }
+                  }}
+                >
                   <div
                     className="workspace-card-thumb"
                     style={
                       card.imageUrl
-                        ? { backgroundImage: `url(${IMG_BASE_URL}/${card.imageUrl})` }
+                        ? {
+                            backgroundImage: `url(${IMG_BASE_URL}/${card.imageUrl})`,
+                          }
                         : undefined
                     }
                   />
@@ -382,7 +426,7 @@ export default function UserWorkspace() {
                         (option) => option.name === value,
                       );
                       setSelectedConfigName(value);
-                      setSelectedConfigId(selected?.id ?? null);
+                      setSelectedConfigId(selected?.detail_id ?? null);
                     }}
                   />
                 ) : (
@@ -400,7 +444,7 @@ export default function UserWorkspace() {
                 Cancel
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!projectName.trim()) {
                     alert("Please enter a project name");
                     return;
@@ -409,17 +453,26 @@ export default function UserWorkspace() {
                     alert("Please select configuration data");
                     return;
                   }
-                  setShowProjectModal(false);
-                  navigate("/guest/setup", {
-                    state: {
-                      projectName: projectName.trim(),
-                      configurationId: selectedConfigId,
-                    },
-                  });
+
+                  try {
+                    setScenarioLoading(true);
+                    const config =
+                      await getConfigurationDetail(selectedConfigId);
+                    setScenarioConfig(config);
+                    setShowProjectModal(false);
+                    setShowScenario(true);
+                  } catch (err) {
+                    const msg =
+                      err instanceof Error ? err.message : String(err);
+                    alert(`Failed to load configuration: ${msg}`);
+                  } finally {
+                    setScenarioLoading(false);
+                  }
                 }}
+                disabled={scenarioLoading}
                 className="workspace-modal-btn workspace-modal-submit"
               >
-                Create New
+                {scenarioLoading ? "Loading..." : "Create New"}
               </button>
             </div>
           </div>

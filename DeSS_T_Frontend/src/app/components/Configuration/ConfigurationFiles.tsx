@@ -278,6 +278,8 @@ export default function ConfigurationFiles({
         return;
       }
 
+      let saveSuccess = false;
+
       try {
         setIsSubmitting(true);
 
@@ -382,9 +384,10 @@ export default function ConfigurationFiles({
           userConfigurationPayload,
         );
 
-        alert(`Configuration "${configurationName}" saved successfully!`);
         console.log("Created UserConfiguration:", userConfiguration);
-        navigate("/user/workspace");
+
+        // Mark success
+        saveSuccess = true;
 
         // Optionally call onSubmit with the configuration detail
         // if needed for further processing
@@ -393,6 +396,14 @@ export default function ConfigurationFiles({
         alert("Failed to save configuration: " + msg);
       } finally {
         setIsSubmitting(false);
+      }
+
+      // Navigate after cleanup if successful
+      if (saveSuccess) {
+        alert(`Configuration "${configurationName}" saved successfully!`);
+        // Use window.location to ensure navigation happens
+        window.location.href = "/user/workspace";
+        return;
       }
 
       return;

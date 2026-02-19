@@ -32,6 +32,7 @@ import type { UserScenario } from "../models/User";
 import { downloadJson } from "../../utility/helpers";
 import {
   uploadScenarioCoverImage,
+  createUserScenario,
 } from "../../utility/api/scenario";
 import { useAuth } from "../contexts/useAuth";
 import Nav from "./NavBar";
@@ -1524,7 +1525,7 @@ export default function Scenario({
                                           </svg>
                                           Show less
                                         </span>
-                                      </> 
+                                      </>
                                     ) : (
                                       <span
                                         role="button"

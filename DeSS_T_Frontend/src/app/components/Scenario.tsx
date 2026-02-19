@@ -4,6 +4,7 @@ import type {
   StationDetail,
   StationPair,
   NetworkModel,
+  GeoLineString,
 } from "../models/Network";
 import type { SimulationResponse } from "../models/SimulationModel";
 import ScenarioMap from "./ScenarioMap";
@@ -27,6 +28,13 @@ import type {
 } from "../models/Scenario";
 import { getScheduleData } from "../../utility/api/simulation";
 import type { PaserSchedule } from "../models/ScheduleModel";
+import type { UserScenario } from "../models/User";
+import { downloadJson } from "../../utility/helpers";
+import {
+  createUserScenario,
+  uploadScenarioCoverImage,
+} from "../../utility/api/scenario";
+import { useAuth } from "../contexts/useAuth";
 import Nav from "./NavBar";
 import ExcelJS from "exceljs";
 
@@ -36,15 +44,17 @@ export default function Scenario({
   onBack,
   projectName,
   usermode = "guest",
+  scenario,
 }: {
   configuration: ConfigurationDetail;
   configurationName?: string;
   onBack?: () => void;
-  mode?: "guest" | "user";
-  project?: ProjectSimulationRequest;
   projectName?: string;
+  scenario?: ScenarioDetail;
   usermode?: "guest" | "user";
 }) {
+  const { user } = useAuth();
+
   useEffect(() => {
     console.log("=== Scenario Component Loaded ===");
     console.log("Configuration:", configuration);
@@ -256,6 +266,7 @@ export default function Scenario({
     Set<string>
   >(new Set());
   const colorPickerRef = useRef<HTMLDivElement | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const scheduleDataRef = useRef<
     Array<{ route_id: string; schedule_list: string }>
   >([]);
@@ -632,6 +643,42 @@ export default function Scenario({
   };
 
   const handleSimulation = async () => {
+    // Helper: Build GeoJSON LineString from route segments
+    const buildGeoJsonLineString = (
+      segments: RouteSegment[],
+    ): GeoLineString => {
+      if (segments.length === 0) {
+        return {
+          type: "LineString",
+          coordinates: [],
+        };
+      }
+
+      const coordinates: [number, number][] = [];
+
+      // Collect all coordinates from segments
+      segments.forEach((segment) => {
+        coordinates.push(...segment.coords);
+      });
+
+      // Remove consecutive duplicate points
+      const uniqueCoords: [number, number][] = [];
+      for (const coord of coordinates) {
+        if (
+          uniqueCoords.length === 0 ||
+          uniqueCoords[uniqueCoords.length - 1][0] !== coord[0] ||
+          uniqueCoords[uniqueCoords.length - 1][1] !== coord[1]
+        ) {
+          uniqueCoords.push(coord);
+        }
+      }
+
+      return {
+        type: "LineString",
+        coordinates: uniqueCoords,
+      };
+    };
+
     try {
       const currentScenarioId = `scenario-detail-${Date.now()}`;
 
@@ -684,8 +731,8 @@ export default function Scenario({
         route_path_id: r.name + "-" + currentScenarioId,
         name: r.name,
         color: r.color,
-        route_scenario_id: "route-scenario-" + currentScenarioId, // to be filled by backend
-        route: "", // to be filled by backend
+        route_scenario_id: "route-scenario-" + currentScenarioId,
+        route: buildGeoJsonLineString(r.segments),
         orders: r.orders,
       }));
 
@@ -709,20 +756,6 @@ export default function Scenario({
         time_periods: simStartHour + ":00-" + simEndHour + ":00",
         time_slot: timeSlot.split(" ")[0],
       };
-
-      // Download JSON to local machine
-      // const jsonString = JSON.stringify(simulationRequest, null, 2);
-      // const blob = new Blob([jsonString], { type: "application/json" });
-      // const url = URL.createObjectURL(blob);
-      // const link = document.createElement("a");
-      // link.href = url;
-      // link.download = `simulation-request-${new Date()
-      //   .toISOString()
-      //   .replace(/:/g, "-")}.json`;
-      // document.body.appendChild(link);
-      // link.click();
-      // document.body.removeChild(link);
-      // URL.revokeObjectURL(url);
 
       const response = await runSimulation(simulationRequest);
       setSimulationResponse(response);
@@ -884,9 +917,178 @@ export default function Scenario({
     setSimulationResponse(null);
   };
 
+  const captureMapImage = async (): Promise<File | null> => {
+    if (!mapContainerRef.current) return null;
+
+    try {
+      // Dynamically import html2canvas
+      const html2canvas = (await import("html2canvas")).default;
+
+      const canvas = await html2canvas(mapContainerRef.current, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+      });
+
+      // Convert canvas to blob
+      return new Promise<File | null>((resolve) => {
+        canvas.toBlob((blob: Blob | null) => {
+          if (blob) {
+            const file = new File([blob], `scenario-cover-${Date.now()}.png`, {
+              type: "image/png",
+            });
+            resolve(file);
+          } else {
+            resolve(null);
+          }
+        }, "image/png");
+      });
+    } catch (err) {
+      console.error("Failed to capture map image:", err);
+      return null;
+    }
+  };
+
+  const handleSave = async () => {
+    // Helper: Build GeoJSON LineString from route segments
+    const buildGeoJsonLineString = (
+      segments: RouteSegment[],
+    ): GeoLineString => {
+      if (segments.length === 0) {
+        return {
+          type: "LineString",
+          coordinates: [],
+        };
+      }
+
+      const coordinates: [number, number][] = [];
+
+      // Collect all coordinates from segments
+      segments.forEach((segment) => {
+        coordinates.push(...segment.coords);
+      });
+
+      // Remove consecutive duplicate points
+      const uniqueCoords: [number, number][] = [];
+      for (const coord of coordinates) {
+        if (
+          uniqueCoords.length === 0 ||
+          uniqueCoords[uniqueCoords.length - 1][0] !== coord[0] ||
+          uniqueCoords[uniqueCoords.length - 1][1] !== coord[1]
+        ) {
+          uniqueCoords.push(coord);
+        }
+      }
+
+      return {
+        type: "LineString",
+        coordinates: uniqueCoords,
+      };
+    };
+
+    try {
+      if (!user) {
+        alert("User not authenticated");
+        return;
+      }
+
+      const scenarioName =
+        projectName || `Scenario ${new Date().toLocaleString()}`;
+      const currentScenarioId = `scenario-${Date.now()}`;
+
+      // Build BusInformations from routes
+      const busInformations: BusInformation[] = routes
+        .filter((r) => r.id) // Only include valid routes
+        .map((r) => ({
+          bus_information_id: `bus-info-${r.id}-${currentScenarioId}`,
+          speed: r.speed,
+          max_dis: r.maxDistance,
+          max_bus: r.maxBuses,
+          capacity: r.capacity,
+          avg_travel_time: r.routeTravelingTime,
+          bus_scenario_id: "bus-scenario-" + currentScenarioId,
+          route_path_id: r.name + "-" + currentScenarioId,
+        }));
+
+      const busScenario: BusScenario = {
+        bus_scenario_id: "bus-scenario-" + currentScenarioId,
+        bus_informations: busInformations,
+      };
+
+      const routePaths: RoutePath[] = routes.map((r) => ({
+        route_path_id: r.name + "-" + currentScenarioId,
+        name: r.name,
+        color: r.color,
+        route_scenario_id: "route-scenario-" + currentScenarioId,
+        route: buildGeoJsonLineString(r.segments),
+        orders: r.orders,
+      }));
+
+      const routeScenario: RouteScenario = {
+        route_scenario_id: "route-" + currentScenarioId,
+        route_paths: routePaths,
+      };
+
+      const scenarioDetail: ScenarioDetail = {
+        scenario_detail_id: currentScenarioId,
+        bus_scenario_id: busScenario.bus_scenario_id,
+        route_scenario_id: routeScenario.route_scenario_id,
+        bus_scenario: busScenario,
+        route_scenario: routeScenario,
+        configuration_detail_id: configuration.configuration_detail_id,
+      };
+
+      // Capture map screenshot and upload as cover image
+      let coverImageId = "";
+      try {
+        const mapFile = await captureMapImage();
+        if (mapFile) {
+          const response = await uploadScenarioCoverImage(mapFile);
+          coverImageId = response.cover_image_id;
+          console.log("Cover image uploaded successfully:", coverImageId);
+        }
+      } catch (uploadError) {
+        console.error("Failed to upload cover image:", uploadError);
+        // Continue with scenario save even if cover image upload fails
+      }
+
+      const userScenario: UserScenario = {
+        user_scenario_id: `user-scenario-${currentScenarioId}`,
+        name: scenarioName,
+        modify_date: new Date().toISOString(),
+        create_by: user.google_id,
+        cover_img_id: coverImageId,
+        scenario_detail_id: currentScenarioId,
+        scenario_detail: scenarioDetail,
+      };
+
+      downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
+
+      // const result = await createUserScenario(userScenario);
+      // console.log("Scenario saved successfully:", result);
+      alert("Scenario saved successfully!");
+
+      // Call onBack after saving
+      if (onBack) {
+        onBack();
+      }
+    } catch (error) {
+      console.error("Failed to save scenario:", error);
+      alert(
+        "Failed to save scenario: " +
+          (error instanceof Error ? error.message : "Unknown error"),
+      );
+    }
+  };
+
   return (
     <>
-      <Nav usermode={usermode} inpage="Project" onBackClick={onBack} />
+      <Nav
+        usermode={usermode}
+        inpage="Project"
+        onBackClick={onBack}
+        projectName={projectName}
+      />
       <main className="">
         <div className="h-[85px]"></div>
         {simulationResponse ? (
@@ -1584,7 +1786,10 @@ export default function Scenario({
                       </div>
                     </div>
                   </div>
-                  <div className="map w-full flex-1 min-h-[400px]">
+                  <div
+                    className="map w-full flex-1 min-h-[400px]"
+                    ref={mapContainerRef}
+                  >
                     <ScenarioMap
                       stations={nodes}
                       route={
@@ -1618,7 +1823,15 @@ export default function Scenario({
                       </div>
                     )}
                   </div>
-                  <div className="mb-4 mt-6 flex justify-end w-full">
+                  <div className="mb-4 mt-6 flex justify-end w-full gap-3">
+                    {usermode === "user" && (
+                      <button
+                        className="btn_secondary px-8"
+                        onClick={handleSave}
+                      >
+                        Save
+                      </button>
+                    )}
                     <button
                       className="btn_primary px-8"
                       onClick={handleSimulation}

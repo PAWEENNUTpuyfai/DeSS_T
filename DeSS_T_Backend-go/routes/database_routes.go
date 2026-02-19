@@ -40,6 +40,6 @@ func DatabaseRoutes(app *fiber.App) {
 
     // //scenario-details
     // api.Get("/scenario-details/:id", controllers.GetScenarioDetails)
-    // api.Post("/upload/scenario-cover-img", controllers.UploadScenarioCoverImg)
+    api.Post("/upload/scenario-cover-img", controllers.UploadScenarioCoverImg)
 
 }

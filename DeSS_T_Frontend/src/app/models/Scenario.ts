@@ -1,4 +1,4 @@
-import type { StationPair } from "./Network";
+import type { GeoLineString, StationPair } from "./Network";
 
 // ------------------- SCENARIO DETAIL --------------------
 export interface ScenarioDetail {
@@ -52,7 +52,7 @@ export interface RoutePath {
   name: string;
   color: string;
   route_scenario_id: string;
-  route: string; // GeoJSON as string: "type:geometry(LINESTRING,4326)"
+  route: GeoLineString;
   orders?: Order[];
 }
 

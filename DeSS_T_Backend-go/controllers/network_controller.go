@@ -427,7 +427,7 @@ func SaveRoutes(c *fiber.Ctx) error {
 			Name:        route.Name,
 			Color:       route.Color,
 			// Route field could store JSON-encoded route data if needed
-			Route:  "", // TODO: Store route geometry/segments as needed
+			Route:  models.GeoLineString{Type: "LineString", Coordinates: [][2]float64{}}, // TODO: Store route geometry/segments as needed
 			Orders: []models.Order{},
 		}
 		routePaths = append(routePaths, routePath)

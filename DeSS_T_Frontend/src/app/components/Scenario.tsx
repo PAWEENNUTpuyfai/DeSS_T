@@ -1042,9 +1042,24 @@ export default function Scenario({
           route_path_id: r.name + "-" + currentScenarioId,
         }));
 
+      const scheduleData: PaserSchedule = await getScheduleData(
+        currentScenarioId,
+        busScheduleFile,
+      );
+
+      const scheduleDatas: ScheduleData[] = scheduleData.ScheduleData.map(
+        (sd) => ({
+          schedule_data_id: sd.ScheduleDataID,
+          schedule_list: sd.ScheduleList,
+          route_path_id: sd.RoutePathID,
+          bus_scenario_id: "bus-" + currentScenarioId, // to be filled by backend
+        }),
+      );
+
       const busScenario: BusScenario = {
         bus_scenario_id: "bus-scenario-" + currentScenarioId,
         bus_informations: busInformations,
+        schedule_data: scheduleDatas,
       };
 
       const routePaths: RoutePath[] = routes.map((r) => ({
@@ -1098,7 +1113,7 @@ export default function Scenario({
         scenario_detail: scenarioDetail,
       };
 
-      // downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
+      downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
 
       const result = await createUserScenario(userScenario);
       console.log("Scenario saved successfully:", result);

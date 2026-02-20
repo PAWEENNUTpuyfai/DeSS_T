@@ -69,11 +69,8 @@ export default function UserNavBar({
             {userName && (
               <span
                 onClick={handleUserNameClick}
-                style={{ 
-                  fontSize: "24px", 
-                  fontWeight: "600", 
                 style={{
-                  fontSize: "16px",
+                  fontSize: "24px",
                   fontWeight: "600",
                   color: "#81069e",
                   cursor: "pointer",
@@ -81,7 +78,7 @@ export default function UserNavBar({
                   paddingBottom: "8px",
                   borderBottom: isWorkspaceRoute ? "7px solid #81069e" : "none",
                   borderRadius: isWorkspaceRoute ? "8px 8px 0 0" : "0",
-                  transition: "border-bottom 0.3s ease"
+                  transition: "border-bottom 0.3s ease",
                 }}
               >
                 {userName}

@@ -31,6 +31,7 @@ import type { PaserSchedule } from "../models/ScheduleModel";
 import type { UserScenario } from "../models/User";
 import { downloadJson } from "../../utility/helpers";
 import {
+  createUserScenario,
   uploadScenarioCoverImage,
 } from "../../utility/api/scenario";
 import { useAuth } from "../contexts/useAuth";
@@ -1047,7 +1048,11 @@ export default function Scenario({
         }
       } catch (uploadError) {
         console.error("Failed to upload cover image:", uploadError);
-        // Continue with scenario save even if cover image upload fails
+      }
+
+      if (!coverImageId) {
+        alert("Failed to upload cover image. Please try again.");
+        return;
       }
 
       const userScenario: UserScenario = {
@@ -1060,16 +1065,12 @@ export default function Scenario({
         scenario_detail: scenarioDetail,
       };
 
-      downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
+      // downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
 
-      // const result = await createUserScenario(userScenario);
-      // console.log("Scenario saved successfully:", result);
+      const result = await createUserScenario(userScenario);
+      console.log("Scenario saved successfully:", result);
       alert("Scenario saved successfully!");
-
-      // Call onBack after saving
-      if (onBack) {
-        onBack();
-      }
+      window.location.href = "/user/workspace?tab=project"; // Redirect to workspace or another appropriate page
     } catch (error) {
       console.error("Failed to save scenario:", error);
       alert(
@@ -1524,7 +1525,7 @@ export default function Scenario({
                                           </svg>
                                           Show less
                                         </span>
-                                      </> 
+                                      </>
                                     ) : (
                                       <span
                                         role="button"

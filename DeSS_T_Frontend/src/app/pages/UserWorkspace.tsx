@@ -5,13 +5,14 @@ import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 import Scenario from "../components/Scenario";
 import UserNavBar from "../components/UserNavBar";
 import CustomDropdown from "../components/CustomDropdown";
-import type { UserConfiguration } from "../models/User";
+import type { UserConfiguration, UserScenario } from "../models/User";
 import type { ConfigurationDetail } from "../models/Configuration";
 import {
   getUserConfigurations,
   getConfigurationDetail,
   deleteUserConfiguration,
 } from "../../utility/api/configuration";
+import { getUserScenarios } from "../../utility/api/scenario";
 import "../../style/Workspace.css";
 import { IMG_BASE_URL } from "../../utility/config";
 
@@ -39,6 +40,8 @@ export default function UserWorkspace({
     UserConfiguration[]
   >([]);
   const [configsError, setConfigsError] = useState<string | null>(null);
+  const [userScenarios, setUserScenarios] = useState<UserScenario[]>([]);
+  const [scenariosError, setScenariosError] = useState<string | null>(null);
 
   // Configuration creation states
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -115,14 +118,14 @@ export default function UserWorkspace({
       }));
     }
 
-    return (user.user_scenarios ?? []).map((scenario) => ({
+    return userScenarios.map((scenario) => ({
       id: scenario.user_scenario_id,
       name: scenario.name,
       date: scenario.modify_date,
       imageUrl: scenario.cover_image?.path_file,
       detail_id: scenario.scenario_detail_id,
     }));
-  }, [user, userConfigurations, activeTab]);
+  }, [user, userConfigurations, userScenarios, activeTab]);
 
   const formatDate = (date?: string) => {
     if (!date) {
@@ -183,6 +186,37 @@ export default function UserWorkspace({
         const msg = err instanceof Error ? err.message : String(err);
         setConfigsError(msg);
         setUserConfigurations([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const userId = user.google_id || user.email;
+    if (!userId) {
+      setScenariosError("Missing user id for scenarios");
+      return;
+    }
+
+    let isMounted = true;
+    setScenariosError(null);
+
+    getUserScenarios(userId)
+      .then((scenarios) => {
+        if (!isMounted) return;
+        setUserScenarios(scenarios ?? []);
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        const msg = err instanceof Error ? err.message : String(err);
+        setScenariosError(msg);
+        setUserScenarios([]);
       });
 
     return () => {
@@ -369,6 +403,11 @@ export default function UserWorkspace({
           {activeTab === "config" && configsError && (
             <div className="text-red-600 mb-3">
               Failed to load configurations: {configsError}
+            </div>
+          )}
+          {activeTab === "project" && scenariosError && (
+            <div className="text-red-600 mb-3">
+              Failed to load projects: {scenariosError}
             </div>
           )}
           <div className="workspace-cards">
@@ -580,7 +619,7 @@ export default function UserWorkspace({
                   }
 
                   // Check for duplicate project name
-                  const isDuplicateProject = user?.user_scenarios?.some(
+                  const isDuplicateProject = userScenarios.some(
                     (scenario) =>
                       scenario.name.toLowerCase() ===
                       projectName.trim().toLowerCase(),
@@ -629,9 +668,7 @@ export default function UserWorkspace({
           <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4 border-2">
             <div className="flex items-center mb-4">
               <span className="w-2 h-8 bg-red-600 mr-3" />
-              <h2 className="text-2xl text-gray-800">
-                Delete Configuration
-              </h2>
+              <h2 className="text-2xl text-gray-800">Delete Configuration</h2>
             </div>
             <p className="text-gray-600 mb-6">
               Are you sure you want to delete this configuration? This action

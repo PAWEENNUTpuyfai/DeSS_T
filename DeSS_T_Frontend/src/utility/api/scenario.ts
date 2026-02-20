@@ -44,3 +44,30 @@ export async function uploadScenarioCoverImage(
   const result: CoverImageResponse = await response.json();
   return result;
 }
+
+export async function getUserScenarios(
+  userId: string,
+): Promise<UserScenario[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/user-scenarios/${encodeURIComponent(userId)}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const result: unknown = await response.json();
+  if (Array.isArray(result)) {
+    return result as UserScenario[];
+  }
+
+  if (
+    result &&
+    typeof result === "object" &&
+    Array.isArray((result as { user_scenarios?: unknown }).user_scenarios)
+  ) {
+    return (result as { user_scenarios: UserScenario[] }).user_scenarios;
+  }
+
+  return [];
+}

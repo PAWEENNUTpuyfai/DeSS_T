@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import NavBar from "../components/NavBar";
 import {
   getConfigurationDetail,
+  getUserConfigurations,
 } from "../../utility/api/configuration";
 import type { ConfigurationDetail } from "../models/Configuration";
 import ConfigurationDetailMap from "../components/ConfigurationDetailMap";
@@ -12,7 +13,6 @@ import "../../style/Workspace.css";
 
 export default function ConfigurationDetailPage() {
   const { configurationId } = useParams<{ configurationId: string }>();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [configuration, setConfiguration] =
     useState<ConfigurationDetail | null>(null);
@@ -22,13 +22,6 @@ export default function ConfigurationDetailPage() {
   const [selectedStationId, setSelectedStationId] = useState<string | null>(
     null,
   );
-
-  useEffect(() => {
-    const nameParam = searchParams.get("name");
-    if (nameParam) {
-      setConfigurationName(decodeURIComponent(nameParam));
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     if (!user) {
@@ -62,6 +55,37 @@ export default function ConfigurationDetailPage() {
 
     fetchConfiguration();
   }, [configurationId, user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const userId = user.google_id || user.email;
+    if (!userId) {
+      return;
+    }
+
+    const fetchConfigName = async () => {
+      try {
+        const configurations = await getUserConfigurations(userId);
+        const matchedConfig = configurations?.find(
+          (config) => config.configuration_detail_id === configurationId,
+        );
+        if (matchedConfig) {
+          setConfigurationName(matchedConfig.name);
+        } else {
+          setError("You do not have permission to access this configuration");
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch configuration name:", err);
+        setError("Failed to verify configuration access");
+      }
+    };
+
+    fetchConfigName();
+  }, [user, configurationId]);
 
 
   // Handle station click - set as selected station
@@ -139,7 +163,7 @@ export default function ConfigurationDetailPage() {
           <h1 className="text-2xl font-bold mb-4 text-red-600">Error</h1>
           <p>{error || "Failed to load configuration"}</p>
           <button
-            onClick={() => navigate("/user/workspace")}
+            onClick={() => window.location.href = "/user/workspace"}
             style={{
               marginTop: "1rem",
               backgroundColor: "#81069e",

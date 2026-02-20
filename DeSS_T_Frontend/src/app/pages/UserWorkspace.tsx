@@ -434,9 +434,7 @@ export default function UserWorkspace({
                   className="workspace-card cursor-pointer hover:shadow-lg transition-shadow relative group"
                   onClick={() => {
                     if (activeTab === "config") {
-                      window.location.href = `/configuration/${card.detail_id}?name=${encodeURIComponent(
-                        card.name,
-                      )}`;
+                      window.location.href = `/configuration/${card.detail_id}`;
                     } else {
                       window.location.href = `/scenario/${card.detail_id}`;
                     }

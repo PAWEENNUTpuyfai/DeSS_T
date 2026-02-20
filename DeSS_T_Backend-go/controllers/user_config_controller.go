@@ -258,3 +258,35 @@ func DeleteUserConfiguration(c *fiber.Ctx) error {
 		"message": "ลบข้อมูล User Configuration สำเร็จเรียบร้อย",
 	})
 }
+// DeleteUserScenario ลบ User Scenario
+func DeleteUserScenario(c *fiber.Ctx) error {
+	// 1. รับค่า ID จาก Parameter ใน URL
+	scenarioID := c.Params("id")
+	if scenarioID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ต้องระบุ ID ของ User Scenario ที่ต้องการลบ",
+		})
+	}
+
+	// 2. เรียกใช้ Service เพื่อลบข้อมูล
+	err := services.DeleteUserScenarioByID(scenarioID)
+	if err != nil {
+		// กรณีที่ 1: หาข้อมูลไม่พบ
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "ไม่พบข้อมูล User Scenario ที่ต้องการลบในระบบ",
+			})
+		}
+
+		// กรณีที่ 2: Error ขัดข้องจาก Database หรือการลบ
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":  "เกิดข้อผิดพลาดในการลบข้อมูล",
+			"detail": err.Error(),
+		})
+	}
+
+	// 3. ส่งผลลัพธ์การลบสำเร็จ
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ลบข้อมูล User Scenario และข้อมูลที่เกี่ยวข้องสำเร็จเรียบร้อย",
+	})
+}

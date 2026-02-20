@@ -68,7 +68,7 @@ type UserScenario struct {
     Name             string    `json:"name"`
     ModifyDate       time.Time `json:"modify_date"`
     CreateBy         string    `json:"create_by" gorm:"column:create_by"`
-    CoverImgID       *string   `json:"cover_img" gorm:"column:cover_img_id"`
+    CoverImgID       *string   `json:"cover_img_id" gorm:"column:cover_img_id"`
     ScenarioDetailID string    `json:"scenario_detail_id" gorm:"column:scenario_detail_id"`
 
     CoverImage     *CoverImageProject `gorm:"foreignKey:CoverImgID;constraint:OnDelete:SET NULL;"`

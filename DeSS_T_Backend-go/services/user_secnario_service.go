@@ -323,3 +323,93 @@ func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, erro
 
 	return response, nil
 }
+
+// DeleteUserScenarioByID ลบ User Scenario และข้อมูล Route/Bus ที่เกี่ยวข้องทั้งหมดแบบถอนรากถอนโคน
+func DeleteUserScenarioByID(scenarioID string) error {
+	var userScenario model_database.UserScenario
+
+	// 1. ดึงข้อมูลพร้อม Preload เพื่อหา ID ของตัวลูกๆ (ScenarioDetail และ CoverImage)
+	err := config.DB.
+		Preload("CoverImage").
+		Preload("ScenarioDetail").
+		First(&userScenario, "id = ?", scenarioID).Error
+
+	if err != nil {
+		return err // ส่งกลับ Error ถ้าระบบไม่พบข้อมูล
+	}
+
+	// เตรียมชื่อไฟล์ไว้ลบจาก Disk
+	var fileNameToDelete string
+	if userScenario.CoverImage != nil {
+		fileNameToDelete = userScenario.CoverImage.PathFile
+	}
+
+	// เก็บค่า ID ของลูกๆ ไว้ก่อนที่ตัวแม่จะถูกลบ
+	scenarioDetailID := userScenario.ScenarioDetailID
+	var busScenarioID, routeScenarioID string
+	if userScenario.ScenarioDetail != nil {
+		busScenarioID = userScenario.ScenarioDetail.BusScenarioID
+		routeScenarioID = userScenario.ScenarioDetail.RouteScenarioID
+	}
+
+	// 2. เริ่ม Transaction ทำการลบแบบ Bottom-Up (รับประกันไม่ติด Foreign Key)
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+
+		// ก. ลบตาราง UserScenario ออกก่อน (เพื่อตัดสายใย Foreign Key)
+		if err := tx.Delete(&userScenario).Error; err != nil {
+			return err
+		}
+
+		// ข. ลบ ScenarioDetail
+		if scenarioDetailID != "" {
+			if err := tx.Delete(&model_database.ScenarioDetail{}, "id = ?", scenarioDetailID).Error; err != nil {
+				return err
+			}
+		}
+
+		// ค. กวาดลบฝั่ง Bus Scenario
+		if busScenarioID != "" {
+			// ลบข้อมูลลูกๆ ของ Bus ก่อน
+			tx.Where("bus_scenario_id = ?", busScenarioID).Delete(&model_database.BusInformation{})
+			tx.Where("bus_scenario_id = ?", busScenarioID).Delete(&model_database.ScheduleData{})
+			
+			// ลบ BusScenario ตัวแม่
+			if err := tx.Delete(&model_database.BusScenario{}, "id = ?", busScenarioID).Error; err != nil {
+				return err
+			}
+		}
+
+		// ง. กวาดลบฝั่ง Route Scenario
+		if routeScenarioID != "" {
+			// ดึง RoutePath ทั้งหมดเพื่อไปตามลบ Order ข้างในก่อน
+			var routePaths []model_database.RoutePath
+			tx.Where("route_scenario_id = ?", routeScenarioID).Find(&routePaths)
+			
+			for _, rp := range routePaths {
+				tx.Where("route_path_id = ?", rp.ID).Delete(&model_database.Order{})
+			}
+
+			// ลบ RoutePath
+			tx.Where("route_scenario_id = ?", routeScenarioID).Delete(&model_database.RoutePath{})
+
+			// ลบ RouteScenario ตัวแม่
+			if err := tx.Delete(&model_database.RouteScenario{}, "id = ?", routeScenarioID).Error; err != nil {
+				return err
+			}
+		}
+
+		// จ. ลบ CoverImage (เฉพาะของโปรเจคนี้)
+		if userScenario.CoverImgID != nil {
+			tx.Delete(&model_database.CoverImageProject{}, "id = ?", *userScenario.CoverImgID)
+		}
+
+		return nil
+	})
+
+	// 3. หากลบข้อมูลใน DB สำเร็จ ให้ลบไฟล์รูปภาพออกจากโฟลเดอร์ในเซิร์ฟเวอร์
+	if err == nil && fileNameToDelete != "" {
+		deletePhysicalFile(fileNameToDelete)
+	}
+
+	return err
+}

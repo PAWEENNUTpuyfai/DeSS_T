@@ -73,8 +73,8 @@ export default function UserNavBar({
                 data-active={isWorkspaceRoute}
                 style={{
                   fontSize: "20px",
-                  fontWeight: "600",
-                  color: "#81069e",
+                  fontWeight: "400",
+                  color: "#000000",
                   cursor: "pointer",
                   paddingTop: "12px",
                   paddingBottom: "8px",
@@ -89,7 +89,7 @@ export default function UserNavBar({
               style={{
                 fontSize: "20px",
                 color: "#9ca3af",
-                fontWeight: "600",
+                fontWeight: "400",
                 cursor: "not-allowed",
                 paddingTop: "12px",
                 paddingBottom: "8px",

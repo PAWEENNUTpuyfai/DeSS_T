@@ -1009,9 +1009,30 @@ export default function Scenario({
           route_path_id: r.name + "-" + currentScenarioId,
         }));
 
+      if (!busScheduleFile) {
+        alert("Please upload a bus schedule file before saving scenario");
+        return;
+      }
+
+      const scheduleData: PaserSchedule = await getScheduleData(
+        currentScenarioId,
+        busScheduleFile,
+      );
+      console.log("Schedule Data received:", scheduleData);
+
+      const scheduleDatas: ScheduleData[] = scheduleData.ScheduleData.map(
+        (sd) => ({
+          schedule_data_id: sd.ScheduleDataID,
+          schedule_list: sd.ScheduleList,
+          route_path_id: sd.RoutePathID,
+          bus_scenario_id: "bus-" + currentScenarioId, // to be filled by backend
+        }),
+      );
+
       const busScenario: BusScenario = {
         bus_scenario_id: "bus-scenario-" + currentScenarioId,
         bus_informations: busInformations,
+        schedule_data: scheduleDatas,
       };
 
       const routePaths: RoutePath[] = routes.map((r) => ({

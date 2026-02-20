@@ -452,11 +452,11 @@ export default function UserWorkspace({
 
       {/* Configuration Name Modal */}
       {showConfigModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
-          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4">
+        <div className="workspace-modal-overlay">
+          <div className="workspace-modal">
             <div className="flex items-center mb-4">
               <span className="w-2 h-8 bg-[#81069e] mr-3" />
-              <h2 className="text-2xl font-bold text-gray-800">
+              <h2 className="workspace-modal-title" style={{ margin: 0 }}>
                 New Configuration Data
               </h2>
             </div>
@@ -468,16 +468,16 @@ export default function UserWorkspace({
               value={configName}
               onChange={(e) => setConfigName(e.target.value)}
               placeholder="Configuration name"
-              className="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 mb-6 focus:outline-none focus:border-[#81069e]"
+              className="workspace-modal-input workspace-modal-input-dropdown"
               autoFocus
             />
-            <div className="flex gap-3 justify-end">
+            <div className="workspace-modal-actions workspace-modal-actions-spaced">
               <button
                 onClick={() => {
                   setShowConfigModal(false);
                   setConfigName("");
                 }}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg transition duration-200"
+                className="workspace-modal-btn workspace-modal-cancel"
               >
                 Cancel
               </button>
@@ -505,7 +505,7 @@ export default function UserWorkspace({
                   setShowConfigModal(false);
                   setShowConfigMap(true);
                 }}
-                className="bg-[#81069e] hover:bg-[#6b0585] text-white py-2 px-6 rounded-lg transition duration-200"
+                className="workspace-modal-btn workspace-modal-submit"
               >
                 Next
               </button>
@@ -518,7 +518,12 @@ export default function UserWorkspace({
       {showProjectModal && (
         <div className="workspace-modal-overlay">
           <div className="workspace-modal">
-            <h2 className="workspace-modal-title">New Project</h2>
+            <div className="flex items-center mb-4">
+              <span className="w-2 h-8 bg-[#81069e] mr-3" />
+              <h2 className="workspace-modal-title" style={{ margin: 0 }}>
+                New Project
+              </h2>
+            </div>
             <div className="workspace-modal-field">
               <label className="workspace-modal-label" htmlFor="project-name">
                 Name :
@@ -529,7 +534,7 @@ export default function UserWorkspace({
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="Project name"
-                className="workspace-modal-input bg-white"
+                className="workspace-modal-input workspace-modal-input-dropdown"
                 autoFocus
               />
             </div>

@@ -4,9 +4,11 @@ import (
 	"DeSS_T_Backend-go/model_database"
 	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
+	"errors"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 func CreateUserScenario(c *fiber.Ctx) error {
@@ -96,4 +98,36 @@ func GetUserScenarios(c *fiber.Ctx) error {
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
         "user_scenarios": responseList,
     })
+}
+// GetScenarioDetails ดึงข้อมูล Scenario Detail แบบเต็มรูปแบบ
+func GetScenarioDetails(c *fiber.Ctx) error {
+	scenarioDetailID := c.Params("id")
+
+	if scenarioDetailID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ต้องระบุ scenario_detail_id ใน URL",
+		})
+	}
+
+	// 1. เรียก Service (ใช้ Service ตัวเดิมที่ผมเขียนให้ได้เลยครับ)
+	result, err := services.GetScenarioDetailByID(scenarioDetailID)
+	
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "ไม่พบข้อมูล Scenario Detail นี้ในระบบ",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":  "เกิดข้อผิดพลาดในการดึงข้อมูล",
+			"detail": err.Error(),
+		})
+	}
+
+	// 2. 🛠️ แก้ไขการส่ง Response ตรงนี้
+	// ดึง ConfigurationDetailID ออกมาวางไว้ที่ Root Level คู่กับก้อน scenario_detail
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"configuration_detail_id": result.ConfigurationDetailID, // 👈 เพิ่มบรรทัดนี้
+		"scenario_detail":         result,                       // ก้อนเดิม
+	})
 }

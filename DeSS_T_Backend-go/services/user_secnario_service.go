@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -9,6 +10,7 @@ import (
 
 	"DeSS_T_Backend-go/config"
 	"DeSS_T_Backend-go/model_database"
+	"DeSS_T_Backend-go/models"
 )
 
 // CreateUserScenario สร้าง Scenario ใหม่ โดยอ้างอิง Configuration Detail ของเดิม
@@ -174,4 +176,150 @@ func GetUserScenariosByUserID(userID string) ([]model_database.UserScenario, err
         Find(&scenarios).Error
         
     return scenarios, err
+}
+
+// parseWKTToGeoLineString แปลงข้อมูล ST_AsText (WKT) กลับเป็น GeoLineString
+func parseWKTToGeoLineString(wkt string) models.GeoLineString {
+	var coords [][2]float64
+
+	// ตัดคำว่า LINESTRING( และ ) ออก
+	wkt = strings.ReplaceAll(wkt, "LINESTRING(", "")
+	wkt = strings.ReplaceAll(wkt, ")", "")
+
+	// แยกแต่ละจุดด้วยลูกน้ำ
+	points := strings.Split(wkt, ",")
+	for _, p := range points {
+		p = strings.TrimSpace(p)
+		lonLat := strings.Split(p, " ") // แยก Lon กับ Lat ด้วยช่องว่าง
+		if len(lonLat) == 2 {
+			lon, _ := strconv.ParseFloat(lonLat[0], 64)
+			lat, _ := strconv.ParseFloat(lonLat[1], 64)
+			coords = append(coords, [2]float64{lon, lat})
+		}
+	}
+
+	return models.GeoLineString{
+		Type:        "LineString",
+		Coordinates: coords,
+	}
+}
+
+// GetScenarioDetailByID ดึงข้อมูลและ Map เข้าสู่ DTO Model
+func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, error) {
+	var dbSD model_database.ScenarioDetail
+
+	// 1. ดึงข้อมูลตัวแม่และลูกๆ ด้วย Preload
+	err := config.DB.
+		Preload("BusScenario").
+		Preload("BusScenario.BusInformations").
+		Preload("BusScenario.ScheduleDatas").
+		Preload("RouteScenario").
+		Preload("RouteScenario.RoutePaths").
+		Preload("RouteScenario.RoutePaths.Orders").
+		Preload("RouteScenario.RoutePaths.Orders.StationPair").
+		Preload("RouteScenario.RoutePaths.Orders.StationPair.RouteBetween").
+		First(&dbSD, "id = ?", scenarioDetailID).Error
+
+	if err != nil {
+		return models.ScenarioDetail{}, err
+	}
+
+	// 2. เริ่มขั้นตอน Mapping จาก model_database -> models (DTO)
+	response := models.ScenarioDetail{
+		ScenarioDetailID:      dbSD.ID,
+		BusScenarioID:         dbSD.BusScenarioID,
+		RouteScenarioID:       dbSD.RouteScenarioID,
+		ConfigurationDetailID: dbSD.ConfigurationDetailID,
+	}
+
+	// --- Map Bus Scenario ---
+	if dbSD.BusScenario != nil {
+		var mappedBusInfos []models.BusInformation
+		for _, info := range dbSD.BusScenario.BusInformations {
+			mappedBusInfos = append(mappedBusInfos, models.BusInformation{
+				BusInformationID: info.ID,
+				Speed:            info.Speed,
+				MaxDis:           info.MaxDis,
+				MaxBus:           info.MaxBus,
+				Capacity:         info.Capacity,
+				BusScenarioID:    info.BusScenarioID,
+				RoutePathID:      info.RoutePathID,
+			})
+		}
+
+		var mappedSchedules []models.ScheduleData
+		for _, sch := range dbSD.BusScenario.ScheduleDatas {
+			mappedSchedules = append(mappedSchedules, models.ScheduleData{
+				ScheduleDataID: sch.ID,
+				ScheduleList:   sch.ScheduleList,
+				RoutePathID:    sch.RoutePathID,
+				BusScenarioID:  sch.BusScenarioID,
+			})
+		}
+
+		response.BusScenario = models.BusScenario{
+			BusScenarioID:   dbSD.BusScenario.ID,
+			BusInformations: mappedBusInfos,
+			ScheduleData:    mappedSchedules,
+		}
+	}
+
+	// --- Map Route Scenario ---
+	if dbSD.RouteScenario != nil {
+		var mappedRoutePaths []models.RoutePath
+
+		for _, rp := range dbSD.RouteScenario.RoutePaths {
+			// 2.1 ค้นหาพิกัดแผนที่ (Geometry) แบบอ่านได้ (WKT)
+			var wktString string
+			config.DB.Raw("SELECT ST_AsText(route) FROM route_paths WHERE id = ?", rp.ID).Scan(&wktString)
+
+			// 2.2 Map Orders & Station Pairs
+			var mappedOrders []models.Order
+			for _, ord := range rp.Orders {
+				mappedOrder := models.Order{
+					OrderID:       ord.ID,
+					Order:         ord.Order,
+					StationPairID: ord.StationPairID,
+					RoutePathID:   ord.RoutePathID,
+				}
+
+				if ord.StationPair != nil {
+					sp := ord.StationPair
+					mappedSP := models.StationPair{
+						StationPairID:  sp.ID,
+						FstStationID:   sp.FstStationID,
+						SndStationID:   sp.SndStationID,
+						RouteBetweenID: sp.RouteBetweenID,
+						NetworkModelID: sp.NetworkModelID,
+					}
+
+					if sp.RouteBetween != nil {
+						mappedSP.RouteBetween = models.RouteBetween{
+							RouteBetweenID: sp.RouteBetween.ID,
+							TravelTime:     sp.RouteBetween.TravelTime,
+							Distance:       sp.RouteBetween.Distance,
+						}
+					}
+					mappedOrder.StationPair = mappedSP
+				}
+				mappedOrders = append(mappedOrders, mappedOrder)
+			}
+
+			// 2.3 ประกอบ RoutePath
+			mappedRoutePaths = append(mappedRoutePaths, models.RoutePath{
+				RoutePathID: rp.ID,
+				Name:        rp.Name,
+				Color:       rp.Color,
+				Route:       parseWKTToGeoLineString(wktString), // 👈 เรียกใช้ Helper ตรงนี้
+				Orders:      mappedOrders,
+			})
+		}
+
+		response.RouteScenario = models.RouteScenario{
+			RouteScenarioID: dbSD.RouteScenario.ID,
+			RoutePaths:      mappedRoutePaths,
+		}
+	}
+
+	return response, nil
 }

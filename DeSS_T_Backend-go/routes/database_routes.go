@@ -39,7 +39,7 @@ func DatabaseRoutes(app *fiber.App) {
     // // api.Delete("/user-scenario/:id",controllers.DeleteUserScenario)
 
     // //scenario-details
-    // api.Get("/scenario-details/:id", controllers.GetScenarioDetails)
+    api.Get("/scenario-details/:id", controllers.GetScenarioDetails)
     api.Post("/upload/scenario-cover-img", controllers.UploadScenarioCoverImg)
 
 }

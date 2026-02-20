@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import NavBar from "../components/NavBar";
 import { getConfigurationDetail } from "../../utility/api/configuration";
@@ -10,19 +10,18 @@ import "../../style/Workspace.css";
 
 export default function ConfigurationDetailPage() {
   const { configurationId } = useParams<{ configurationId: string }>();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [configuration, setConfiguration] =
     useState<ConfigurationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedStationId, setSelectedStationId] = useState<string | null>(
-    null
+    null,
   );
 
   useEffect(() => {
     if (!user) {
-      navigate("/");
+      window.location.href = "/";
       return;
     }
 
@@ -51,7 +50,7 @@ export default function ConfigurationDetailPage() {
     };
 
     fetchConfiguration();
-  }, [configurationId, user, navigate]);
+  }, [configurationId, user]);
 
   // Handle station click - set as selected station
   const handleStationClick = (stationId: string) => {
@@ -78,8 +77,9 @@ export default function ConfigurationDetailPage() {
   };
 
   const getStationPairs = (): StationPair[] => {
-    if (!configuration?.network_model?.StationPair || !selectedStationId) return [];
-    
+    if (!configuration?.network_model?.StationPair || !selectedStationId)
+      return [];
+
     return configuration.network_model.StationPair.filter(
       (pair) =>
         pair.FstStation === selectedStationId ||
@@ -87,14 +87,15 @@ export default function ConfigurationDetailPage() {
     );
   };
 
-  const getSelectedStation = (stationId: string | null): StationDetail | null => {
+  const getSelectedStation = (
+    stationId: string | null,
+  ): StationDetail | null => {
     if (!configuration?.network_model?.Station_detail || !stationId)
       return null;
     return (
       configuration.network_model.Station_detail.find(
         (s) =>
-          s.station_detail_id === stationId ||
-          s.station_id_osm === stationId,
+          s.station_detail_id === stationId || s.station_id_osm === stationId,
       ) || null
     );
   };
@@ -107,7 +108,6 @@ export default function ConfigurationDetailPage() {
     );
     return station?.name || stationId;
   };
-
 
   if (loading) {
     return (

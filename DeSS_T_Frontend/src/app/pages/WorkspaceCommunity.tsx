@@ -1,5 +1,4 @@
 import { useAuth } from "../contexts/useAuth";
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import UserNavBar from "../components/UserNavBar";
 import Nav from "../components/NavBar";
@@ -17,7 +16,6 @@ interface Project {
 
 export default function WorkspaceCommunity() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -30,13 +28,43 @@ export default function WorkspaceCommunity() {
 
   // Mock data
   const [publicProjects] = useState<Project[]>([
-    { id: "1", name: "CMU Work 1", author: "By Tonnam Anuwat", thumbnail: "map" },
-    { id: "2", name: "CMU Work 2", author: "By Tonnam Anuwat", thumbnail: "map" },
-    { id: "3", name: "CMU Work 3", author: "By Tonnam Anuwat", thumbnail: "map" },
-    { id: "4", name: "CMU Work 4", author: "By Tonnam Anuwat", thumbnail: "map" },
-    { id: "5", name: "Work test 1", author: "By Mindtssawora", thumbnail: "map" },
+    {
+      id: "1",
+      name: "CMU Work 1",
+      author: "By Tonnam Anuwat",
+      thumbnail: "map",
+    },
+    {
+      id: "2",
+      name: "CMU Work 2",
+      author: "By Tonnam Anuwat",
+      thumbnail: "map",
+    },
+    {
+      id: "3",
+      name: "CMU Work 3",
+      author: "By Tonnam Anuwat",
+      thumbnail: "map",
+    },
+    {
+      id: "4",
+      name: "CMU Work 4",
+      author: "By Tonnam Anuwat",
+      thumbnail: "map",
+    },
+    {
+      id: "5",
+      name: "Work test 1",
+      author: "By Mindtssawora",
+      thumbnail: "map",
+    },
     { id: "6", name: "Demo", author: "By Fuyfai Paweennul", thumbnail: "map" },
-    { id: "7", name: "My Public Work", author: "By Tonnam Anuwat", thumbnail: "map" },
+    {
+      id: "7",
+      name: "My Public Work",
+      author: "By Tonnam Anuwat",
+      thumbnail: "map",
+    },
     { id: "8", name: "CMU", author: "By PDF", thumbnail: "map" },
   ]);
 
@@ -66,7 +94,7 @@ export default function WorkspaceCommunity() {
   };
 
   const handleBackClick = () => {
-    navigate(-1);
+    window.history.back();
   };
 
   const displayData = publicProjects;
@@ -97,7 +125,9 @@ export default function WorkspaceCommunity() {
                 className="sidebar-card-header-button"
                 onClick={() => toggleSection("osm")}
               >
-                <span className={`toggle-arrow ${expandedSections.osm ? "open" : ""}`}>
+                <span
+                  className={`toggle-arrow ${expandedSections.osm ? "open" : ""}`}
+                >
                   ▼
                 </span>
                 🗺️ OpenStreetMap
@@ -118,7 +148,9 @@ export default function WorkspaceCommunity() {
                 className="sidebar-card-header-button"
                 onClick={() => toggleSection("upload")}
               >
-                <span className={`toggle-arrow ${expandedSections.upload ? "open" : ""}`}>
+                <span
+                  className={`toggle-arrow ${expandedSections.upload ? "open" : ""}`}
+                >
                   ▼
                 </span>
                 📅 Upload Period
@@ -146,7 +178,7 @@ export default function WorkspaceCommunity() {
             {user && (
               <button
                 className="workspace-logout"
-                onClick={() => navigate("/")}
+                onClick={() => (window.location.href = "/")}
               >
                 Logout
               </button>
@@ -176,14 +208,16 @@ export default function WorkspaceCommunity() {
                 <CustomDropdown
                   options={sortOptions}
                   selectedValue={sortOrder === "asc" ? "Date Asc" : "Date Desc"}
-                  onChange={(value) => setSortOrder(value === "Date Asc" ? "asc" : "desc")}
+                  onChange={(value) =>
+                    setSortOrder(value === "Date Asc" ? "asc" : "desc")
+                  }
                   width="min-w-[120px]"
                   height="h-[40px]"
                   fontSize="text-lg"
                 />
               </div>
             </div>
- 
+
             <div className="projects-grid">
               {filteredData.map((project) => (
                 <div key={project.id} className="project-card">

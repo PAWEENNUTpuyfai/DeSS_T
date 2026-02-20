@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
@@ -46,7 +46,7 @@ export default function ConfigurationFiles({
   configurationName,
   configuration,
 }: GuestConfigurationFilesProps) {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { user } = useAuth();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const makeId = (): string => {
@@ -402,7 +402,7 @@ export default function ConfigurationFiles({
       if (saveSuccess) {
         alert(`Configuration "${configurationName}" saved successfully!`);
         // Use window.location to ensure navigation happens
-        window.location.href = "/user/workspace";
+        window.location.href = "/user/workspace?tab=config";
         return;
       }
 

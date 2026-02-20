@@ -96,7 +96,7 @@ type BusScenario struct {
     ID string `gorm:"primaryKey" json:"bus_scenario_id"`
 
     ScenarioDetails []ScenarioDetail `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;" json:"-"`
-    ScheduleDatas   []ScheduleData   `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;" json:"schedule_datas"` // (เผื่ออนาคต)
+    ScheduleDatas   []ScheduleData   `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;" json:"schedule_data"` // (เผื่ออนาคต)
     BusInformations []BusInformation `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;" json:"bus_informations"` // 🛠️ แก้ไขตรงนี้: เพิ่ม json tag
 }
 

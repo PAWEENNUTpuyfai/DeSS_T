@@ -1,11 +1,8 @@
 import "../../style/GuestDecision.css";
-import { useNavigate } from "react-router-dom";
 
 export default function GuestDecision() {
-  const navigate = useNavigate();
-
   const handleSecondaryClick = () => {
-    navigate("/guest/setup");
+    window.location.href = "/guest/setup";
   };
 
   return (

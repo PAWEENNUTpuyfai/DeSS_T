@@ -69,16 +69,15 @@ export default function UserNavBar({
             {userName && (
               <span
                 onClick={handleUserNameClick}
+                className="nav-user-name"
+                data-active={isWorkspaceRoute}
                 style={{
-                  fontSize: "24px",
+                  fontSize: "20px",
                   fontWeight: "600",
                   color: "#81069e",
                   cursor: "pointer",
-                  paddingTop: "18px",
+                  paddingTop: "12px",
                   paddingBottom: "8px",
-                  borderBottom: isWorkspaceRoute ? "7px solid #81069e" : "none",
-                  borderRadius: isWorkspaceRoute ? "8px 8px 0 0" : "0",
-                  transition: "border-bottom 0.3s ease",
                 }}
               >
                 {userName}
@@ -88,7 +87,7 @@ export default function UserNavBar({
             {/* Workspace Community */}
             <span
               style={{
-                fontSize: "24px",
+                fontSize: "20px",
                 color: "#9ca3af",
                 fontWeight: "600",
                 cursor: "not-allowed",

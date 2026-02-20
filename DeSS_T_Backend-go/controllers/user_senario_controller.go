@@ -1,9 +1,12 @@
 package controllers
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"DeSS_T_Backend-go/model_database"
+	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func CreateUserScenario(c *fiber.Ctx) error {
@@ -31,4 +34,66 @@ func CreateUserScenario(c *fiber.Ctx) error {
 		"message": "สร้าง User Scenario สำเร็จ",
 		"data":    result,
 	})
+}
+
+func GetUserScenarios(c *fiber.Ctx) error {
+    // 1. รับค่า user_id จาก Parameter
+    userID := c.Params("user_id")
+    if userID == "" {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "ต้องระบุ user_id",
+        })
+    }
+
+    // 2. ดึงข้อมูลจากฐานข้อมูลผ่าน Service
+    dbScenarios, err := services.GetUserScenariosByUserID(userID)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error":  "เกิดข้อผิดพลาดในการดึงข้อมูลรายการ User Scenario",
+            "detail": err.Error(),
+        })
+    }
+
+    // 3. 🛠 MAPPING: จาก DB Model แปลงเป็น DTO Model (models.UserScenario)
+    var responseList []models.UserScenario
+
+    for _, dbSc := range dbScenarios {
+        // --- จัดการ Cover Image ---
+        var coverImage models.CoverImageProject
+        var coverImgIDStr string
+        
+        if dbSc.CoverImage != nil {
+            // ถ้ามีข้อมูลรูปภาพ ให้ Map id และ path_file
+            coverImgIDStr = dbSc.CoverImage.ID
+            coverImage = models.CoverImageProject{
+                CoverImageProID: dbSc.CoverImage.ID,
+                PathFile:        dbSc.CoverImage.PathFile,
+            }
+        } else if dbSc.CoverImgID != nil {
+            coverImgIDStr = *dbSc.CoverImgID
+        }
+
+        // --- ประกอบร่าง User Scenario DTO ---
+        dto := models.UserScenario{
+            UserScenarioID:   dbSc.ID,
+            Name:             dbSc.Name,
+            ModifyDate:       dbSc.ModifyDate.Format(time.RFC3339), // แปลงเป็น ISO String เช่น "2026-02-19T10:00:00Z"
+            CreateBy:         dbSc.CreateBy,
+            CoverImgID:       coverImgIDStr,
+            ScenarioDetailID: dbSc.ScenarioDetailID,
+            CoverImage:       coverImage,
+            // ScenarioDetail: (ข้ามฟิลด์นี้ไปเพื่อให้ JSON ไม่แสดงผลก้อนใหญ่ ตาม omitempty)
+        }
+
+        responseList = append(responseList, dto)
+    }
+
+    // 4. ถ้าไม่มีข้อมูล จะคืนค่ากลับเป็น Array ว่าง [] เพื่อให้ Frontend จัดการง่าย
+    if responseList == nil {
+        responseList = []models.UserScenario{}
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "user_scenarios": responseList,
+    })
 }

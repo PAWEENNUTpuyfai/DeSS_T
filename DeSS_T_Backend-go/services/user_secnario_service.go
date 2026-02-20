@@ -95,10 +95,33 @@ func CreateUserScenario(input model_database.UserScenario) (model_database.UserS
 				bs.ID = uuid.New().String()
 				sd.BusScenarioID = bs.ID
 
-				// เซฟ Header
+				// เซฟ Header โดยข้ามลูกๆ ไปก่อน
 				if err := tx.Omit("ScenarioDetails", "ScheduleDatas", "BusInformations").Create(bs).Error; err != nil {
 					return err
 				}
+
+				// --- [เพิ่มส่วนนี้] จัดการ ScheduleDatas ---
+				for i := range bs.ScheduleDatas {
+					schedule := &bs.ScheduleDatas[i]
+					schedule.ID = uuid.New().String()
+					schedule.BusScenarioID = bs.ID
+
+					// 🗺️ แมพ ID ของ RoutePath ให้ถูกต้อง
+					if newRpID, exists := routePathIDMap[schedule.RoutePathID]; exists {
+						schedule.RoutePathID = newRpID
+					} else {
+						// กรณีไม่เจอใน Map (อาจเป็นเพราะ JSON ส่ง ID ผิด)
+						return fmt.Errorf("ไม่พบอ้างอิง route_path_id: %s ใน schedule_data", schedule.RoutePathID)
+					}
+
+					// บันทึกโดยตัด Pointer ทิ้ง
+					if err := tx.Omit("RoutePath", "BusScenario").Create(schedule).Error; err != nil {
+						return fmt.Errorf("failed to create schedule data: %w", err)
+					}
+				}
+				// ----------------------------------------
+
+	
 
 				for i := range bs.BusInformations {
 					info := &bs.BusInformations[i]
@@ -139,4 +162,16 @@ func CreateUserScenario(input model_database.UserScenario) (model_database.UserS
 	})
 
 	return input, err
+}
+
+func GetUserScenariosByUserID(userID string) ([]model_database.UserScenario, error) {
+    var scenarios []model_database.UserScenario
+    
+    // ดึงเฉพาะข้อมูลพื้นฐานและหน้าปก (ไม่ดึง ScenarioDetail เพราะเราต้องการแค่ ID)
+    err := config.DB.
+        Preload("CoverImage").
+        Where("create_by = ?", userID).
+        Find(&scenarios).Error
+        
+    return scenarios, err
 }

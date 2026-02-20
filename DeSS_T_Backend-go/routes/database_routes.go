@@ -33,7 +33,7 @@ func DatabaseRoutes(app *fiber.App) {
     // // api.Delete("/public-scenario/:id", controllers.DeletePublicScenario)
 
     // //user-scenarios
-    // api.Get("/user-scenarios/:user_id", controllers.GetUserScenarios)
+    api.Get("/user-scenarios/:user_id", controllers.GetUserScenarios)
     api.Post("/user-scenario",controllers.CreateUserScenario)
     // // api.Put("/user-scenario/:id",controllers.UpdateUserScenario)
     // // api.Delete("/user-scenario/:id",controllers.DeleteUserScenario)

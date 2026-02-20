@@ -108,3 +108,18 @@ export async function getConfigurationDetail(
 
   throw new Error("Invalid configuration detail response");
 }
+
+export async function deleteUserConfiguration(
+  configurationId: string,
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/user-configuration/${encodeURIComponent(configurationId)}`,
+    {
+      method: "DELETE",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+}

@@ -949,6 +949,39 @@ export default function Scenario({
   };
 
   const handleSave = async () => {
+    // Validation: Check if file is attached
+    if (!busScheduleFile) {
+      alert("Please attach a bus schedule file before saving");
+      return;
+    }
+
+    // Validation: Check if all non-hidden routes are not empty
+    const activeRoutes = routes.filter((r) => !r.hidden);
+    const emptyRoutes = activeRoutes.filter(
+      (route) =>
+        (!route.stations || route.stations.length === 0) &&
+        (!route.orders || route.orders.length === 0),
+    );
+
+    if (emptyRoutes.length > 0) {
+      alert(
+        `Please fill in all routes. Empty routes: ${emptyRoutes.map((r) => r.name).join(", ")}`,
+      );
+      return;
+    }
+
+    // Validation: Check if at least one route has station sequence
+    const hasRouteWithSequence = routes.some(
+      (route) => route.orders && route.orders.length > 0,
+    );
+
+    if (!hasRouteWithSequence) {
+      alert(
+        "Please create at least 1 route with station sequence before saving",
+      );
+      return;
+    }
+
     // Helper: Build GeoJSON LineString from route segments
     const buildGeoJsonLineString = (
       segments: RouteSegment[],

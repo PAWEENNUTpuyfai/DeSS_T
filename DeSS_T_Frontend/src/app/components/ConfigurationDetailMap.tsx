@@ -3,7 +3,6 @@ import {
   MapContainer,
   TileLayer,
   CircleMarker,
-  Popup,
   Tooltip,
   useMap,
 } from "react-leaflet";
@@ -151,11 +150,6 @@ export default function ConfigurationDetailMap({
               click: () => handleStationClick(stationId),
             }}
           >
-            <Popup>
-              <div>
-                <strong>{st.name || stationId}</strong>
-              </div>
-            </Popup>
             {isSelected && (
               <Tooltip permanent direction="top" offset={[0, -10]}>
                 <strong>{st.name || stationId}</strong>

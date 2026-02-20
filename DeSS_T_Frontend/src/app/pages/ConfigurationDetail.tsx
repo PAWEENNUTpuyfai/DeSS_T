@@ -127,8 +127,20 @@ export default function ConfigurationDetailPage() {
           <h1 className="text-2xl font-bold mb-4 text-red-600">Error</h1>
           <p>{error || "Failed to load configuration"}</p>
           <button
-            onClick={() => (window.location.href = "/user/workspace")}
-            className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
+            onClick={() => navigate("/user/workspace")}
+            style={{
+              marginTop: "1rem",
+              backgroundColor: "#81069e",
+              color: "white",
+              fontWeight: "600",
+              padding: "0.5rem 1.5rem",
+              borderRadius: "0.5rem",
+              border: "none",
+              cursor: "pointer",
+              transition: "background-color 0.2s"
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#6a0580")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#81069e")}
           >
             Back to Workspace
           </button>
@@ -154,12 +166,11 @@ export default function ConfigurationDetailPage() {
               <h2>Configuration Details</h2>
             </div>
           </div>
-
-          <div className="px-3 max-w-[98%] mx-auto">
-            {/* Main Layout: Map (66%) - Station Detail Panel (33%) */}
-            <div className="flex gap-4 h-[calc(70vh-80px)] mb-6">
-              {/* Center: Map */}
-              <div className="flex-[2] bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+  
+          <div className="flex gap-4 h-[calc(90vh-80px)]">
+            {/* Left: Map Container (66% width) */}
+            <div className="flex-[2] h-full px-4">
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden h-full">
                 {stations.length > 0 ? (
                   <ConfigurationDetailMap
                     stations={stations}
@@ -172,120 +183,89 @@ export default function ConfigurationDetailPage() {
                   </div>
                 )}
               </div>
-
-              {/* Right: Station Detail Panel (33%) */}
-              <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
-                {/* Selected Station Info */}
-                {selectedStation1 && (
-                  <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200">
-                    <h3 className="text-lg font-bold mb-2 text-purple-600">
-                      Station Details
-                    </h3>
-                    <p className="font-semibold">{selectedStation1.name}</p>
-                    <p className="text-sm text-gray-600">
-                      ID: {selectedStation1.station_detail_id}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Lat: {selectedStation1.lat?.toFixed(6)}, Lon:{" "}
-                      {selectedStation1.lon?.toFixed(6)}
-                    </p>
-                  </div>
-                )}
-
-                {!selectedStation1 && (
-                  <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200">
-                    <p className="text-gray-600 text-center">
-                      Click on a station to view details
-                    </p>
-                  </div>
-                )}
-
-                {/* Alighting & Interarrival Data */}
-                <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200">
-                  <h3 className="text-lg font-bold mb-3 text-purple-600">
-                    Alighting & Interarrival Data
-                  </h3>
-                  {filteredAlighting1.length > 0 ||
-                  filteredInterarrival1.length > 0 ? (
-                    <div className="space-y-4">
-                      {(() => {
-                        const timePeriods = new Set<string>();
-                        filteredAlighting1.forEach((d) =>
-                          timePeriods.add(d.time_period),
-                        );
-                        filteredInterarrival1.forEach((d) =>
-                          timePeriods.add(d.time_period),
-                        );
-
-                        return Array.from(timePeriods)
-                          .sort()
-                          .map((timePeriod) => {
-                            const alighting = filteredAlighting1.find(
-                              (d) => d.time_period === timePeriod,
-                            );
-                            const interarrival = filteredInterarrival1.find(
-                              (d) => d.time_period === timePeriod,
-                            );
-
-                            return (
-                              <div
-                                key={timePeriod}
-                                className="border-b pb-3 last:border-b-0"
-                              >
-                                <h4 className="font-semibold text-purple-600 mb-2">
-                                  Time Period : {timePeriod}
-                                </h4>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-sm">
-                                    <thead className="bg-gray-100 border-b">
-                                      <tr>
-                                        <th className="text-left px-2 py-2">
-                                          Alighting Dist
-                                        </th>
-                                        <th className="text-left px-2 py-2">
-                                          Alighting Args
-                                        </th>
-                                        <th className="text-left px-2 py-2">
-                                          Interarrival Dist
-                                        </th>
-                                        <th className="text-left px-2 py-2">
-                                          Interarrival Args
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      <tr className="hover:bg-gray-50">
-                                        <td className="px-2 py-2">
-                                          {alighting?.distribution || "N/A"}
-                                        </td>
-                                        <td className="px-2 py-2 text-xs font-mono">
-                                          {alighting?.argument_list || "N/A"}
-                                        </td>
-                                        <td className="px-2 py-2">
-                                          {interarrival?.distribution || "N/A"}
-                                        </td>
-                                        <td className="px-2 py-2 text-xs font-mono">
-                                          {interarrival?.argument_list || "N/A"}
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            );
-                          });
-                      })()}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm">No data</p>
-                  )}
-                </div>
-              </div>
             </div>
 
-            {/* Station Pairs Section - Full Width Below Map */}
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
-              <h3 className="text-xl font-bold mb-4 text-purple-600">
+            {/* Right: Side Panel (33% width) - Station Details & Alighting/Interarrival Data */}
+            <div className="flex-1 h-full px-4 overflow-y-auto flex flex-col gap-4 pb-4">
+              {/* Selected Station Info */}
+              {selectedStation1 && (
+                <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 flex-shrink-0">
+                  <h3 className="text-lg font-bold mb-2" style={{ color: "#81069e" }}>
+                    Station Details
+                  </h3>
+                  <p className="font-semibold">{selectedStation1.name}</p>
+                  <p className="text-sm text-gray-600">
+                    ID: {selectedStation1.station_detail_id}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Lat: {selectedStation1.lat?.toFixed(6)}, Lon:{" "}
+                    {selectedStation1.lon?.toFixed(6)}
+                  </p>
+                </div>
+              )}
+
+              {!selectedStation1 && (
+                <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 flex-shrink-0">
+                  <p className="text-gray-600 text-center">
+                    Click on a station to view details
+                  </p>
+                </div>
+              )}
+
+              {/* Alighting & Interarrival Data */}
+              <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 flex-1 overflow-y-auto">
+                <h3 className="text-lg font-bold mb-3" style={{ color: "#81069e" }}>
+                  Alighting & Interarrival Data
+                </h3>
+                {(filteredAlighting1.length > 0 || filteredInterarrival1.length > 0) ? (
+                  <div className="space-y-4">
+                    {(() => {
+                      const timePeriods = new Set<string>();
+                      filteredAlighting1.forEach(d => timePeriods.add(d.time_period));
+                      filteredInterarrival1.forEach(d => timePeriods.add(d.time_period));
+                      
+                      return Array.from(timePeriods).sort().map((timePeriod) => {
+                        const alighting = filteredAlighting1.find(d => d.time_period === timePeriod);
+                        const interarrival = filteredInterarrival1.find(d => d.time_period === timePeriod);
+                         
+                        return (
+                          <div key={timePeriod} className="border-b pb-3 last:border-b-0">
+                            <h4 className="font-semibold mb-2" style={{ color: "#81069e" }}>Time Period : {timePeriod}</h4>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead className="bg-gray-100 border-b">
+                                  <tr>
+                                    <th className="text-left px-2 py-2">Alighting Dist</th>
+                                    <th className="text-left px-2 py-2">Alighting Args</th>
+                                    <th className="text-left px-2 py-2">Interarrival Dist</th>
+                                    <th className="text-left px-2 py-2">Interarrival Args</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="hover:bg-gray-50">
+                                    <td className="px-2 py-2">{alighting?.distribution || "N/A"}</td>
+                                    <td className="px-2 py-2 text-xs font-mono">{alighting?.argument_list || "N/A"}</td>
+                                    <td className="px-2 py-2">{interarrival?.distribution || "N/A"}</td>
+                                    <td className="px-2 py-2 text-xs font-mono">{interarrival?.argument_list || "N/A"}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No data</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mx-4 mt-4">
+            <div className="bg-white p-6">
+              <h3 className="text-xl font-bold mb-4" style={{ color: "#81069e" }}>
                 Station Pairs
                 {selectedStation1 && (
                   <span className="text-sm font-normal text-gray-600 ml-2">

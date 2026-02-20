@@ -32,7 +32,6 @@ import type { UserScenario } from "../models/User";
 import { downloadJson } from "../../utility/helpers";
 import {
   uploadScenarioCoverImage,
-  createUserScenario,
 } from "../../utility/api/scenario";
 import { useAuth } from "../contexts/useAuth";
 import Nav from "./NavBar";
@@ -1009,30 +1008,9 @@ export default function Scenario({
           route_path_id: r.name + "-" + currentScenarioId,
         }));
 
-      if (!busScheduleFile) {
-        alert("Please upload a bus schedule file before saving scenario");
-        return;
-      }
-
-      const scheduleData: PaserSchedule = await getScheduleData(
-        currentScenarioId,
-        busScheduleFile,
-      );
-      console.log("Schedule Data received:", scheduleData);
-
-      const scheduleDatas: ScheduleData[] = scheduleData.ScheduleData.map(
-        (sd) => ({
-          schedule_data_id: sd.ScheduleDataID,
-          schedule_list: sd.ScheduleList,
-          route_path_id: sd.RoutePathID,
-          bus_scenario_id: "bus-" + currentScenarioId, // to be filled by backend
-        }),
-      );
-
       const busScenario: BusScenario = {
         bus_scenario_id: "bus-scenario-" + currentScenarioId,
         bus_informations: busInformations,
-        schedule_data: scheduleDatas,
       };
 
       const routePaths: RoutePath[] = routes.map((r) => ({
@@ -1084,8 +1062,8 @@ export default function Scenario({
 
       downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
 
-      const result = await createUserScenario(userScenario);
-      console.log("Scenario saved successfully:", result);
+      // const result = await createUserScenario(userScenario);
+      // console.log("Scenario saved successfully:", result);
       alert("Scenario saved successfully!");
 
       // Call onBack after saving
@@ -1546,7 +1524,7 @@ export default function Scenario({
                                           </svg>
                                           Show less
                                         </span>
-                                      </>
+                                      </> 
                                     ) : (
                                       <span
                                         role="button"
@@ -1692,7 +1670,7 @@ export default function Scenario({
                                 className="text-white rounded-t-lg -mx-4 -mt-4 px-4 py-3 mb-4"
                                 style={{ backgroundColor: route.color }}
                               >
-                                <h4 className="text-lg font-semibold">
+                                <h4 className="text-lg">
                                   Bus Information - {route.name}
                                 </h4>
                               </div>

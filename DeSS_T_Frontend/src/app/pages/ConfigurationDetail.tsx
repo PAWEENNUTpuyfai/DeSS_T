@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import NavBar from "../components/NavBar";
-import { getConfigurationDetail } from "../../utility/api/configuration";
+import {
+  getConfigurationDetail,
+} from "../../utility/api/configuration";
 import type { ConfigurationDetail } from "../models/Configuration";
 import ConfigurationDetailMap from "../components/ConfigurationDetailMap";
 import type { StationDetail, StationPair } from "../models/Network";
@@ -10,14 +12,23 @@ import "../../style/Workspace.css";
 
 export default function ConfigurationDetailPage() {
   const { configurationId } = useParams<{ configurationId: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [configuration, setConfiguration] =
     useState<ConfigurationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [configurationName, setConfigurationName] = useState<string>("");
   const [selectedStationId, setSelectedStationId] = useState<string | null>(
     null,
   );
+
+  useEffect(() => {
+    const nameParam = searchParams.get("name");
+    if (nameParam) {
+      setConfigurationName(decodeURIComponent(nameParam));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) {
@@ -51,6 +62,7 @@ export default function ConfigurationDetailPage() {
 
     fetchConfiguration();
   }, [configurationId, user]);
+
 
   // Handle station click - set as selected station
   const handleStationClick = (stationId: string) => {
@@ -163,7 +175,11 @@ export default function ConfigurationDetailPage() {
           <div className="workspace-header mb-6">
             <div className="workspace-title">
               <span className="workspace-title-bar" />
-              <h2>Configuration Details</h2>
+              <h2>
+                {configurationName
+                  ? `Configuration Details - ${configurationName}`
+                  : "Configuration Details"}
+              </h2>
             </div>
           </div>
   

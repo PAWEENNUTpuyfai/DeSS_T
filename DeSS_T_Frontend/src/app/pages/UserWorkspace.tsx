@@ -434,7 +434,9 @@ export default function UserWorkspace({
                   className="workspace-card cursor-pointer hover:shadow-lg transition-shadow relative group"
                   onClick={() => {
                     if (activeTab === "config") {
-                      window.location.href = `/configuration/${card.detail_id}`;
+                      window.location.href = `/configuration/${card.detail_id}?name=${encodeURIComponent(
+                        card.name,
+                      )}`;
                     } else {
                       window.location.href = `/scenario/${card.detail_id}`;
                     }
@@ -506,7 +508,7 @@ export default function UserWorkspace({
         <div className="workspace-modal-overlay">
           <div className="workspace-modal">
             <div className="flex items-center mb-4">
-              <span className="w-2 h-8 bg-[#81069e] mr-3" />
+              <span className="w-1 h-8 bg-[#81069e] mr-3" />
               <h2 className="workspace-modal-title" style={{ margin: 0 }}>
                 New Configuration Data
               </h2>
@@ -570,7 +572,7 @@ export default function UserWorkspace({
         <div className="workspace-modal-overlay">
           <div className="workspace-modal">
             <div className="flex items-center mb-4">
-              <span className="w-2 h-8 bg-[#81069e] mr-3" />
+              <span className="w-1 h-8 bg-[#81069e] mr-3" />
               <h2 className="workspace-modal-title" style={{ margin: 0 }}>
                 New Project
               </h2>

@@ -69,32 +69,35 @@ type UserScenario struct {
     ModifyDate       time.Time `json:"modify_date"`
     CreateBy         string    `json:"create_by" gorm:"column:create_by"`
     CoverImgID       *string   `json:"cover_img" gorm:"column:cover_img_id"`
-    ScenarioDetailID string    `json:"scenario_detail" gorm:"column:scenario_detail_id"`
+    ScenarioDetailID string    `json:"scenario_detail_id" gorm:"column:scenario_detail_id"`
 
     CoverImage     *CoverImageProject `gorm:"foreignKey:CoverImgID;constraint:OnDelete:SET NULL;"`
     CreateByUser   *User              `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;"`
-    ScenarioDetail *ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID;constraint:OnDelete:CASCADE;"`
+    ScenarioDetail *ScenarioDetail    `gorm:"foreignKey:ScenarioDetailID;constraint:OnDelete:CASCADE;" json:"scenario_detail"`
 }
 
 // ------------------- SCENARIO DETAIL --------------------
 type ScenarioDetail struct {
     ID                    string `gorm:"primaryKey" json:"scenario_detail_id"`
-    BusScenarioID         string `json:"bus_scenario" gorm:"column:bus_scenario_id"`
-    RouteScenarioID       string `json:"route_scenario" gorm:"column:route_scenario_id"`
-    ConfigurationDetailID string `json:"configuration_detail" gorm:"column:configuration_detail_id"`
+    BusScenarioID         string `json:"bus_scenario_id" gorm:"column:bus_scenario_id"`
+    RouteScenarioID       string `json:"route_scenario_id" gorm:"column:route_scenario_id"`
+    ConfigurationDetailID string `json:"configuration_detail_id" gorm:"column:configuration_detail_id"`
 
-    BusScenario         *BusScenario         `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
-    RouteScenario       *RouteScenario       `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
-    ConfigurationDetail *ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
+    BusScenario         *BusScenario         `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;" json:"bus_scenario"`
+    RouteScenario       *RouteScenario       `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;" json:"route_scenario"`
+    ConfigurationDetail *ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;" json:"configuration_detail"`
+
+    UserScenarios   []UserScenario   `gorm:"foreignKey:ScenarioDetailID;constraint:OnDelete:CASCADE;" json:"-"`
+    PublicScenarios []PublicScenario `gorm:"foreignKey:ScenarioDetailID;constraint:OnDelete:CASCADE;" json:"-"`
 }
 
 // ------------------- BUS SCENARIO --------------------
 type BusScenario struct {
     ID string `gorm:"primaryKey" json:"bus_scenario_id"`
 
-    ScenarioDetails []ScenarioDetail `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
-    ScheduleDatas   []ScheduleData   `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
-    BusInformations []BusInformation `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;"`
+    ScenarioDetails []ScenarioDetail `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;" json:"-"`
+    ScheduleDatas   []ScheduleData   `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;" json:"schedule_datas"` // (เผื่ออนาคต)
+    BusInformations []BusInformation `gorm:"foreignKey:BusScenarioID;constraint:OnDelete:CASCADE;" json:"bus_informations"` // 🛠️ แก้ไขตรงนี้: เพิ่ม json tag
 }
 
 // ------------------- SCHEDULE DATA --------------------
@@ -126,8 +129,8 @@ type BusInformation struct {
 type RouteScenario struct {
     ID string `gorm:"primaryKey" json:"route_scenario_id"`
 
-    ScenarioDetails []ScenarioDetail `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
-    RoutePaths      []RoutePath      `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;"`
+    ScenarioDetails []ScenarioDetail `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;" json:"-"`
+    RoutePaths      []RoutePath      `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;" json:"route_paths"` // 🛠️ แก้ไขตรงนี้: เพิ่ม json tag
 }
 
 // ------------------- ROUTE PATH --------------------
@@ -140,9 +143,9 @@ type RoutePath struct {
     RouteJSON       LineStringData `gorm:"-" json:"route"`
 
     RouteScenario   *RouteScenario   `gorm:"foreignKey:RouteScenarioID;constraint:OnDelete:CASCADE;" json:"-"`
-    Orders          []Order          `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE;"`
-    ScheduleDatas   []ScheduleData   `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE;"`
-    BusInformations []BusInformation `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE;"`
+    Orders          []Order          `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE;" json:"orders"` // 🛠️ แก้ไขตรงนี้: เพิ่ม json tag
+    ScheduleDatas   []ScheduleData   `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE;" json:"-"`
+    BusInformations []BusInformation `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE;" json:"-"`
 }
 
 // ------------------- ORDER --------------------
@@ -152,8 +155,8 @@ type Order struct {
     StationPairID string `json:"station_pair_id"`
     RoutePathID   string `json:"route_path_id"`
 
-    RoutePath   *RoutePath   `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE;"`
-    StationPair *StationPair `gorm:"foreignKey:StationPairID;constraint:OnDelete:CASCADE;"`
+    RoutePath   *RoutePath   `gorm:"foreignKey:RoutePathID;constraint:OnDelete:CASCADE;" json:"-"`
+    StationPair *StationPair `gorm:"foreignKey:StationPairID;constraint:OnDelete:CASCADE;" json:"station_pair"` // 🛠️ แก้ไขตรงนี้: เพิ่ม json tag
 }
 
 // ------------------- USER CONFIGURATION --------------------

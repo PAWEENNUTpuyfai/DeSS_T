@@ -72,7 +72,7 @@ export default function UserNavBar({
                 className="nav-user-name"
                 data-active={isWorkspaceRoute}
                 style={{
-                  fontSize: "20px",
+                  fontSize: "18px",
                   fontWeight: "400",
                   color: "#000000",
                   cursor: "pointer",
@@ -87,7 +87,7 @@ export default function UserNavBar({
             {/* Workspace Community */}
             <span
               style={{
-                fontSize: "20px",
+                fontSize: "18px",
                 color: "#9ca3af",
                 fontWeight: "400",
                 cursor: "not-allowed",

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 // import { useEffect, useRef } from "react";
 import "../../style/navbar.css";
 
@@ -28,13 +27,10 @@ export default function Nav({
   userName,
 }: NavProps) {
   const [showConfirm, setShowConfirm] = useState(false);
-  const navigate = useNavigate();
 
   const handleConfirmLeave = () => {
     if (inpage === "configuration-detail") {
-      navigate("/user/workspace");
-    } else if (usermode === "user") {
-      navigate("/");
+      window.location.href = "/user/workspace?tab=config";
     } else {
       onBackClick?.();
     }
@@ -125,7 +121,10 @@ export default function Nav({
             )}
           </h1>
           {usermode === "guest" ? (
-            <button className="login-btn mr-8" onClick={() => navigate("/")}>
+            <button
+              className="login-btn mr-8"
+              onClick={() => (window.location.href = "/")}
+            >
               Login
             </button>
           ) : (

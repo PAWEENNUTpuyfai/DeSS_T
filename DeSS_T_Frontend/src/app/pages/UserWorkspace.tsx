@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../contexts/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import ConfigurationMap from "../components/Configuration/ConfigurationMap";
 import Scenario from "../components/Scenario";
 import UserNavBar from "../components/UserNavBar";
@@ -15,12 +15,26 @@ import {
 import "../../style/Workspace.css";
 import { IMG_BASE_URL } from "../../utility/config";
 
-export default function UserWorkspace() {
+interface UserWorkspaceProps {
+  initialActiveTab?: "project" | "config";
+}
+
+export default function UserWorkspace({
+  initialActiveTab,
+}: UserWorkspaceProps = {}) {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Read tab from query parameter, fallback to initialActiveTab prop, then default to "project"
+  const tabFromUrl = searchParams.get("tab");
+  const defaultTab =
+    tabFromUrl === "config" || tabFromUrl === "project"
+      ? tabFromUrl
+      : initialActiveTab || "project";
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"project" | "config">("project");
+  const [activeTab, setActiveTab] = useState<"project" | "config">(defaultTab);
   const [userConfigurations, setUserConfigurations] = useState<
     UserConfiguration[]
   >([]);
@@ -173,7 +187,7 @@ export default function UserWorkspace() {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    window.location.href = "/";
   };
 
   const handleDeleteConfiguration = async (
@@ -354,9 +368,9 @@ export default function UserWorkspace() {
                   className="workspace-card cursor-pointer hover:shadow-lg transition-shadow relative group"
                   onClick={() => {
                     if (activeTab === "config") {
-                      navigate(`/configuration/${card.detail_id}`);
+                      window.location.href = `/configuration/${card.detail_id}`;
                     } else {
-                      navigate(`/scenario/${card.detail_id}`);
+                      window.location.href = `/scenario/${card.detail_id}`;
                     }
                   }}
                 >

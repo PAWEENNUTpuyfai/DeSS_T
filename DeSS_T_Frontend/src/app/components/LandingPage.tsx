@@ -1,5 +1,4 @@
 import "../../style/LandingPage.css";
-import { useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { GoogleLogin } from "@react-oauth/google";
@@ -7,16 +6,15 @@ import { useAuth } from "../contexts/useAuth";
 import { userLogin as userLoginAPI } from "../../utility/api/userLogin";
 
 export default function LandingPage() {
-  const navigate = useNavigate();
   const { isAuthenticated, isLoading, login } = useAuth();
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // If user is already logged in, redirect to workspace page
     if (!isLoading && isAuthenticated) {
-      navigate("/user/workspace", { replace: true });
+      window.location.replace("/user/workspace");
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading]);
 
   const handleCredentialResponse = (credentialResponse: any) => {
     try {
@@ -56,7 +54,7 @@ export default function LandingPage() {
         });
 
       // Navigate to the workspace page
-      navigate("/user/workspace");
+      window.location.href = "/user/workspace";
     } catch (error) {
       console.error("Error decoding token:", error);
     }
@@ -67,7 +65,7 @@ export default function LandingPage() {
   };
 
   const handleGuestClick = () => {
-    navigate("/guest/decision");
+    window.location.href = "/guest/decision";
   };
 
   return (

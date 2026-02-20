@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import "../../style/navbar.css";
 
 interface UserNavProps {
@@ -17,11 +17,10 @@ export default function UserNavBar({
   userName,
 }: UserNavProps) {
   const [showConfirm, setShowConfirm] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
 
   const handleConfirmLeave = () => {
-    navigate("/user/workspace");
+    window.location.href = "/user/workspace";
   };
 
   const handleCancelLeave = () => {
@@ -29,7 +28,7 @@ export default function UserNavBar({
   };
 
   const handleUserNameClick = () => {
-    navigate("/user/workspace");
+    window.location.href = "/user/workspace";
   };
 
   const isWorkspaceRoute = location.pathname === "/user/workspace";
@@ -49,7 +48,14 @@ export default function UserNavBar({
           }}
         >
           {/* Middle-Left: Logo and User Info */}
-          <div style={{ display: "flex", alignItems: "center", gap: "24px", flex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "24px",
+              flex: 1,
+            }}
+          >
             {/* Logo */}
             <div style={{ flexShrink: 0 }}>
               <img
@@ -61,16 +67,16 @@ export default function UserNavBar({
 
             {/* User Name */}
             {userName && (
-              <span 
+              <span
                 onClick={handleUserNameClick}
-                style={{ 
-                  fontSize: "16px", 
-                  fontWeight: "600", 
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "600",
                   color: "#81069e",
                   cursor: "pointer",
                   paddingBottom: "8px",
                   borderBottom: isWorkspaceRoute ? "3px solid #81069e" : "none",
-                  transition: "border-bottom 0.3s ease"
+                  transition: "border-bottom 0.3s ease",
                 }}
               >
                 {userName}
@@ -92,7 +98,7 @@ export default function UserNavBar({
               Workspace community
             </span>
           </div>
- 
+
           {/* Right: Profile Avatar */}
           <div className="nav-user" style={{ flexShrink: 0 }}>
             {userAvatarUrl && (

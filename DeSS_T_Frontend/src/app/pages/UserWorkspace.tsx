@@ -46,9 +46,20 @@ export default function UserWorkspace() {
 
   // Filter states
   const [fileFilter, setFileFilter] = useState("All Files");
-  const [sortFilter, setSortFilter] = useState("Date Asc");
+  const [sortBy, setSortBy] = useState("Date modify");
+  const [sortOrder, setSortOrder] = useState("Ascending");
   const fileFilterOptions = ["All Files", "Public", "Private"];
-  const sortFilterOptions = ["Date Asc", "Date Desc", "Name"];
+  const sortGroups = [
+    {
+      label: "Sort By",
+      options: ["Name", "Date modify", "Date Upload"],
+    },
+    {
+      label: "Order",
+      options: ["Ascending", "Descending"],
+    },
+  ];
+  const currentSortDisplay = `${sortBy} - ${sortOrder}`;
 
   const configOptions = useMemo(() => {
     if (!user) {
@@ -274,17 +285,28 @@ export default function UserWorkspace() {
                 options={fileFilterOptions}
                 selectedValue={fileFilter}
                 onChange={setFileFilter}
-                width="min-w-[120px]"
-                height="h-[40px]"
-                fontSize="text-lg"
+                width="w-[200px]"
+                height="h-[50px]"
+                fontSize="text-base"
               />
               <CustomDropdown
-                options={sortFilterOptions}
-                selectedValue={sortFilter}
-                onChange={setSortFilter}
-                width="min-w-[120px]"
-                height="h-[40px]"
-                fontSize="text-lg"
+                groups={sortGroups}
+                selectedValue={currentSortDisplay}
+                selectedGroupValues={[sortBy, sortOrder]}
+                onChange={(value) => {
+                  // Check if value is from first group (Sort By)
+                  if (["Name", "Date modify", "Date Upload"].includes(value)) {
+                    setSortBy(value);
+                  }
+                  // Check if value is from second group (Order)
+                  else if (["Ascending", "Descending"].includes(value)) {
+                    setSortOrder(value);
+                  }
+                }}
+                isGrouped={true}
+                width="w-[200px]"
+                height="h-[50px]"
+                fontSize="text-base"
               />
             </div>
           </div>
@@ -356,10 +378,13 @@ export default function UserWorkspace() {
       {/* Configuration Name Modal */}
       {showConfigModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Create New Configuration
-            </h2>
+          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4 border-2 border-[#81069e]">
+            <div className="flex items-center mb-4">
+              <span className="w-2 h-8 bg-[#81069e] mr-3" />
+              <h2 className="text-2xl font-bold text-gray-800">
+                New Configuration Data
+              </h2>
+            </div>
             <p className="text-gray-600 mb-6">
               Please enter a name for your configuration
             </p>
@@ -368,7 +393,7 @@ export default function UserWorkspace() {
               value={configName}
               onChange={(e) => setConfigName(e.target.value)}
               placeholder="Configuration name"
-              className="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 mb-6 focus:outline-none focus:border-purple-500"
+              className="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 mb-6 focus:outline-none focus:border-[#81069e]"
               autoFocus
             />
             <div className="flex gap-3 justify-end">
@@ -390,7 +415,7 @@ export default function UserWorkspace() {
                     alert("Please enter a configuration name");
                   }
                 }}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
+                className="bg-[#81069e] hover:bg-[#6b0585] text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
               >
                 Next
               </button>
@@ -434,9 +459,9 @@ export default function UserWorkspace() {
                       setSelectedConfigName(value);
                       setSelectedConfigId(selected?.detail_id ?? null);
                     }}
-                    width="min-w-[160px]"
-                    height="h-[45px]"
-                    fontSize="text-lg"
+                    width="w-full"
+                    height="h-[50px]"
+                    fontSize="text-base"
                   />
                 ) : (
                   <div className="workspace-modal-dropdown-disabled">

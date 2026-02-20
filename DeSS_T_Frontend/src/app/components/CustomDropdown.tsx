@@ -12,6 +12,7 @@ interface CustomDropdownProps {
   selectedValue: string;
   onChange: (value: string) => void;
   isGrouped?: boolean;
+  selectedGroupValues?: string[]; // Array of selected values for grouped dropdown
   icon?: string;
   width?: string; // e.g. "200px", "100%", "w-64"
   height?: string; // e.g. "60px", "40px"
@@ -24,6 +25,7 @@ export default function CustomDropdown({
   selectedValue,
   onChange,
   isGrouped = false,
+  selectedGroupValues = [],
   icon = "",
   width = "min-w-[200px]",
   height = "h-[60px]",
@@ -69,14 +71,14 @@ export default function CustomDropdown({
       {/* Main Button */}
       <span
         onClick={() => setIsOpen(!isOpen)}
-        className={`main-btn text-dropdown ${heightClass} ${fontSizeClass} flex items-center justify-between px-4`}
+        className={`main-btn text-dropdown ${heightClass} ${fontSizeClass} flex items-center px-4 cursor-pointer`}
         style={{ height: heightStyle, fontSize: fontSizeStyle }}
       > 
-        <span className="py-2 px-4">
-          {icon && <span className="mr-2">{icon}</span>}
-          {selectedValue}
+        <span className="flex items-center py-2 px-4 flex-1 overflow-hidden">
+          {icon && <span className="mr-2 flex-shrink-0">{icon}</span>}
+          <span className="truncate">{selectedValue}</span>
         </span>
-        <div className="h-full w-[2.5px] bg-[#76218a] mx-2"></div>
+        <div className="h-full w-[2.5px] bg-[#76218a] mx-2 flex-shrink-0"></div>
         <svg
           className={`w-7 h-7 transition-transform duration-200 ${
             isOpen ? "transform rotate-180" : ""
@@ -102,21 +104,24 @@ export default function CustomDropdown({
               {groups.map((group, groupIndex) => (
                 <div key={groupIndex}>
                   {groupIndex > 0 && <div className="dropdown-divider"></div>}
-                  {group.options.map((option) => (
-                    <span
-                      key={option}
-                      onClick={() => handleSelect(option)}
-                      className={`w-full text-left px-6 py-2 text-[#C296CD] ${fontSizeClass} font-medium hover:bg-gray-50 transition-colors flex items-center`}
-                      style={{ fontSize: fontSizeStyle }}
-                    >
-                      {selectedValue === option && (
-                        <span className="mr-3 text-[#81069e]">•</span>
-                      )}
-                      <span className={selectedValue === option ? "" : "ml-5"}>
-                        {option}
+                  {group.options.map((option) => {
+                    const isSelected = selectedGroupValues.includes(option);
+                    return (
+                      <span
+                        key={option}
+                        onClick={() => handleSelect(option)}
+                        className={`w-full text-left px-6 py-2 text-[#C296CD] ${fontSizeClass} font-medium hover:bg-gray-50 transition-colors flex items-center`}
+                        style={{ fontSize: fontSizeStyle }}
+                      >
+                        {isSelected && (
+                          <span className="mr-3 text-[#81069e]">•</span>
+                        )}
+                        <span className={isSelected ? "" : "ml-5"}>
+                          {option}
+                        </span>
                       </span>
-                    </span>
-                  ))}
+                    );
+                  })}
                 </div>
               ))}
             </div>

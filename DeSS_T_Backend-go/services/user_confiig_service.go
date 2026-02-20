@@ -5,6 +5,8 @@ import (
 	"DeSS_T_Backend-go/model_database"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
@@ -250,30 +252,78 @@ func GetUserConfigurationsByUserID(userID string) ([]model_database.UserConfigur
 }
 
 func DeleteUserConfigurationByID(configID string) error {
-	// 1. ค้นหาข้อมูลก่อนว่ามีอยู่จริงหรือไม่ เพื่อเอา ConfigurationDetailID มาด้วย
-	var userConfig model_database.UserConfiguration
-	if err := config.DB.First(&userConfig, "id = ?", configID).Error; err != nil {
-		return err // จะคืนค่า gorm.ErrRecordNotFound ถ้าไม่เจอข้อมูล
-	}
+    var userConfig model_database.UserConfiguration
 
-	// 2. ใช้ Transaction ในการลบ เพื่อความปลอดภัย
-	err := config.DB.Transaction(func(tx *gorm.DB) error {
-		// 2.1 ลบตัว User Configuration (ตารางหลัก)
-		if err := tx.Delete(&userConfig).Error; err != nil {
-			return err
-		}
+    // 1. ดึงข้อมูลพร้อม Preload ไปจนถึง ConfigurationDetail เพื่อหา NetworkModelID
+    err := config.DB.
+        Preload("CoverImage").
+        Preload("ConfigurationDetail").
+        First(&userConfig, "id = ?", configID).Error
+    
+    if err != nil {
+        return err
+    }
 
-		// 2.2 ลบ Configuration Detail (ตัวแม่ของ Network และ Data ต่างๆ)
-		// การลบตรงนี้จะไปทริกเกอร์ OnDelete:CASCADE ทำให้ข้อมูลลูกๆ โดนลบตามไปด้วย (Clean up)
-		if userConfig.ConfigurationDetailID != "" {
-			if err := tx.Where("id = ?", userConfig.ConfigurationDetailID).
-				Delete(&model_database.ConfigurationDetail{}).Error; err != nil {
-				return err
-			}
-		}
+    // เตรียม ID และชื่อไฟล์สำหรับลบ
+    var fileNameToDelete string
+    if userConfig.CoverImage != nil {
+        fileNameToDelete = userConfig.CoverImage.PathFile
+    }
 
-		return nil
-	})
+    // ดึง NetworkModelID ออกมาเก็บไว้ก่อนลบ Config
+    networkModelID := ""
+    if userConfig.ConfigurationDetail != nil {
+        networkModelID = userConfig.ConfigurationDetail.NetworkModelID
+    }
 
-	return err
+    // 2. ใช้ Transaction ลบตามลำดับความสัมพันธ์
+    err = config.DB.Transaction(func(tx *gorm.DB) error {
+        
+        // ก. ลบ UserConfiguration
+        if err := tx.Delete(&userConfig).Error; err != nil {
+            return err
+        }
+
+        // ข. ลบ ConfigurationDetail (ถ้ามี)
+        // ตรงนี้จะลบ AlightingData, InterArrivalData ตาม Cascade
+        if userConfig.ConfigurationDetailID != "" {
+            if err := tx.Delete(&model_database.ConfigurationDetail{}, "id = ?", userConfig.ConfigurationDetailID).Error; err != nil {
+                return err
+            }
+        }
+
+        // ค. ลบ NetworkModel (หัวใจสำคัญ)
+        // เมื่อลบ NetworkModelID นี้ StationDetail และ StationPair จะถูกลบตาม Cascade ใน Model
+        if networkModelID != "" {
+            // เช็คก่อนว่ามี Config อื่นใช้ NetworkModel นี้อยู่ไหม (ป้องกันลบพลาดถ้ามีการแชร์ Network)
+            var count int64
+            tx.Model(&model_database.ConfigurationDetail{}).Where("network_model_id = ?", networkModelID).Count(&count)
+            
+            if count == 0 { // ถ้าไม่มีใครใช้แล้ว ให้ลบทิ้งทันที
+                if err := tx.Delete(&model_database.NetworkModel{}, "id = ?", networkModelID).Error; err != nil {
+                    return err
+                }
+            }
+        }
+
+        return nil
+    })
+
+    // 3. ลบไฟล์จริงออกจาก Disk
+    if err == nil && fileNameToDelete != "" {
+        deletePhysicalFile(fileNameToDelete)
+    }
+
+    return err
+}
+
+// Helper function สำหรับลบไฟล์จริงบน Disk
+func deletePhysicalFile(fileName string) {
+    uploadDir := os.Getenv("UPLOAD_DIR")
+    if uploadDir == "" { uploadDir = "./uploads" }
+    
+    filePath := filepath.Join(uploadDir, fileName)
+    if _, err := os.Stat(filePath); err == nil {
+        _ = os.Remove(filePath)
+    }
 }

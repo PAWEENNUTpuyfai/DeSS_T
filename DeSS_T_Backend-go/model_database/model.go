@@ -168,7 +168,7 @@ type UserConfiguration struct {
     CoverImgID            *string   `json:"cover_img_id" gorm:"column:cover_img_id"`
     ConfigurationDetailID string    `json:"configuration_detail_id" gorm:"column:configuration_detail_id"`
 
-    CoverImage          *CoverImageConf      `gorm:"foreignKey:CoverImgID;constraint:OnDelete:CASCADE;" json:"cover_image"`
+    CoverImage          *CoverImageConf      `gorm:"foreignKey:CoverImgID;constraint:OnDelete:SET NULL;" json:"cover_image"`
     ConfigurationDetail *ConfigurationDetail `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;" json:"configuration_detail"`
     CreateByUser        *User                `gorm:"foreignKey:CreateBy;references:GoogleID;constraint:OnDelete:CASCADE;" json:"create_by_user"`
 
@@ -236,7 +236,7 @@ type InterArrivalData struct {
 // ------------------- NETWORK MODEL --------------------
 type NetworkModel struct {
     ID               string `gorm:"primaryKey" json:"network_model_id"`
-    NetworkModelName string `json:"Network_model" gorm:"column:network_model_name"` // API response only (not stored in DB)
+    NetworkModelName string `json:"Network_model" gorm:"column:network_model_name"` 
 
     ConfigurationDetails []ConfigurationDetail `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"configuration_detail"`
     StationPairs         []StationPair         `gorm:"foreignKey:NetworkModelID;constraint:OnDelete:CASCADE;" json:"StationPair"`

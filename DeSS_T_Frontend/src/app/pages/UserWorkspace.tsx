@@ -59,6 +59,11 @@ export default function UserWorkspace({
     useState<ConfigurationDetail | null>(null);
   const [scenarioLoading, setScenarioLoading] = useState(false);
 
+  // Delete confirmation states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfigId, setDeleteConfigId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Filter states
   const [fileFilter, setFileFilter] = useState("All Files");
   const [sortBy, setSortBy] = useState("Date modify");
@@ -195,24 +200,34 @@ export default function UserWorkspace({
     e: React.MouseEvent,
   ) => {
     e.stopPropagation();
+    setDeleteConfigId(configurationId);
+    setShowDeleteModal(true);
+  };
 
-    if (
-      !window.confirm("Are you sure you want to delete this configuration?")
-    ) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!deleteConfigId) return;
 
     try {
-      await deleteUserConfiguration(configurationId);
+      setIsDeleting(true);
+      await deleteUserConfiguration(deleteConfigId);
       setUserConfigurations((prev) =>
         prev.filter(
-          (config) => config.user_configuration_id !== configurationId,
+          (config) => config.user_configuration_id !== deleteConfigId,
         ),
       );
+      setShowDeleteModal(false);
+      setDeleteConfigId(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setConfigsError(`Failed to delete configuration: ${msg}`);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteConfigId(null);
   };
 
   const resetProjectModal = () => {
@@ -241,7 +256,7 @@ export default function UserWorkspace({
           <p>{error || "Failed to load user information"}</p>
           <button
             onClick={handleLogout}
-            className="mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg"
+            className="mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg"
           >
             Back to Home
           </button>
@@ -438,7 +453,7 @@ export default function UserWorkspace({
       {/* Configuration Name Modal */}
       {showConfigModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
-          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4 border-2 border-[#81069e]">
+          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4">
             <div className="flex items-center mb-4">
               <span className="w-2 h-8 bg-[#81069e] mr-3" />
               <h2 className="text-2xl font-bold text-gray-800">
@@ -462,20 +477,35 @@ export default function UserWorkspace({
                   setShowConfigModal(false);
                   setConfigName("");
                 }}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded-lg transition duration-200"
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg transition duration-200"
               >
                 Cancel
               </button>
               <button
                 onClick={() => {
-                  if (configName.trim()) {
-                    setShowConfigModal(false);
-                    setShowConfigMap(true);
-                  } else {
+                  if (!configName.trim()) {
                     alert("Please enter a configuration name");
+                    return;
                   }
+
+                  // Check for duplicate name
+                  const isDuplicate = userConfigurations.some(
+                    (config) =>
+                      config.name.toLowerCase() ===
+                      configName.trim().toLowerCase(),
+                  );
+
+                  if (isDuplicate) {
+                    alert(
+                      "A configuration with this name already exists. Please choose a different name.",
+                    );
+                    return;
+                  }
+
+                  setShowConfigModal(false);
+                  setShowConfigMap(true);
                 }}
-                className="bg-[#81069e] hover:bg-[#6b0585] text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
+                className="bg-[#81069e] hover:bg-[#6b0585] text-white py-2 px-6 rounded-lg transition duration-200"
               >
                 Next
               </button>
@@ -543,6 +573,21 @@ export default function UserWorkspace({
                     alert("Please enter a project name");
                     return;
                   }
+
+                  // Check for duplicate project name
+                  const isDuplicateProject = user?.user_scenarios?.some(
+                    (scenario) =>
+                      scenario.name.toLowerCase() ===
+                      projectName.trim().toLowerCase(),
+                  );
+
+                  if (isDuplicateProject) {
+                    alert(
+                      "A project with this name already exists. Please choose a different name.",
+                    );
+                    return;
+                  }
+
                   if (!selectedConfigId) {
                     alert("Please select configuration data");
                     return;
@@ -567,6 +612,40 @@ export default function UserWorkspace({
                 className="workspace-modal-btn workspace-modal-submit"
               >
                 {scenarioLoading ? "Loading..." : "Create New"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
+          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4 border-2">
+            <div className="flex items-center mb-4">
+              <span className="w-2 h-8 bg-red-600 mr-3" />
+              <h2 className="text-2xl text-gray-800">
+                Delete Configuration
+              </h2>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this configuration? This action
+              cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDelete}
+                disabled={isDeleting}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

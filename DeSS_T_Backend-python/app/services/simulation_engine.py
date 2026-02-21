@@ -345,13 +345,21 @@ class Bus(sim.Component):
         self.passengers = []
         self.max_distance_init = max_distance
         self.remaining_distance = max_distance
-
+        # ดึงค่าจาก Config ว่าจะใช้ Dwell Time หรือไม่
+        self.use_dwell = env.sim_engine.config.get("USE_DWELL_TIME", True)
         dwell = env.sim_engine.config["DWELL_TIME"]
 
-        self.door_open_time = dwell["door_open_time"]
-        self.door_close_time = dwell["door_close_time"]
-        self.boarding_time = dwell["boarding_time"]
-        self.alighting_time = dwell["alighting_time"]
+        # ถ้าไม่ใช้ ให้เซตค่าเวลาทั้งหมดเป็น 0
+        if self.use_dwell:
+            self.door_open_time = dwell["door_open_time"]
+            self.door_close_time = dwell["door_close_time"]
+            self.boarding_time = dwell["boarding_time"]
+            self.alighting_time = dwell["alighting_time"]
+        else:
+            self.door_open_time = 0
+            self.door_close_time = 0
+            self.boarding_time = 0
+            self.alighting_time = 0
 
     def process(self):
         delay = self.depart_time - self.env.now()
@@ -425,10 +433,10 @@ class Bus(sim.Component):
                     station.wait_store.length() > 0
                 )
             )
-            if alight_count > 0:
+            if alight_count > 0 and self.use_dwell:
                 yield self.hold(alight_count * self.alighting_time)
 
-            if need_open:
+            if need_open and self.use_dwell:
                 add_log(self.env, "Bus", f"Bus {self.bus_id} opens door at {station.name}")
                 yield self.hold(self.door_open_time)
 
@@ -492,23 +500,22 @@ class Bus(sim.Component):
 
                     self.passengers.append(p)
                     boarded += 1
-            if boarded > 0:
+
+            if boarded > 0 and self.use_dwell:
                 yield self.hold(boarded * self.boarding_time)
 
-            if need_open:
+            if need_open and self.use_dwell:
                 add_log(self.env, "Bus", f"Bus {self.bus_id} closes door at {station.name}")
                 yield self.hold(self.door_close_time)
 
-            dwell_time = 0.0
-
-            if need_open:
-                dwell_time = (
-                    self.door_open_time
-                    + alight_count * self.alighting_time
-                    + boarded * self.boarding_time
-                    + self.door_close_time
-                )
-            self.total_travel_time += dwell_time
+            # คำนวณ dwell_time เพื่อเก็บสถิติ Utilization
+            # หาก use_dwell=False ค่า dwell_time จะเป็น 0 ทำให้ Utilization ไม่ถูกนับช่วงจอด
+            current_dwell = 0
+            if self.use_dwell and need_open:
+                current_dwell = (self.door_open_time + (alight_count * self.alighting_time) + 
+                                (boarded * self.boarding_time) + self.door_close_time)
+            
+            self.total_travel_time += current_dwell
 
             # ---------- TRAVEL ----------
             if not is_last_station:
@@ -567,20 +574,20 @@ class Bus(sim.Component):
                 self.total_travel_time += travel_time
                 self.total_travel_dist += travel_dist
 
-                if dwell_time > 0:
+                if current_dwell > 0:
                     utilization = len(self.passengers) / self.capacity
 
                     self.env.route_util_mon[self.route_id].tally(
                         utilization,
-                        weight=dwell_time
+                        weight=current_dwell
                     )
                     self.env.global_utilization_mon.tally(
                         utilization,
-                        weight=dwell_time
+                        weight=current_dwell
                     )
                     slots[slot]["route_util"][self.route_id].tally(
                         utilization,
-                        weight=dwell_time
+                        weight=current_dwell
                     )
 
                 if travel_time <= 0:

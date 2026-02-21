@@ -59,6 +59,7 @@ def build_simulation_config(req):
         "BUS_SCHEDULES": bus_schedules,
         "INTERARRIVAL_RULES": interarrival_rules,
         "ALIGHTING_RULES": alighting_rules,
+        "USE_DWELL_TIME": False,
         "DWELL_TIME":dwell_time
     }
 

@@ -1266,7 +1266,9 @@ export default function Scenario({
       );
       console.log("Scenario saved successfully:", result);
       alert("Scenario saved successfully!");
-      window.location.href = "/user/workspace?tab=project"; // Redirect to workspace or another appropriate page
+
+      const idforRedirect = result.scenario_detail_id;
+      window.location.href = `/scenario/${idforRedirect}`; // Redirect to workspace or another appropriate page
     } catch (error) {
       console.error("Failed to save scenario:", error);
       alert(

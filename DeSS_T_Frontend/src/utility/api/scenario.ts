@@ -52,8 +52,8 @@ export async function createUserScenario(
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  const result: UserScenario = await response.json();
-  return result;
+  const responseData: { user_scenario: UserScenario } = await response.json();
+  return responseData.user_scenario;
 }
 
 export async function uploadScenarioCoverImage(

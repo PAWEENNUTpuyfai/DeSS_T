@@ -116,3 +116,16 @@ export async function getScenarioDetails(
   const result: ScenarioDetailsResponse = await response.json();
   return result;
 }
+
+export async function deleteUserScenario(scenarioId: string): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/user-scenario/${encodeURIComponent(scenarioId)}`,
+    {
+      method: "DELETE",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+}

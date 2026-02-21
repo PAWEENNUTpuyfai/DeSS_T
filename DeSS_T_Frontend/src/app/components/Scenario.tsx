@@ -29,7 +29,7 @@ import type {
 import { getScheduleData } from "../../utility/api/simulation";
 import type { PaserSchedule } from "../models/ScheduleModel";
 import type { UserScenario } from "../models/User";
-import { downloadJson } from "../../utility/helpers";
+// import { downloadJson } from "../../utility/helpers";
 import {
   createUserScenario,
   uploadScenarioCoverImage,
@@ -278,6 +278,10 @@ export default function Scenario({
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
   const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [successRedirectId, setSuccessRedirectId] = useState<string | null>(
+    null,
+  );
   const hasExistingSchedule =
     (scenario?.bus_scenario?.schedule_data?.length ?? 0) > 0;
 
@@ -872,7 +876,7 @@ export default function Scenario({
         time_slot: timeSlot.split(" ")[0],
       };
 
-      downloadJson(simulationRequest, `simulationRequest.json`);
+      // downloadJson(simulationRequest, `simulationRequest.json`);
 
       const response = await runSimulation(simulationRequest);
       setSimulationResponse(response);
@@ -1258,17 +1262,15 @@ export default function Scenario({
         scenario_detail: scenarioDetail,
       };
 
-      downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
+      // downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
 
       const result = await createUserScenario(
         idforUpdate || currentScenarioId,
         userScenario,
       );
       console.log("Scenario saved successfully:", result);
-      alert("Scenario saved successfully!");
-
-      const idforRedirect = result.scenario_detail_id;
-      window.location.href = `/scenario/${idforRedirect}`; // Redirect to workspace or another appropriate page
+      setSuccessRedirectId(result.scenario_detail_id);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Failed to save scenario:", error);
       alert(
@@ -2051,6 +2053,33 @@ export default function Scenario({
           </main>
         )}
       </main>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="confirm-modal-overlay">
+          <div className="confirm-modal">
+            <h2 className="text-green-600 text-xl flex items-center justify-center">
+              ✓ Scenario saved successfully!
+            </h2>
+            <p className="confirm-modal-subtitle">
+              Your scenario has been saved and is ready for analysis.
+            </p>
+            <div className="confirm-modal-actions">
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 rounded-full mb-4 mt-2"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  if (successRedirectId) {
+                    window.location.href = `/scenario/${successRedirectId}`;
+                  }
+                }}
+              >
+                View Scenario
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

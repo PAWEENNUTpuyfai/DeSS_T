@@ -243,6 +243,7 @@ export default function UserWorkspace({
 
     try {
       setIsDeleting(true);
+      console.log(`Attempting to delete configuration with ID: ${deleteConfigId}`);
       await deleteUserConfiguration(deleteConfigId);
       setUserConfigurations((prev) =>
         prev.filter(

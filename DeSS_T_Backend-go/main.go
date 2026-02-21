@@ -38,8 +38,8 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*", // หรือ "http://localhost:5173"
-		AllowMethods: "GET,POST,OPTIONS",
-		AllowHeaders: "Content-Type",
+		AllowMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+		AllowHeaders: "Content-Type, Authorization",
 	}))
 
 	// Serve static files from uploads directory

@@ -142,6 +142,9 @@ export default function EditScenarioPage() {
       }
       usermode="user"
       idforUpdate={userScenarioId}
+      onBack={() => {
+        window.location.href = "/user/workspace?tab=project";
+      }}
     />
   );
 }

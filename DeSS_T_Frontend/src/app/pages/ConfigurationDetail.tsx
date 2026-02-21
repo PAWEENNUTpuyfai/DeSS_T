@@ -7,7 +7,9 @@ import {
   getUserConfigurations,
   deleteUserConfiguration,
 } from "../../utility/api/configuration";
+import { getScenarioDetails, getUserScenarios } from "../../utility/api/scenario";
 import type { ConfigurationDetail } from "../models/Configuration";
+import type { UserScenario } from "../models/User";
 import ConfigurationDetailMap from "../components/ConfigurationDetailMap";
 import type { StationDetail, StationPair } from "../models/Network";
 import "../../style/Workspace.css";
@@ -26,6 +28,11 @@ export default function ConfigurationDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [userConfigId, setUserConfigId] = useState<string | null>(null);
+  const [linkedScenarios, setLinkedScenarios] = useState<UserScenario[]>([]);
+  const [linkedScenariosLoading, setLinkedScenariosLoading] = useState(false);
+  const [linkedScenariosError, setLinkedScenariosError] = useState<string | null>(
+    null,
+  );
   const [stationPairSort, setStationPairSort] = useState<"from" | "to" | "all">(
     "all",
   );
@@ -108,6 +115,77 @@ export default function ConfigurationDetailPage() {
 
     fetchConfigName();
   }, [user, configurationId]);
+
+  useEffect(() => {
+    if (!showDeleteModal || !user || !configurationId) {
+      return;
+    }
+
+    let isMounted = true;
+    setLinkedScenariosLoading(true);
+    setLinkedScenariosError(null);
+
+    const loadLinkedScenarios = async () => {
+      const userId = user.google_id || user.email;
+      if (!userId) {
+        setLinkedScenarios([]);
+        setLinkedScenariosLoading(false);
+        return;
+      }
+
+      const scenarios = await getUserScenarios(userId);
+      const scenariosWithDetails = await Promise.allSettled(
+        scenarios.map(async (scenario) => {
+          if (scenario.scenario_detail?.configuration_detail_id) {
+            return scenario;
+          }
+
+          const detail = await getScenarioDetails(scenario.scenario_detail_id);
+          return { ...scenario, scenario_detail: detail.scenario_detail };
+        }),
+      );
+
+      if (!isMounted) {
+        return;
+      }
+
+      const resolved: UserScenario[] = [];
+      let hadError = false;
+
+      scenariosWithDetails.forEach((result) => {
+        if (result.status === "fulfilled") {
+          resolved.push(result.value);
+        } else {
+          hadError = true;
+        }
+      });
+
+      const linked = resolved.filter(
+        (scenario) =>
+          scenario.scenario_detail?.configuration_detail_id === configurationId,
+      );
+
+      setLinkedScenarios(linked);
+      setLinkedScenariosLoading(false);
+      if (hadError) {
+        setLinkedScenariosError(
+          "Some scenarios could not be checked for configuration links.",
+        );
+      }
+    };
+
+    loadLinkedScenarios().catch((err: unknown) => {
+      if (!isMounted) return;
+      const msg = err instanceof Error ? err.message : String(err);
+      setLinkedScenariosError(msg);
+      setLinkedScenarios([]);
+      setLinkedScenariosLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showDeleteModal, user, configurationId]);
 
   // Click outside to close autocomplete
   useEffect(() => {
@@ -205,6 +283,7 @@ export default function ConfigurationDetailPage() {
 
   const cancelDelete = () => {
     setShowDeleteModal(false);
+    setLinkedScenarios([]);
   };
 
   if (loading) {
@@ -925,6 +1004,27 @@ export default function ConfigurationDetailPage() {
               Are you sure you want to delete "{configurationName}"? This action
               cannot be undone.
             </p>
+            <div className="mb-6">
+              <p className="text-sm font-semibold text-gray-800 mb-2">
+                Linked scenarios
+              </p>
+              {linkedScenariosLoading ? (
+                <p className="text-sm text-gray-500">Loading scenarios...</p>
+              ) : linkedScenarios.length > 0 ? (
+                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
+                  {linkedScenarios.map((scenario) => (
+                    <li key={scenario.user_scenario_id}>{scenario.name}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">No linked scenarios.</p>
+              )}
+              {linkedScenariosError && (
+                <p className="text-sm text-red-600 mt-2">
+                  {linkedScenariosError}
+                </p>
+              )}
+            </div>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={cancelDelete}

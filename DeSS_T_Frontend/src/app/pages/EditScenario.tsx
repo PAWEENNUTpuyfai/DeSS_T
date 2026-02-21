@@ -88,6 +88,7 @@ export default function EditScenarioPage() {
         if (target) {
           setScenarioName(target.name);
           setUserScenarioId(target.user_scenario_id);
+          console.log(target.user_scenario_id);
         } else {
           setError("You do not have permission to access this scenario");
         }

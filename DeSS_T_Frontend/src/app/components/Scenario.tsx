@@ -45,6 +45,7 @@ export default function Scenario({
   projectName,
   scenario,
   usermode = "guest",
+  idforUpdate,
 }: {
   configuration: ConfigurationDetail;
   configurationName?: string;
@@ -52,6 +53,7 @@ export default function Scenario({
   projectName?: string;
   scenario?: ScenarioDetail;
   usermode?: "guest" | "user";
+  idforUpdate?: string;
 }) {
   const { user } = useAuth();
 
@@ -276,6 +278,8 @@ export default function Scenario({
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
   const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
+  const hasExistingSchedule =
+    (scenario?.bus_scenario?.schedule_data?.length ?? 0) > 0;
 
   const timeSlotOptions = [
     "5 Minutes",
@@ -284,6 +288,87 @@ export default function Scenario({
     "20 Minutes",
     "30 Minutes",
   ];
+
+  const buildStationsFromOrders = (orders?: Order[]): string[] => {
+    if (!orders || orders.length === 0) return [];
+    const sorted = [...orders].sort((a, b) => a.order - b.order);
+    const stations: string[] = [];
+
+    sorted.forEach((order, idx) => {
+      const pair = order.station_pair;
+      if (!pair) return;
+      if (idx === 0 && pair.FstStation) {
+        stations.push(pair.FstStation);
+      }
+      if (pair.SndStation) {
+        stations.push(pair.SndStation);
+      }
+    });
+
+    return stations;
+  };
+
+  const buildSegmentsFromLine = (route?: GeoLineString): RouteSegment[] => {
+    if (!route || !Array.isArray(route.coordinates)) return [];
+    if (route.coordinates.length < 2) return [];
+    return [
+      {
+        from: "",
+        to: "",
+        coords: route.coordinates,
+      },
+    ];
+  };
+
+  const isEditingScenario = !!scenario?.scenario_detail_id;
+  const buildRoutePathId = (route: SimpleRoute, scenarioId: string) =>
+    isEditingScenario ? route.id : `${route.name}-${scenarioId}`;
+
+  useEffect(() => {
+    if (!scenario?.route_scenario?.route_paths?.length) return;
+
+    const busInfoByRoute = new Map(
+      scenario.bus_scenario?.bus_informations?.map((info) => [
+        info.route_path_id,
+        info,
+      ]) ?? [],
+    );
+
+    const derivedRoutes = scenario.route_scenario.route_paths.map(
+      (path, idx) => {
+        const info = busInfoByRoute.get(path.route_path_id);
+        const orders = path.orders ?? [];
+
+        return {
+          id: path.route_path_id || `${Date.now()}-${idx}`,
+          name: path.name || `Route ${idx + 1}`,
+          color: path.color || colorOptions[idx % colorOptions.length],
+          stations: buildStationsFromOrders(orders),
+          segments: buildSegmentsFromLine(path.route),
+          orders,
+          hidden: false,
+          locked: false,
+          maxDistance: info?.max_dis ?? 70,
+          speed: info?.speed ?? 60,
+          capacity: info?.capacity ?? 16,
+          maxBuses: info?.max_bus ?? 4,
+          routeTravelingTime: info?.avg_travel_time ?? 0,
+        };
+      },
+    );
+
+    if (derivedRoutes.length > 0) {
+      setRoutes(derivedRoutes);
+    }
+
+    const scheduleData = scenario.bus_scenario?.schedule_data ?? [];
+    if (scheduleData.length > 0) {
+      scheduleDataRef.current = scheduleData.map((sd) => ({
+        route_id: sd.route_path_id,
+        schedule_list: sd.schedule_list,
+      }));
+    }
+  }, [scenario, colorOptions]);
 
   // Close color picker when clicking outside
   useEffect(() => {
@@ -680,64 +765,94 @@ export default function Scenario({
     };
 
     try {
-      const currentScenarioId = `scenario-detail-${Date.now()}`;
+      const currentScenarioId =
+        scenario?.scenario_detail_id || `scenario-detail-${Date.now()}`;
+      const busScenarioId =
+        scenario?.bus_scenario_id || `bus-${currentScenarioId}`;
+      const routeScenarioId =
+        scenario?.route_scenario_id || `route-${currentScenarioId}`;
 
-      // Check if bus schedule file exists
-      if (!busScheduleFile) {
+      const existingScheduleData = scenario?.bus_scenario?.schedule_data ?? [];
+
+      if (!busScheduleFile && existingScheduleData.length === 0) {
         alert("Please upload a bus schedule file before running simulation");
         return;
       }
 
-      const scheduleData: PaserSchedule = await getScheduleData(
-        currentScenarioId,
-        busScheduleFile,
-      );
-      console.log("Schedule Data received:", scheduleData);
+      let scheduleDatas: ScheduleData[] = [];
 
-      const scheduleDatas: ScheduleData[] = scheduleData.ScheduleData.map(
-        (sd) => ({
+      if (busScheduleFile) {
+        const scheduleData: PaserSchedule = await getScheduleData(
+          currentScenarioId,
+          busScheduleFile,
+        );
+        console.log("Schedule Data received:", scheduleData);
+
+        scheduleDatas = scheduleData.ScheduleData.map((sd) => ({
           schedule_data_id: sd.ScheduleDataID,
           schedule_list: sd.ScheduleList,
           route_path_id: sd.RoutePathID,
-          bus_scenario_id: "bus-" + currentScenarioId, // to be filled by backend
-        }),
+          bus_scenario_id: busScenarioId,
+        }));
+
+        // Store schedule data in ref for playbackSeed
+        scheduleDataRef.current = scheduleData.ScheduleData.map((sd) => ({
+          route_id:
+            routes.find((r) => r.name === sd.RoutePathID)?.id || sd.RoutePathID,
+          schedule_list: sd.ScheduleList,
+        }));
+      } else {
+        scheduleDatas = existingScheduleData.map((sd) => ({
+          ...sd,
+          bus_scenario_id: sd.bus_scenario_id || busScenarioId,
+        }));
+
+        scheduleDataRef.current = scheduleDatas.map((sd) => ({
+          route_id: sd.route_path_id,
+          schedule_list: sd.schedule_list,
+        }));
+      }
+
+      const busInfoByRoute = new Map(
+        scenario?.bus_scenario?.bus_informations?.map((info) => [
+          info.route_path_id,
+          info,
+        ]) ?? [],
       );
 
-      // Store schedule data in ref for playbackSeed
-      scheduleDataRef.current = scheduleData.ScheduleData.map((sd) => ({
-        route_id:
-          routes.find((r) => r.name === sd.RoutePathID)?.id || sd.RoutePathID,
-        schedule_list: sd.ScheduleList,
-      }));
-
-      const busInformations: BusInformation[] = routes.map((r) => ({
-        bus_information_id: `${r.id}-businfo`,
-        speed: r.speed,
-        max_dis: r.maxDistance,
-        max_bus: r.maxBuses,
-        capacity: r.capacity,
-        avg_travel_time: r.routeTravelingTime || 0,
-        bus_scenario_id: "bus-" + currentScenarioId,
-        route_path_id: r.name + "-" + currentScenarioId,
-      }));
+      const busInformations: BusInformation[] = routes.map((r) => {
+        const info = busInfoByRoute.get(r.id);
+        return {
+          bus_information_id: info?.bus_information_id || `${r.id}-businfo`,
+          speed: r.speed,
+          max_dis: r.maxDistance,
+          max_bus: r.maxBuses,
+          capacity: r.capacity,
+          avg_travel_time: r.routeTravelingTime || 0,
+          bus_scenario_id: busScenarioId,
+          route_path_id: buildRoutePathId(r, currentScenarioId),
+        };
+      });
 
       const busScenario: BusScenario = {
-        bus_scenario_id: "bus-" + currentScenarioId,
+        bus_scenario_id: busScenarioId,
         schedule_data: scheduleDatas,
         bus_informations: busInformations,
       };
 
       const routePaths: RoutePath[] = routes.map((r) => ({
-        route_path_id: r.name + "-" + currentScenarioId,
+        route_path_id: buildRoutePathId(r, currentScenarioId),
         name: r.name,
         color: r.color,
-        route_scenario_id: "route-scenario-" + currentScenarioId,
+        route_scenario_id: isEditingScenario
+          ? routeScenarioId
+          : "route-scenario-" + currentScenarioId,
         route: buildGeoJsonLineString(r.segments),
         orders: r.orders,
       }));
 
       const routeScenario: RouteScenario = {
-        route_scenario_id: "route-" + currentScenarioId,
+        route_scenario_id: routeScenarioId,
         route_paths: routePaths,
       };
 
@@ -756,6 +871,8 @@ export default function Scenario({
         time_periods: simStartHour + ":00-" + simEndHour + ":00",
         time_slot: timeSlot.split(" ")[0],
       };
+
+      downloadJson(simulationRequest, `simulationRequest.json`);
 
       const response = await runSimulation(simulationRequest);
       setSimulationResponse(response);
@@ -951,7 +1068,8 @@ export default function Scenario({
 
   const handleSave = async () => {
     // Validation: Check if file is attached
-    if (!busScheduleFile) {
+    const existingScheduleData = scenario?.bus_scenario?.schedule_data ?? [];
+    if (!busScheduleFile && existingScheduleData.length === 0) {
       alert("Please attach a bus schedule file before saving");
       return;
     }
@@ -1027,53 +1145,79 @@ export default function Scenario({
 
       const scenarioName =
         projectName || `Scenario ${new Date().toLocaleString()}`;
-      const currentScenarioId = `scenario-${Date.now()}`;
+      const currentScenarioId =
+        scenario?.scenario_detail_id || `scenario-${Date.now()}`;
+      const busScenarioId =
+        scenario?.bus_scenario_id || `bus-scenario-${currentScenarioId}`;
+      const routeScenarioId =
+        scenario?.route_scenario_id || `route-${currentScenarioId}`;
 
       // Build BusInformations from routes
-      const busInformations: BusInformation[] = routes
-        .filter((r) => r.id) // Only include valid routes
-        .map((r) => ({
-          bus_information_id: `bus-info-${r.id}-${currentScenarioId}`,
-          speed: r.speed,
-          max_dis: r.maxDistance,
-          max_bus: r.maxBuses,
-          capacity: r.capacity,
-          avg_travel_time: r.routeTravelingTime,
-          bus_scenario_id: "bus-scenario-" + currentScenarioId,
-          route_path_id: r.name + "-" + currentScenarioId,
-        }));
-
-      const scheduleData: PaserSchedule = await getScheduleData(
-        currentScenarioId,
-        busScheduleFile,
+      const busInfoByRoute = new Map(
+        scenario?.bus_scenario?.bus_informations?.map((info) => [
+          info.route_path_id,
+          info,
+        ]) ?? [],
       );
 
-      const scheduleDatas: ScheduleData[] = scheduleData.ScheduleData.map(
-        (sd) => ({
+      const busInformations: BusInformation[] = routes
+        .filter((r) => r.id)
+        .map((r) => {
+          const info = busInfoByRoute.get(r.id);
+          return {
+            bus_information_id:
+              info?.bus_information_id ||
+              `bus-info-${r.id}-${currentScenarioId}`,
+            speed: r.speed,
+            max_dis: r.maxDistance,
+            max_bus: r.maxBuses,
+            capacity: r.capacity,
+            avg_travel_time: r.routeTravelingTime,
+            bus_scenario_id: busScenarioId,
+            route_path_id: buildRoutePathId(r, currentScenarioId),
+          };
+        });
+
+      let scheduleDatas: ScheduleData[] = [];
+
+      if (busScheduleFile) {
+        const scheduleData: PaserSchedule = await getScheduleData(
+          currentScenarioId,
+          busScheduleFile,
+        );
+
+        scheduleDatas = scheduleData.ScheduleData.map((sd) => ({
           schedule_data_id: sd.ScheduleDataID,
           schedule_list: sd.ScheduleList,
           route_path_id: sd.RoutePathID,
-          bus_scenario_id: "bus-" + currentScenarioId, // to be filled by backend
-        }),
-      );
+          bus_scenario_id: busScenarioId,
+        }));
+      } else {
+        scheduleDatas = existingScheduleData.map((sd) => ({
+          ...sd,
+          bus_scenario_id: sd.bus_scenario_id || busScenarioId,
+        }));
+      }
 
       const busScenario: BusScenario = {
-        bus_scenario_id: "bus-scenario-" + currentScenarioId,
+        bus_scenario_id: busScenarioId,
         bus_informations: busInformations,
         schedule_data: scheduleDatas,
       };
 
       const routePaths: RoutePath[] = routes.map((r) => ({
-        route_path_id: r.name + "-" + currentScenarioId,
+        route_path_id: buildRoutePathId(r, currentScenarioId),
         name: r.name,
         color: r.color,
-        route_scenario_id: "route-scenario-" + currentScenarioId,
+        route_scenario_id: isEditingScenario
+          ? routeScenarioId
+          : "route-scenario-" + currentScenarioId,
         route: buildGeoJsonLineString(r.segments),
         orders: r.orders,
       }));
 
       const routeScenario: RouteScenario = {
-        route_scenario_id: "route-" + currentScenarioId,
+        route_scenario_id: routeScenarioId,
         route_paths: routePaths,
       };
 
@@ -1648,7 +1792,7 @@ export default function Scenario({
                         />
                         <div
                           className={`p-6 border-2 border-dashed rounded-[20px] bg-white cursor-pointer flex flex-col items-center justify-center min-h-[120px] hover:bg-gray-50 ${
-                            busScheduleFile
+                            busScheduleFile || hasExistingSchedule
                               ? "border-green-500 bg-green-50"
                               : "border-[#81069e]"
                           }`}
@@ -1673,6 +1817,15 @@ export default function Scenario({
                               </p>
                               <p className="text-green-600 text-sm">
                                 {busScheduleFile.name}
+                              </p>
+                            </>
+                          ) : hasExistingSchedule ? (
+                            <>
+                              <p className="text-green-600 font-semibold mb-2">
+                                Existing schedule data loaded
+                              </p>
+                              <p className="text-green-600 text-sm text-center">
+                                You can upload a new file to replace it
                               </p>
                             </>
                           ) : (

@@ -10,6 +10,7 @@ interface CoverImageResponse {
 
 export interface ScenarioDetailsResponse {
   configuration_detail_id: string;
+  configuration_name: string;
   scenario_detail: ScenarioDetail;
 }
 

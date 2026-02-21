@@ -21,6 +21,7 @@ export default function EditScenarioPage() {
   const [configuration, setConfiguration] =
     useState<ConfigurationDetail | null>(null);
   const [scenarioName, setScenarioName] = useState<string>("");
+  const [userScenarioId, setUserScenarioId] = useState<string>("");
 
   useEffect(() => {
     if (!user) {
@@ -86,6 +87,7 @@ export default function EditScenarioPage() {
 
         if (target) {
           setScenarioName(target.name);
+          setUserScenarioId(target.user_scenario_id);
         } else {
           setError("You do not have permission to access this scenario");
         }
@@ -134,7 +136,11 @@ export default function EditScenarioPage() {
       scenario={scenarioDetails.scenario_detail}
       configuration={configuration}
       projectName={scenarioName || "User's scenario"}
+      configurationName={
+        scenarioDetails.configuration_name || "User's Configuration"
+      }
       usermode="user"
+      idforUpdate={userScenarioId}
     />
   );
 }

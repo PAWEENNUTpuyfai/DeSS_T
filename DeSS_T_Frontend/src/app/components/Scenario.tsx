@@ -43,6 +43,7 @@ export default function Scenario({
   configurationName,
   onBack,
   projectName,
+  scenario,
   usermode = "guest",
 }: {
   configuration: ConfigurationDetail;
@@ -1115,7 +1116,7 @@ export default function Scenario({
 
       downloadJson(userScenario, `${scenarioName.replace(/\s+/g, "_")}.json`);
 
-      const result = await createUserScenario(userScenario);
+      const result = await createUserScenario(currentScenarioId, userScenario);
       console.log("Scenario saved successfully:", result);
       alert("Scenario saved successfully!");
       window.location.href = "/user/workspace?tab=project"; // Redirect to workspace or another appropriate page

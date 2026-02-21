@@ -1,4 +1,5 @@
 import type { UserScenario } from "../../app/models/User";
+import type { ScenarioDetail } from "../../app/models/Scenario";
 import { API_BASE_URL } from "../config";
 
 interface CoverImageResponse {
@@ -7,16 +8,44 @@ interface CoverImageResponse {
   url: string;
 }
 
+export interface ScenarioDetailsResponse {
+  configuration_detail_id: string;
+  scenario_detail: ScenarioDetail;
+}
+
+// export async function createUserScenario(
+//   userScenario: UserScenario,
+// ): Promise<UserScenario> {
+//   const response = await fetch(`${API_BASE_URL}/user-scenario`, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify(userScenario),
+//   });
+
+//   if (!response.ok) {
+//     throw new Error(`HTTP error! status: ${response.status}`);
+//   }
+
+//   const result: UserScenario = await response.json();
+//   return result;
+// }
+
 export async function createUserScenario(
+  id: string,
   userScenario: UserScenario,
 ): Promise<UserScenario> {
-  const response = await fetch(`${API_BASE_URL}/user-scenario`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${API_BASE_URL}/user-scenario/${encodeURIComponent(id)}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userScenario),
     },
-    body: JSON.stringify(userScenario),
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -70,4 +99,19 @@ export async function getUserScenarios(
   }
 
   return [];
+}
+
+export async function getScenarioDetails(
+  scenarioDetailId: string,
+): Promise<ScenarioDetailsResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/scenario-details/${encodeURIComponent(scenarioDetailId)}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const result: ScenarioDetailsResponse = await response.json();
+  return result;
 }

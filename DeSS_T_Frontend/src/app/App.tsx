@@ -11,6 +11,7 @@ import Outputpage from "./pages/Outputpage";
 import UserWorkspace from "./pages/UserWorkspace";
 import WorkspaceCommunity from "./pages/WorkspaceCommunity";
 import ConfigurationDetailPage from "./pages/ConfigurationDetail";
+import EditScenarioPage from "./pages/EditScenario";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -35,6 +36,15 @@ export default function App() {
                 <ProtectedRoute>
                   {" "}
                   <ConfigurationDetailPage />{" "}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/scenario/:scenarioId"
+              element={
+                <ProtectedRoute>
+                  {" "}
+                  <EditScenarioPage />{" "}
                 </ProtectedRoute>
               }
             />

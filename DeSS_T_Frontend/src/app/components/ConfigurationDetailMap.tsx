@@ -32,6 +32,7 @@ export default function ConfigurationDetailMap({
   const [bounds, setBounds] = useState<
     [[number, number], [number, number]] | undefined
   >();
+  const [initialBoundsSet, setInitialBoundsSet] = useState(false);
 
   // Safe station to LatLng conversion with fallback
   const stationToLatLng = (s: StationDetail): LatLng => {
@@ -41,9 +42,9 @@ export default function ConfigurationDetailMap({
     return [13.75, 100.5];
   };
 
-  // Auto calculate bounds from stations
+  // Auto calculate bounds from stations (only on initial load)
   useEffect(() => {
-    if (!stations || stations.length === 0) return;
+    if (!stations || stations.length === 0 || initialBoundsSet) return;
 
     let minLat = Infinity,
       minLon = Infinity,
@@ -59,8 +60,8 @@ export default function ConfigurationDetailMap({
     }
 
     // Add some padding
-    const latPadding = (maxLat - minLat) * 0.1;
-    const lonPadding = (maxLon - minLon) * 0.1;
+    const latPadding = (maxLat - minLat) * 0.25;
+    const lonPadding = (maxLon - minLon) * 0.25;
 
     setBounds([
       [minLat - latPadding, minLon - lonPadding],
@@ -68,7 +69,8 @@ export default function ConfigurationDetailMap({
     ]);
 
     setCenter([(minLat + maxLat) / 2, (minLon + maxLon) / 2]);
-  }, [stations]);
+    setInitialBoundsSet(true);
+  }, [stations, initialBoundsSet]);
 
   function UpdateMapView({
     boundsProp,
@@ -119,11 +121,12 @@ export default function ConfigurationDetailMap({
   return (
     <MapContainer
       center={center}
-      zoom={13}
+      zoom={12}
       style={{ width: "100%", height: "100%" }}
+      dragging={true}
       doubleClickZoom={false}
       keyboard={false}
-      touchZoom={true}
+      touchZoom={false}
       boxZoom={false}
       inertia={false}
     >

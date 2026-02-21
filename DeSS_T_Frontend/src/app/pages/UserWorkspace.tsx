@@ -593,7 +593,7 @@ export default function UserWorkspace({
               <label className="workspace-modal-label">
                 Configuration Data :
               </label>
-              <div className="workspace-modal-dropdown">
+              <div className="workspace-modal-dropdown" style={{ width: "285px", flex: "0 0 285px" }}>
                 {configOptionNames.length > 0 ? (
                   <CustomDropdown
                     options={configOptionNames}

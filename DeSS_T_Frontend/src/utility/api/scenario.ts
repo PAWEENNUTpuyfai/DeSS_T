@@ -10,6 +10,7 @@ interface CoverImageResponse {
 
 export interface ScenarioDetailsResponse {
   configuration_detail_id: string;
+  configuration_name: string;
   scenario_detail: ScenarioDetail;
 }
 
@@ -51,8 +52,8 @@ export async function createUserScenario(
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  const result: UserScenario = await response.json();
-  return result;
+  const responseData: { user_scenario: UserScenario } = await response.json();
+  return responseData.user_scenario;
 }
 
 export async function uploadScenarioCoverImage(

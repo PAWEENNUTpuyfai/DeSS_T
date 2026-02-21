@@ -116,7 +116,7 @@ export default function CustomDropdown({
                         {isSelected && (
                           <span className="mr-3 text-[#81069e]">•</span>
                         )}
-                        <span className={isSelected ? "" : "ml-5"}>
+                        <span className={`dropdown-option-text ${isSelected ? "" : "ml-5"}`}>
                           {option}
                         </span>
                       </span>
@@ -137,7 +137,7 @@ export default function CustomDropdown({
                     {selectedValue === option && (
                       <span className="mr-3 text-[#81069e]">•</span>
                     )}
-                    <span className={selectedValue === option ? "" : "ml-5"}>
+                    <span className={`dropdown-option-text ${selectedValue === option ? "" : "ml-5"}`}>
                       {option}
                     </span>
                   </span>

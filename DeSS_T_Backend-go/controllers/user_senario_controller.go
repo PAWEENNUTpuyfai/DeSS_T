@@ -99,6 +99,7 @@ func GetUserScenarios(c *fiber.Ctx) error {
         "user_scenarios": responseList,
     })
 }
+
 // GetScenarioDetails ดึงข้อมูล Scenario Detail แบบเต็มรูปแบบ
 func GetScenarioDetails(c *fiber.Ctx) error {
 	scenarioDetailID := c.Params("id")
@@ -109,8 +110,8 @@ func GetScenarioDetails(c *fiber.Ctx) error {
 		})
 	}
 
-	// 1. เรียก Service (ใช้ Service ตัวเดิมที่ผมเขียนให้ได้เลยครับ)
-	result, err := services.GetScenarioDetailByID(scenarioDetailID)
+	// 1. เรียก Service (รับค่า result และ configName)
+	result, configName, err := services.GetScenarioDetailByID(scenarioDetailID)
 	
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -124,14 +125,13 @@ func GetScenarioDetails(c *fiber.Ctx) error {
 		})
 	}
 
-	// 2. 🛠️ แก้ไขการส่ง Response ตรงนี้
-	// ดึง ConfigurationDetailID ออกมาวางไว้ที่ Root Level คู่กับก้อน scenario_detail
+	// 2. 🛠️ ประกอบร่าง JSON Response
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"configuration_detail_id": result.ConfigurationDetailID, // 👈 เพิ่มบรรทัดนี้
-		"scenario_detail":         result,                       // ก้อนเดิม
+		"configuration_detail_id": result.ConfigurationDetailID, 
+		"configuration_name":      configName,                     // 👈 เพิ่มชื่อที่ค้นหาได้ตรงนี้!
+		"scenario_detail":         result,                       
 	})
 }
-
 // DeleteUserScenario ลบ User Scenario
 func DeleteUserScenario(c *fiber.Ctx) error {
 	// 1. รับค่า ID จาก Parameter ใน URL

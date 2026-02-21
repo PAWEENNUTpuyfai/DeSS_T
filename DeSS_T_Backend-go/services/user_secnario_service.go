@@ -204,11 +204,11 @@ func parseWKTToGeoLineString(wkt string) models.GeoLineString {
 	}
 }
 
-// GetScenarioDetailByID ดึงข้อมูลและ Map เข้าสู่ DTO Model
-func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, error) {
+// GetScenarioDetailByID ดึงข้อมูลและ Map เข้าสู่ DTO Model พร้อมดึงชื่อ Configuration
+func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, string, error) {
 	var dbSD model_database.ScenarioDetail
 
-	// 1. ดึงข้อมูลตัวแม่และลูกๆ ด้วย Preload
+	// 1. ดึงข้อมูล Scenario Detail
 	err := config.DB.
 		Preload("BusScenario").
 		Preload("BusScenario.BusInformations").
@@ -221,10 +221,28 @@ func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, erro
 		First(&dbSD, "id = ?", scenarioDetailID).Error
 
 	if err != nil {
-		return models.ScenarioDetail{}, err
+		return models.ScenarioDetail{}, "", err // 👈 คืนค่า string ว่างไปก่อนถ้ามี Error
 	}
 
-	// 2. เริ่มขั้นตอน Mapping จาก model_database -> models (DTO)
+	// 2. 🔍 ค้นหาชื่อ Configuration จาก ConfigurationDetailID
+	var configName string
+	var userConf model_database.UserConfiguration
+	var publicConf model_database.PublicConfiguration
+
+	// ลองหาใน User Configuration ก่อน
+	if err := config.DB.Select("name").Where("configuration_detail_id = ?", dbSD.ConfigurationDetailID).First(&userConf).Error; err == nil {
+		configName = userConf.Name
+	} else {
+		// ถ้าไม่เจอใน User ลองหาใน Public Configuration
+		if err := config.DB.Select("name").Where("configuration_detail_id = ?", dbSD.ConfigurationDetailID).First(&publicConf).Error; err == nil {
+			configName = publicConf.Name
+		} else {
+			// ถ้าไม่เจอเลย ก็ให้เป็นค่าว่าง หรือค่า Default
+			configName = "Unknown Configuration"
+		}
+	}
+
+	// 3. เริ่มขั้นตอน Mapping จาก model_database -> models (DTO) เหมือนเดิม
 	response := models.ScenarioDetail{
 		ScenarioDetailID:      dbSD.ID,
 		BusScenarioID:         dbSD.BusScenarioID,
@@ -232,7 +250,7 @@ func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, erro
 		ConfigurationDetailID: dbSD.ConfigurationDetailID,
 	}
 
-	// --- Map Bus Scenario ---
+	// --- Map Bus Scenario (โค้ดเดิม) ---
 	if dbSD.BusScenario != nil {
 		var mappedBusInfos []models.BusInformation
 		for _, info := range dbSD.BusScenario.BusInformations {
@@ -264,16 +282,14 @@ func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, erro
 		}
 	}
 
-	// --- Map Route Scenario ---
+	// --- Map Route Scenario (โค้ดเดิม) ---
 	if dbSD.RouteScenario != nil {
 		var mappedRoutePaths []models.RoutePath
 
 		for _, rp := range dbSD.RouteScenario.RoutePaths {
-			// 2.1 ค้นหาพิกัดแผนที่ (Geometry) แบบอ่านได้ (WKT)
 			var wktString string
 			config.DB.Raw("SELECT ST_AsText(route) FROM route_paths WHERE id = ?", rp.ID).Scan(&wktString)
 
-			// 2.2 Map Orders & Station Pairs
 			var mappedOrders []models.Order
 			for _, ord := range rp.Orders {
 				mappedOrder := models.Order{
@@ -305,12 +321,11 @@ func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, erro
 				mappedOrders = append(mappedOrders, mappedOrder)
 			}
 
-			// 2.3 ประกอบ RoutePath
 			mappedRoutePaths = append(mappedRoutePaths, models.RoutePath{
 				RoutePathID: rp.ID,
 				Name:        rp.Name,
 				Color:       rp.Color,
-				Route:       parseWKTToGeoLineString(wktString), // 👈 เรียกใช้ Helper ตรงนี้
+				Route:       parseWKTToGeoLineString(wktString), 
 				Orders:      mappedOrders,
 			})
 		}
@@ -321,9 +336,9 @@ func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, erro
 		}
 	}
 
-	return response, nil
+	// 🛠️ คืนค่า Response (DTO) และ ชื่อของ Configuration กลับไปพร้อมกัน
+	return response, configName, nil
 }
-
 // DeleteUserScenarioByID ลบ User Scenario และข้อมูล Route/Bus ที่เกี่ยวข้องทั้งหมดแบบถอนรากถอนโคน
 func DeleteUserScenarioByID(scenarioID string) error {
 	var userScenario model_database.UserScenario

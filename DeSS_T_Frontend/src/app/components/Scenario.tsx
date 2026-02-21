@@ -731,43 +731,103 @@ export default function Scenario({
     });
   };
 
-  const handleSimulation = async () => {
-    // Helper: Build GeoJSON LineString from route segments
-    const buildGeoJsonLineString = (
-      segments: RouteSegment[],
-    ): GeoLineString => {
-      if (segments.length === 0) {
-        return {
-          type: "LineString",
-          coordinates: [],
-        };
-      }
-
-      const coordinates: [number, number][] = [];
-
-      // Collect all coordinates from segments
-      segments.forEach((segment) => {
-        coordinates.push(...segment.coords);
-      });
-
-      // Remove consecutive duplicate points
-      const uniqueCoords: [number, number][] = [];
-      for (const coord of coordinates) {
-        if (
-          uniqueCoords.length === 0 ||
-          uniqueCoords[uniqueCoords.length - 1][0] !== coord[0] ||
-          uniqueCoords[uniqueCoords.length - 1][1] !== coord[1]
-        ) {
-          uniqueCoords.push(coord);
-        }
-      }
-
+  // Helper: Build GeoJSON LineString from route segments
+  const buildGeoJsonLineString = (segments: RouteSegment[]): GeoLineString => {
+    if (segments.length === 0) {
       return {
         type: "LineString",
-        coordinates: uniqueCoords,
+        coordinates: [],
       };
+    }
+
+    const coordinates: [number, number][] = [];
+
+    // Collect all coordinates from segments
+    segments.forEach((segment) => {
+      coordinates.push(...segment.coords);
+    });
+
+    // Remove consecutive duplicate points
+    const uniqueCoords: [number, number][] = [];
+    for (const coord of coordinates) {
+      if (
+        uniqueCoords.length === 0 ||
+        uniqueCoords[uniqueCoords.length - 1][0] !== coord[0] ||
+        uniqueCoords[uniqueCoords.length - 1][1] !== coord[1]
+      ) {
+        uniqueCoords.push(coord);
+      }
+    }
+
+    return {
+      type: "LineString",
+      coordinates: uniqueCoords,
+    };
+  };
+
+  // Helper: Build Scenario Detail from routes and configuration
+  const buildScenarioDetail = (
+    currentScenarioId: string,
+    busScenarioId: string,
+    routeScenarioId: string,
+    scheduleDatas: ScheduleData[],
+  ): ScenarioDetail => {
+    const busInfoByRoute = new Map(
+      scenario?.bus_scenario?.bus_informations?.map((info) => [
+        info.route_path_id,
+        info,
+      ]) ?? [],
+    );
+
+    const busInformations: BusInformation[] = routes.map((r) => {
+      const info = busInfoByRoute.get(r.id);
+      return {
+        bus_information_id: info?.bus_information_id || `${r.id}-businfo`,
+        speed: r.speed,
+        max_dis: r.maxDistance,
+        max_bus: r.maxBuses,
+        capacity: r.capacity,
+        avg_travel_time: r.routeTravelingTime || 0,
+        bus_scenario_id: busScenarioId,
+        route_path_id: buildRoutePathId(r, currentScenarioId),
+      };
+    });
+
+    const busScenario: BusScenario = {
+      bus_scenario_id: busScenarioId,
+      schedule_data: scheduleDatas,
+      bus_informations: busInformations,
     };
 
+    const routePaths: RoutePath[] = routes.map((r) => ({
+      route_path_id: buildRoutePathId(r, currentScenarioId),
+      name: r.name,
+      color: r.color,
+      route_scenario_id: isEditingScenario
+        ? routeScenarioId
+        : "route-scenario-" + currentScenarioId,
+      route: buildGeoJsonLineString(r.segments),
+      orders: r.orders,
+    }));
+
+    const routeScenario: RouteScenario = {
+      route_scenario_id: routeScenarioId,
+      route_paths: routePaths,
+    };
+
+    const scenarioDetail: ScenarioDetail = {
+      scenario_detail_id: currentScenarioId,
+      bus_scenario_id: busScenario.bus_scenario_id,
+      route_scenario_id: routeScenario.route_scenario_id,
+      bus_scenario: busScenario,
+      route_scenario: routeScenario,
+      configuration_detail_id: configuration.configuration_detail_id,
+    };
+
+    return scenarioDetail;
+  };
+
+  const handleSimulation = async () => {
     try {
       const currentScenarioId =
         scenario?.scenario_detail_id || `scenario-detail-${Date.now()}`;
@@ -817,57 +877,12 @@ export default function Scenario({
         }));
       }
 
-      const busInfoByRoute = new Map(
-        scenario?.bus_scenario?.bus_informations?.map((info) => [
-          info.route_path_id,
-          info,
-        ]) ?? [],
+      const scenarioDetail = buildScenarioDetail(
+        currentScenarioId,
+        busScenarioId,
+        routeScenarioId,
+        scheduleDatas,
       );
-
-      const busInformations: BusInformation[] = routes.map((r) => {
-        const info = busInfoByRoute.get(r.id);
-        return {
-          bus_information_id: info?.bus_information_id || `${r.id}-businfo`,
-          speed: r.speed,
-          max_dis: r.maxDistance,
-          max_bus: r.maxBuses,
-          capacity: r.capacity,
-          avg_travel_time: r.routeTravelingTime || 0,
-          bus_scenario_id: busScenarioId,
-          route_path_id: buildRoutePathId(r, currentScenarioId),
-        };
-      });
-
-      const busScenario: BusScenario = {
-        bus_scenario_id: busScenarioId,
-        schedule_data: scheduleDatas,
-        bus_informations: busInformations,
-      };
-
-      const routePaths: RoutePath[] = routes.map((r) => ({
-        route_path_id: buildRoutePathId(r, currentScenarioId),
-        name: r.name,
-        color: r.color,
-        route_scenario_id: isEditingScenario
-          ? routeScenarioId
-          : "route-scenario-" + currentScenarioId,
-        route: buildGeoJsonLineString(r.segments),
-        orders: r.orders,
-      }));
-
-      const routeScenario: RouteScenario = {
-        route_scenario_id: routeScenarioId,
-        route_paths: routePaths,
-      };
-
-      const scenarioDetail: ScenarioDetail = {
-        scenario_detail_id: currentScenarioId,
-        bus_scenario_id: busScenario.bus_scenario_id,
-        route_scenario_id: routeScenario.route_scenario_id,
-        bus_scenario: busScenario,
-        route_scenario: routeScenario,
-        configuration_detail_id: configuration.configuration_detail_id,
-      };
 
       const simulationRequest: ProjectSimulationRequest = {
         configuration: configuration,
@@ -1105,42 +1120,6 @@ export default function Scenario({
       return;
     }
 
-    // Helper: Build GeoJSON LineString from route segments
-    const buildGeoJsonLineString = (
-      segments: RouteSegment[],
-    ): GeoLineString => {
-      if (segments.length === 0) {
-        return {
-          type: "LineString",
-          coordinates: [],
-        };
-      }
-
-      const coordinates: [number, number][] = [];
-
-      // Collect all coordinates from segments
-      segments.forEach((segment) => {
-        coordinates.push(...segment.coords);
-      });
-
-      // Remove consecutive duplicate points
-      const uniqueCoords: [number, number][] = [];
-      for (const coord of coordinates) {
-        if (
-          uniqueCoords.length === 0 ||
-          uniqueCoords[uniqueCoords.length - 1][0] !== coord[0] ||
-          uniqueCoords[uniqueCoords.length - 1][1] !== coord[1]
-        ) {
-          uniqueCoords.push(coord);
-        }
-      }
-
-      return {
-        type: "LineString",
-        coordinates: uniqueCoords,
-      };
-    };
-
     try {
       if (!user) {
         alert("User not authenticated");
@@ -1155,32 +1134,6 @@ export default function Scenario({
         scenario?.bus_scenario_id || `bus-scenario-${currentScenarioId}`;
       const routeScenarioId =
         scenario?.route_scenario_id || `route-${currentScenarioId}`;
-
-      // Build BusInformations from routes
-      const busInfoByRoute = new Map(
-        scenario?.bus_scenario?.bus_informations?.map((info) => [
-          info.route_path_id,
-          info,
-        ]) ?? [],
-      );
-
-      const busInformations: BusInformation[] = routes
-        .filter((r) => r.id)
-        .map((r) => {
-          const info = busInfoByRoute.get(r.id);
-          return {
-            bus_information_id:
-              info?.bus_information_id ||
-              `bus-info-${r.id}-${currentScenarioId}`,
-            speed: r.speed,
-            max_dis: r.maxDistance,
-            max_bus: r.maxBuses,
-            capacity: r.capacity,
-            avg_travel_time: r.routeTravelingTime,
-            bus_scenario_id: busScenarioId,
-            route_path_id: buildRoutePathId(r, currentScenarioId),
-          };
-        });
 
       let scheduleDatas: ScheduleData[] = [];
 
@@ -1203,36 +1156,12 @@ export default function Scenario({
         }));
       }
 
-      const busScenario: BusScenario = {
-        bus_scenario_id: busScenarioId,
-        bus_informations: busInformations,
-        schedule_data: scheduleDatas,
-      };
-
-      const routePaths: RoutePath[] = routes.map((r) => ({
-        route_path_id: buildRoutePathId(r, currentScenarioId),
-        name: r.name,
-        color: r.color,
-        route_scenario_id: isEditingScenario
-          ? routeScenarioId
-          : "route-scenario-" + currentScenarioId,
-        route: buildGeoJsonLineString(r.segments),
-        orders: r.orders,
-      }));
-
-      const routeScenario: RouteScenario = {
-        route_scenario_id: routeScenarioId,
-        route_paths: routePaths,
-      };
-
-      const scenarioDetail: ScenarioDetail = {
-        scenario_detail_id: currentScenarioId,
-        bus_scenario_id: busScenario.bus_scenario_id,
-        route_scenario_id: routeScenario.route_scenario_id,
-        bus_scenario: busScenario,
-        route_scenario: routeScenario,
-        configuration_detail_id: configuration.configuration_detail_id,
-      };
+      const scenarioDetail = buildScenarioDetail(
+        currentScenarioId,
+        busScenarioId,
+        routeScenarioId,
+        scheduleDatas,
+      );
 
       // Capture map screenshot and upload as cover image
       let coverImageId = "";

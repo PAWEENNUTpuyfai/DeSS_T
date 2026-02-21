@@ -259,6 +259,15 @@ export default function Scenario({
   const scheduleDataRef = useRef<
     Array<{ route_id: string; schedule_list: string }>
   >([]);
+  
+  // 🔹 Track if user has made any changes (for warning before simulation)
+  const hasDataChangedRef = useRef<boolean>(false);
+  const markAsChanged = () => {
+    if (usermode === "user") {
+      hasDataChangedRef.current = true;
+    }
+  };
+  
   const [simStartHour, setSimStartHour] = useState<number>(8);
   const [simEndHour, setSimEndHour] = useState<number>(16);
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
@@ -363,24 +372,28 @@ export default function Scenario({
       | "routeTravelingTime",
     value: number,
   ) => {
+    markAsChanged(); // 🔹 Mark as changed when bus info updated
     setRoutes((prev) =>
       prev.map((r) => (r.id === routeId ? { ...r, [key]: value } : r)),
     );
   };
 
   const updateName = (routeId: string, name: string) => {
+    markAsChanged(); // 🔹 Mark as changed when route name updated
     setRoutes((prev) =>
       prev.map((r) => (r.id === routeId ? { ...r, name } : r)),
     );
   };
 
   const handleColorPick = (routeId: string, color: ColorResult) => {
+    markAsChanged(); // 🔹 Mark as changed when route color updated
     setRoutes((prev) =>
       prev.map((r) => (r.id === routeId ? { ...r, color: color.hex } : r)),
     );
   };
 
   const addRoute = () => {
+    markAsChanged(); // 🔹 Mark as changed when route added
     setRoutes((prev) => [...prev, createRoute(prev.length)]);
   };
 
@@ -411,6 +424,7 @@ export default function Scenario({
   };
 
   const removeRoute = (routeId: string) => {
+    markAsChanged(); // 🔹 Mark as changed when route removed
     setRoutes((prev) => prev.filter((r) => r.id !== routeId));
   };
 
@@ -673,6 +687,7 @@ export default function Scenario({
 
     // Just add the station without fetching geometry yet
     // Geometry will be fetched when confirm is clicked
+    markAsChanged(); // 🔹 Mark as changed when station added to route
     setRoutes((prev) =>
       prev.map((r) =>
         r.id === route.id ? { ...r, stations: [...r.stations, stationId] } : r,
@@ -794,9 +809,20 @@ export default function Scenario({
   };
 
   const handleSimulation = async () => {
+    // 🔹 Check if user has unsaved changes (user mode only)
+    if (usermode === "user" && hasDataChangedRef.current) {
+      const confirmProceed = window.confirm(
+        "⚠️ You have unsaved changes. Running simulation without saving will not persist these changes.\n\nDo you want to continue?"
+      );
+      if (!confirmProceed) {
+        return;
+      }
+    }
+    
     try {
       const currentScenarioId =
         scenario?.scenario_detail_id || `scenario-detail-${Date.now()}`;
+
       const busScenarioId =
         scenario?.bus_scenario_id || `bus-${currentScenarioId}`;
       const routeScenarioId =
@@ -861,6 +887,9 @@ export default function Scenario({
 
       const response = await runSimulation(simulationRequest);
       setSimulationResponse(response);
+      
+      // 🔹 Reset change flag after successful simulation
+      hasDataChangedRef.current = false;
     } catch (error) {
       console.error("Simulation failed:", error);
       alert(
@@ -889,6 +918,7 @@ export default function Scenario({
       return;
     }
 
+    markAsChanged(); // 🔹 Mark as changed when new file uploaded
     setBusScheduleFile(file);
   };
 
@@ -1164,6 +1194,10 @@ export default function Scenario({
         userScenario,
       );
       console.log("Scenario saved successfully:", result);
+      
+      // 🔹 Reset change flag after successful save
+      hasDataChangedRef.current = false;
+      
       setSuccessRedirectId(result.scenario_detail_id);
       setShowSuccessModal(true);
     } catch (error) {

@@ -260,6 +260,7 @@ func GetScenarioDetailByID(scenarioDetailID string) (models.ScenarioDetail, stri
 				MaxDis:           info.MaxDis,
 				MaxBus:           info.MaxBus,
 				Capacity:         info.Capacity,
+				AvgTravelTime:	  info.AvgTravelTime,
 				BusScenarioID:    info.BusScenarioID,
 				RoutePathID:      info.RoutePathID,
 			})

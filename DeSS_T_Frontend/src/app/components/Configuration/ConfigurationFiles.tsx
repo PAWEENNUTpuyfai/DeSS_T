@@ -35,6 +35,7 @@ interface GuestConfigurationFilesProps {
 }
 import "../../../style/configuration.css";
 import Nav from "../NavBar";
+import { downloadJson } from "../../../utility/helpers";
 
 export default function ConfigurationFiles({
   stationDetails,
@@ -361,6 +362,10 @@ export default function ConfigurationFiles({
           alighting_datas: toAlightingData(alightRes, normalizedStations),
           interarrival_datas: toInterArrivalData(interRes, normalizedStations),
         };
+
+        downloadJson(cfg.alighting_datas, `alighting_datas-${Date.now()}.json`);
+        downloadJson(cfg.interarrival_datas, `interarrival_datas-${Date.now()}.json`);
+        downloadJson(cfg, `configuration-detail-${Date.now()}.json`);
 
         // Create UserConfiguration payload (API expects this structure)
         const userConfigurationPayload: UserConfiguration = {

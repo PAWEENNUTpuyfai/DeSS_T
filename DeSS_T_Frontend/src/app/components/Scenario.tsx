@@ -267,6 +267,9 @@ export default function Scenario({
       hasDataChangedRef.current = true;
     }
   };
+
+  // 🔹 Unsaved changes modal state
+  const [showUnsavedModal, setShowUnsavedModal] = useState<boolean>(false);
   
   const [simStartHour, setSimStartHour] = useState<number>(8);
   const [simEndHour, setSimEndHour] = useState<number>(16);
@@ -811,14 +814,13 @@ export default function Scenario({
   const handleSimulation = async () => {
     // 🔹 Check if user has unsaved changes (user mode only)
     if (usermode === "user" && hasDataChangedRef.current) {
-      const confirmProceed = window.confirm(
-        "⚠️ You have unsaved changes. Running simulation without saving will not persist these changes.\n\nDo you want to continue?"
-      );
-      if (!confirmProceed) {
-        return;
-      }
+      setShowUnsavedModal(true);
+      return;
     }
-    
+    await executeSimulation();
+  };
+
+  const executeSimulation = async () => {
     try {
       const currentScenarioId =
         scenario?.scenario_detail_id || `scenario-detail-${Date.now()}`;
@@ -1417,6 +1419,39 @@ export default function Scenario({
           }
         }}
       />
+
+      {/* Unsaved Changes Modal */}
+      {showUnsavedModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
+          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <span className="w-2 h-8 bg-[#81069e] mr-3" />
+              <h2 className="text-2xl text-gray-800">Unsaved Changes</h2>
+            </div>
+            <p className="text-gray-600 mb-6">
+              You have unsaved changes. Running the simulation without saving
+              will not persist these changes.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowUnsavedModal(false)}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-full transition duration-200 outline-none focus:outline-none hover:outline-none active:outline-none focus:ring-0 hover:ring-0 active:ring-0 border-0"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowUnsavedModal(false);
+                  executeSimulation();
+                }}
+                className="bg-[#81069e] hover:bg-[#6a0585] text-white py-2 px-6 rounded-full transition duration-200 outline-none focus:outline-none hover:outline-none active:outline-none focus:ring-0 hover:ring-0 active:ring-0 border-0"
+              >
+                Continue
+              </button> 
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

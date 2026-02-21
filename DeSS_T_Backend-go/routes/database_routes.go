@@ -34,8 +34,8 @@ func DatabaseRoutes(app *fiber.App) {
 
     // //user-scenarios
     api.Get("/user-scenarios/:user_id", controllers.GetUserScenarios)
-    api.Post("/user-scenario",controllers.CreateUserScenario)
-    // // api.Put("/user-scenario/:id",controllers.UpdateUserScenario)
+    api.Post("/user-scenario-create",controllers.CreateUserScenario)
+    api.Post("/user-scenario/:id",controllers.EditUserScenario)
     api.Delete("/user-scenario/:id",controllers.DeleteUserScenario)
 
     // //scenario-details

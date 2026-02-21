@@ -118,6 +118,7 @@ type BusInformation struct {
     MaxDis        float32 `json:"max_dis"`
     MaxBus        int     `json:"max_bus"`
     Capacity      int     `json:"capacity"`
+    AvgTravelTime float32 `json:"avg_travel_time"`
     BusScenarioID string  `json:"bus_scenario_id"`
     RoutePathID   string  `json:"route_path_id"`
 

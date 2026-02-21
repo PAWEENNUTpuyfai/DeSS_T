@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/useAuth";
 import NavBar from "../components/NavBar";
@@ -27,8 +27,15 @@ export default function ConfigurationDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [userConfigId, setUserConfigId] = useState<string | null>(null);
   const [stationPairSort, setStationPairSort] = useState<'from' | 'to' | null>(null);
+  const [stationPairSearch, setStationPairSearch] = useState<string>('');
+  const [showPairAutocomplete, setShowPairAutocomplete] = useState(false);
+  const [pairHighlightedIndex, setPairHighlightedIndex] = useState(-1);
+  const [pairAutocompleteRef, setPairAutocompleteRef] = useState<HTMLDivElement | null>(null);
   const [stationSearch, setStationSearch] = useState<string>('');
   const [stationFilter, setStationFilter] = useState<'all' | 'with-data' | 'no-data'>('all');
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [autocompleteRef, setAutocompleteRef] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -94,6 +101,20 @@ export default function ConfigurationDetailPage() {
 
     fetchConfigName();
   }, [user, configurationId]);
+
+  // Click outside to close autocomplete
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (autocompleteRef && !autocompleteRef.contains(event.target as Node)) {
+        setShowAutocomplete(false);
+      }
+      if (pairAutocompleteRef && !pairAutocompleteRef.contains(event.target as Node)) {
+        setShowPairAutocomplete(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [autocompleteRef, pairAutocompleteRef]);
 
 
   // Handle station click - set as selected station
@@ -238,6 +259,14 @@ export default function ConfigurationDetailPage() {
       return bIsTo - aIsTo;
     }
   });
+
+  const filteredStationPairs = stationPairs.filter((pair) => {
+    if (stationPairSearch.trim() === '') return true;
+    const query = stationPairSearch.toLowerCase();
+    const fromName = getStationName(pair.FstStation).toLowerCase();
+    const toName = getStationName(pair.SndStation).toLowerCase();
+    return fromName.includes(query) || toName.includes(query);
+  });
   
   const stations = configuration.network_model?.Station_detail || [];
   const totalPairs = configuration.network_model?.StationPair?.length || 0;
@@ -247,6 +276,14 @@ export default function ConfigurationDetailPage() {
     ...(configuration.alighting_datas?.map(d => d.station_id || d.station_detail?.station_detail_id || '') ?? []),
     ...(configuration.interarrival_datas?.map(d => d.station_id || d.station_detail?.station_detail_id || '') ?? []),
   ].filter(Boolean));
+
+  // Autocomplete suggestions
+  const autocompleteSuggestions = stationSearch.trim() !== '' 
+    ? stations.filter(s => 
+        s.name?.toLowerCase().includes(stationSearch.toLowerCase()) ||
+        s.station_detail_id?.toLowerCase().includes(stationSearch.toLowerCase())
+      ).slice(0, 5)
+    : [];
 
   const filteredMapStations = stations.filter(s => {
     const id = s.station_detail_id ?? '';
@@ -260,6 +297,65 @@ export default function ConfigurationDetailPage() {
       (stationFilter === 'no-data' && !hasData);
     return matchSearch && matchFilter;
   });
+
+  const handleStationSelect = (station: StationDetail) => {
+    setStationSearch(station.name || '');
+    setSelectedStationId(station.station_detail_id ?? null);
+    setShowAutocomplete(false);
+    setHighlightedIndex(-1);
+  };
+
+  const pairAutocompleteSuggestions = stationPairSearch.trim() !== ''
+    ? stations
+        .filter(s => s.name?.toLowerCase().includes(stationPairSearch.toLowerCase()))
+        .slice(0, 5)
+    : [];
+
+  const handlePairStationSelect = (station: StationDetail) => {
+    setStationPairSearch(station.name || '');
+    setShowPairAutocomplete(false);
+    setPairHighlightedIndex(-1);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showAutocomplete || autocompleteSuggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => 
+        prev < autocompleteSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault();
+      handleStationSelect(autocompleteSuggestions[highlightedIndex]);
+    } else if (e.key === 'Escape') {
+      setShowAutocomplete(false);
+      setHighlightedIndex(-1);
+    }
+  };
+
+  const handlePairSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showPairAutocomplete || pairAutocompleteSuggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setPairHighlightedIndex(prev =>
+        prev < pairAutocompleteSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setPairHighlightedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && pairHighlightedIndex >= 0) {
+      e.preventDefault();
+      handlePairStationSelect(pairAutocompleteSuggestions[pairHighlightedIndex]);
+    } else if (e.key === 'Escape') {
+      setShowPairAutocomplete(false);
+      setPairHighlightedIndex(-1);
+    }
+  };
 
   return (
     <div className="workspace-page">
@@ -307,20 +403,46 @@ export default function ConfigurationDetailPage() {
             {/* Left: Map */}
             <div className="flex-[2] h-full pl-1 pr-2 flex flex-col gap-2">
               {/* Search + Filter bar */}
-              <div className="flex items-center gap-3 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-100 px-4 py-2.5" style={{ fontFamily: "'Lexend', sans-serif" }}>
-                {/* Search input */}
-                <div className="relative flex-1">
+              <div className="flex items-center gap-3 flex-shrink-0 bg-white rounded-2xl shadow-md border border-gray-100 px-4 py-2.5 relative z-30">
+                {/* Search input with autocomplete */}
+                <div className="relative flex-1" ref={setAutocompleteRef}>
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#81069e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
                   </svg>
                   <input
                     type="text"
                     value={stationSearch}
-                    onChange={e => setStationSearch(e.target.value)}
+                    onChange={e => {
+                      setStationSearch(e.target.value);
+                      setShowAutocomplete(e.target.value.trim() !== '');
+                      setHighlightedIndex(-1);
+                    }}
+                    onKeyDown={handleSearchKeyDown}
+                    onFocus={() => stationSearch.trim() !== '' && setShowAutocomplete(true)}
                     placeholder="Search stations..."
                     className="w-full pl-9 pr-3 py-1.5 text-sm bg-[#f7f7f7] rounded-xl border border-transparent focus:outline-none focus:border-[#81069e] focus:ring-1 focus:ring-[#d1a3db] transition-all placeholder-gray-400"
-                    style={{ fontFamily: "'Lexend', sans-serif", color: '#333' }}
+                    style={{ color: '#333' }}
                   />
+                  {/* Autocomplete dropdown */}
+                  {showAutocomplete && autocompleteSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#d1a3db] rounded-xl shadow-lg overflow-hidden z-[100001]">
+                      {autocompleteSuggestions.map((station, idx) => (
+                        <div
+                          key={station.station_detail_id}
+                          onClick={() => handleStationSelect(station)}
+                          className="px-3 py-2 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                          style={{
+                            background: idx === highlightedIndex ? '#f3e5f5' : 'white',
+                            color: idx === highlightedIndex ? '#81069e' : '#333',
+                          }}
+                          onMouseEnter={() => setHighlightedIndex(idx)}
+                        >
+                          <div className="text-sm font-semibold">{station.name}</div>
+                          <div className="text-xs text-gray-500">ID: {station.station_detail_id}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {/* Divider */}
                 <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
@@ -333,10 +455,14 @@ export default function ConfigurationDetailPage() {
                   ] as const).map(({ key, label, dot }) => (
                     <button
                       key={key}
-                      onClick={() => setStationFilter(key)}
+                      onClick={() => {
+                        setStationFilter(key);
+                        setStationSearch("");
+                        setShowAutocomplete(false);
+                        setHighlightedIndex(-1);
+                      }}
                       className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-full border-2 transition-all"
                       style={{
-                        fontFamily: "'Lexend', sans-serif",
                         borderColor: '#81069e',
                         background: stationFilter === key ? '#81069e' : '#ffffff',
                         color: stationFilter === key ? '#ffffff' : '#81069e',
@@ -351,11 +477,11 @@ export default function ConfigurationDetailPage() {
                 {/* Divider */}
                 <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
                 {/* Count */}
-                <span className="flex-shrink-0 text-xs font-semibold text-[#81069e] bg-[#f3e5f5] border border-[#d1a3db] rounded-full px-3 py-1" style={{ fontFamily: "'Lexend', sans-serif" }}>
+                <span className="flex-shrink-0 text-xs font-semibold text-[#81069e] bg-[#f3e5f5] border border-[#d1a3db] rounded-full px-3 py-1">
                   {filteredMapStations.length}/{stations.length}
                 </span>
               </div>
-              <div className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden flex-1">
+              <div className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden flex-1 relative z-0">
                 {stations.length > 0 ? (
                   <ConfigurationDetailMap
                     stations={filteredMapStations}
@@ -459,22 +585,90 @@ export default function ConfigurationDetailPage() {
                 <span className="w-1 h-5 bg-[#81069e] rounded-full flex-shrink-0" />
                 <h3 className="text-base font-bold text-gray-800">Station Pairs</h3>
                 {selectedStation1 && (
-                  <span className="text-sm text-gray-500 ml-1">— from {selectedStation1.name}</span>
+                  <span className="text-sm text-gray-500 ml-1">— {selectedStation1.name}</span>
                 )}
-                {stationPairs.length > 0 && (
-                  <span className="ml-auto bg-[#e1bee7] text-[#81069e] text-xs font-bold px-2 py-0.5 rounded-full">
-                    {stationPairs.length}
-                  </span>
-                )}
+                <div className="ml-auto flex items-center gap-2">
+                  <div className="relative" ref={setPairAutocompleteRef}>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#81069e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input
+                      type="text"
+                      value={stationPairSearch}
+                      onChange={(e) => {
+                        setStationPairSearch(e.target.value);
+                        setShowPairAutocomplete(e.target.value.trim() !== '');
+                        setPairHighlightedIndex(-1);
+                      }}
+                      onKeyDown={handlePairSearchKeyDown}
+                      onFocus={() => stationPairSearch.trim() !== '' && setShowPairAutocomplete(true)}
+                      placeholder="Search station pairs..."
+                      className="w-56 pl-8 pr-3 py-1.5 text-xs bg-[#f7f7f7] rounded-xl border border-transparent focus:outline-none focus:border-[#81069e] focus:ring-1 focus:ring-[#d1a3db] transition-all placeholder-gray-400"
+                      style={{ color: '#333' }}
+                    />
+                    {showPairAutocomplete && pairAutocompleteSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#d1a3db] rounded-xl shadow-lg overflow-hidden z-[100001]">
+                        {pairAutocompleteSuggestions.map((station, idx) => (
+                          <div
+                            key={station.station_detail_id}
+                            onClick={() => handlePairStationSelect(station)}
+                            className="px-3 py-2 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                            style={{
+                              background: idx === pairHighlightedIndex ? '#f3e5f5' : 'white',
+                              color: idx === pairHighlightedIndex ? '#81069e' : '#333',
+                            }}
+                            onMouseEnter={() => setPairHighlightedIndex(idx)}
+                          >
+                            <div className="text-sm font-semibold">{station.name}</div>
+                            <div className="text-xs text-gray-500">ID: {station.station_detail_id}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setStationPairSort('from')}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border-2 transition-all"
+                      style={{
+                        borderColor: '#81069e',
+                        background: stationPairSort === 'from' ? '#81069e' : '#ffffff',
+                        color: stationPairSort === 'from' ? '#ffffff' : '#81069e',
+                        boxShadow: stationPairSort === 'from' ? '0 4px 10px rgba(129,6,158,0.22)' : 'none',
+                      }}
+                    >
+                      From
+                    </button>
+                    <button
+                      onClick={() => setStationPairSort('to')}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border-2 transition-all"
+                      style={{
+                        borderColor: '#81069e',
+                        background: stationPairSort === 'to' ? '#81069e' : '#ffffff',
+                        color: stationPairSort === 'to' ? '#ffffff' : '#81069e',
+                        boxShadow: stationPairSort === 'to' ? '0 4px 10px rgba(129,6,158,0.22)' : 'none',
+                      }}
+                    >
+                      To
+                    </button>
+                  </div>
+                  {stationPairs.length > 0 && (
+                    <span className="bg-[#e1bee7] text-[#81069e] text-xs font-bold px-2 py-0.5 rounded-full">
+                      {filteredStationPairs.length}
+                    </span>
+                  )}
+                </div>
               </div>
               {stationPairs.length > 0 ? (
+                filteredStationPairs.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <div className="rounded-xl overflow-hidden border border-[#d1a3db]">
+                  <table className="w-full text-sm border-separate border-spacing-0">
                     <thead>
                       <tr className="bg-[#f3e5f5]">
                         <th 
                           onClick={() => setStationPairSort('from')}
-                          className="text-left px-6 py-3 text-[#81069e] font-semibold cursor-pointer hover:bg-[#e1bee7] transition-colors select-none"
+                          className="text-left px-6 py-3 text-[#81069e] font-semibold cursor-pointer hover:bg-[#e1bee7] transition-colors select-none rounded-tl-xl"
                         >
                           <div className="flex items-center gap-2">
                             From Station
@@ -499,21 +693,30 @@ export default function ConfigurationDetailPage() {
                           </div>
                         </th>
                         <th className="text-left px-6 py-3 text-[#81069e] font-semibold">Distance (m)</th>
-                        <th className="text-left px-6 py-3 text-[#81069e] font-semibold">Travel Time (s)</th>
+                        <th className="text-left px-6 py-3 text-[#81069e] font-semibold rounded-tr-xl">Travel Time (s)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {stationPairs.map((pair, idx) => (
+                      {filteredStationPairs.map((pair, idx) => {
+                        const isLast = idx === filteredStationPairs.length - 1;
+                        return (
                         <tr key={idx} className="border-t border-gray-100 hover:bg-[#f3e5f5]/60 transition-colors">
-                          <td className="px-6 py-3 text-gray-700">{getStationName(pair.FstStation)}</td>
+                          <td className={`px-6 py-3 text-gray-700${isLast ? " rounded-bl-xl" : ""}`}>{getStationName(pair.FstStation)}</td>
                           <td className="px-6 py-3 text-gray-700">{getStationName(pair.SndStation)}</td>
                           <td className="px-6 py-3 text-gray-700">{pair.RouteBetween?.Distance?.toFixed(2) || "N/A"}</td>
-                          <td className="px-6 py-3 text-gray-700">{pair.RouteBetween?.TravelTime?.toFixed(2) || "N/A"}</td>
+                          <td className={`px-6 py-3 text-gray-700${isLast ? " rounded-br-xl" : ""}`}>{pair.RouteBetween?.TravelTime?.toFixed(2) || "N/A"}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-6 text-sm">
+                    No station pairs match your search
+                  </p>
+                )
               ) : (
                 <p className="text-gray-400 text-center py-6 text-sm">
                   {selectedStation1 ? "No station pairs found" : "Select a station to view pairs"}

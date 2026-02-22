@@ -34,7 +34,12 @@ func main() {
 		_ = os.Setenv("UPLOAD_DIR", uploadDir)
 	}
 
-	app := fiber.New()
+	bodyLimit := 100 * 1024 * 1024 // 100MB
+	fmt.Printf("✅ Fiber BodyLimit set to: %d bytes (%.2f MB)\n", bodyLimit, float64(bodyLimit)/(1024*1024))
+
+	app := fiber.New(fiber.Config{
+		BodyLimit: bodyLimit,
+	})
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*", // หรือ "http://localhost:5173"

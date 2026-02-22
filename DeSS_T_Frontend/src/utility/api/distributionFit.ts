@@ -1,4 +1,4 @@
-import type { DataFitResponse } from "../../app/models/DistriButionFitModel";
+import type { DataFitResponse } from "../../app/models/DistributionFitModel";
 import type { StationDetail } from "../../app/models/Network";
 import { API_BASE_URL } from "../config";
 import { buildStationNameToIdMap } from "../sheetHelpers";

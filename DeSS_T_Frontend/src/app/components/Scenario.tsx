@@ -765,10 +765,10 @@ export default function Scenario({
 
     const busInformations: BusInformation[] = routes.map((r) => {
       const info = busInfoByRoute.get(r.id);
-      // ✅ คำนวณ avg_travel_time จาก speed (km/h) และ maxDistance (km) = นาที
-      const avgTravelTime = r.speed > 0 
-        ? (r.maxDistance / r.speed) * 60 
-        : 0;
+      // ✅ ใช้ค่าที่ user กำหนดไว้ (routeTravelingTime) ถ้าไม่มีถึงคำนวณจาก speed/distance
+      const avgTravelTime = r.routeTravelingTime !== undefined && r.routeTravelingTime !== null
+        ? r.routeTravelingTime  // ใช้ค่าที่ user แก้ไว้
+        : (r.speed > 0 ? (r.maxDistance / r.speed) * 60 : 0);  // คำนวณถ้าไม่มีค่า
       return {
         bus_information_id: info?.bus_information_id || `${r.id}-businfo`,
         speed: r.speed,
@@ -850,12 +850,17 @@ export default function Scenario({
         );
         console.log("Schedule Data received:", scheduleData);
 
-        scheduleDatas = scheduleData.ScheduleData.map((sd) => ({
-          schedule_data_id: sd.ScheduleDataID,
-          schedule_list: sd.ScheduleList,
-          route_path_id: sd.RoutePathID,
-          bus_scenario_id: busScenarioId,
-        }));
+        scheduleDatas = scheduleData.ScheduleData.map((sd) => {
+          const matchingRoute = routes.find((r) => r.name === sd.RoutePathID);
+          return {
+            schedule_data_id: sd.ScheduleDataID,
+            schedule_list: sd.ScheduleList,
+            route_path_id: matchingRoute 
+              ? buildRoutePathId(matchingRoute, currentScenarioId) 
+              : sd.RoutePathID,
+            bus_scenario_id: busScenarioId,
+          };
+        });
 
         // Store schedule data in ref for playbackSeed
         scheduleDataRef.current = scheduleData.ScheduleData.map((sd) => ({
@@ -874,7 +879,7 @@ export default function Scenario({
           schedule_list: sd.schedule_list,
         }));
       }
-
+      
       const scenarioDetail = buildScenarioDetail(
         currentScenarioId,
         busScenarioId,

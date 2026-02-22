@@ -889,9 +889,6 @@ export default function Scenario({
 
       const response = await runSimulation(simulationRequest);
       setSimulationResponse(response);
-      
-      // 🔹 Reset change flag after successful simulation
-      hasDataChangedRef.current = false;
     } catch (error) {
       console.error("Simulation failed:", error);
       alert(

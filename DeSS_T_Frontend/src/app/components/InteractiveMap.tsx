@@ -243,12 +243,31 @@ export default function InteractiveMap({
           playbackSeed?.scheduleData?.find((s) => s.route_id.includes(r.name)) || // Name contains
           playbackSeed?.scheduleData?.[0]; // Fallback to first schedule if only one exists
           
-        const routeResult = playbackSeed?.routeResults?.find(
-          (rr) => rr.route_id === r.id,
+        // ✅ ใช้ busInfo.speed และ routeDistance แทน routeResult
+        const busInfo = playbackSeed?.busInfo?.find(
+          (bi) => bi.route_id === r.id,
         );
-        const totalTravelTimeSeconds = routeResult?.average_travel_time
-          ? routeResult.average_travel_time * 60
-          : 300;
+        
+        // ดึง maxDistance จาก playbackSeed.routeDetails หรือ busInfo
+        const routeDetails = playbackSeed?.routeDetails?.find(
+          (rd) => rd?.route_id === r.id,
+        );
+        const maxDistance = routeDetails?.max_dis || 68; // Fallback to 68 km
+        
+        // คำนวณ travel time จาก speed และ distance
+        let totalTravelTimeSeconds = 300; // default 5 minutes
+        if (busInfo?.speed && busInfo.speed > 0) {
+          const travelTimeMinutes = (maxDistance / busInfo.speed) * 60;
+          totalTravelTimeSeconds = travelTimeMinutes * 60;
+        }
+
+        if (logDebug) {
+          console.log(`🚌 Route: ${r.name}`);
+          console.log(`   busInfo.speed: ${busInfo?.speed} km/h`);
+          console.log(`   maxDistance: ${maxDistance} km`);
+          console.log(`   Calculated travelTimeSeconds: ${totalTravelTimeSeconds}`);
+          console.log(`   Expected: ${maxDistance} km ÷ ${busInfo?.speed} km/h = ${(maxDistance / (busInfo?.speed || 1)).toFixed(2)} hours`);
+        }
 
         const departureTimes =
           routeSchedule?.schedule_list
@@ -269,6 +288,11 @@ export default function InteractiveMap({
         }
 
         const travelTimeMinutes = totalTravelTimeSeconds / 60;
+        
+        if (logDebug) {
+          console.log(`   travelTimeMinutes: ${travelTimeMinutes.toFixed(2)} min`);
+          console.log(`   Expected: ~68 km ÷ 30 km/h = ~136 minutes`);
+        }
         
         // Find active buses: those that have departed but not yet finished
         const activeDepartures = [...validDepartureTimes]
@@ -313,7 +337,8 @@ export default function InteractiveMap({
     [
       mockRoutes,
       playbackSeed?.scheduleData,
-      playbackSeed?.routeResults,
+      playbackSeed?.busInfo,
+      playbackSeed?.routeDetails,
       simEndMinutes,
       simStartMinutes,
     ],

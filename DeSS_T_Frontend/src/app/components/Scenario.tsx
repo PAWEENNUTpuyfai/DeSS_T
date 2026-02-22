@@ -765,13 +765,17 @@ export default function Scenario({
 
     const busInformations: BusInformation[] = routes.map((r) => {
       const info = busInfoByRoute.get(r.id);
+      // ✅ คำนวณ avg_travel_time จาก speed (km/h) และ maxDistance (km) = นาที
+      const avgTravelTime = r.speed > 0 
+        ? (r.maxDistance / r.speed) * 60 
+        : 0;
       return {
         bus_information_id: info?.bus_information_id || `${r.id}-businfo`,
         speed: r.speed,
         max_dis: r.maxDistance,
         max_bus: r.maxBuses,
         capacity: r.capacity,
-        avg_travel_time: r.routeTravelingTime || 0,
+        avg_travel_time: avgTravelTime,
         bus_scenario_id: busScenarioId,
         route_path_id: buildRoutePathId(r, currentScenarioId),
       };
@@ -1026,6 +1030,10 @@ export default function Scenario({
       max_bus: r.maxBuses,
       speed: r.speed,
       capacity: r.capacity,
+    })),
+    routeDetails: routes.map((r) => ({
+      route_id: r.id,
+      max_dis: r.maxDistance,
     })),
     routeOrders: routes.map((r) => ({
       route_id: r.id,

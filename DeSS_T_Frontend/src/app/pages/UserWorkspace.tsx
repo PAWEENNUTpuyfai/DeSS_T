@@ -12,7 +12,11 @@ import {
   getConfigurationDetail,
   deleteUserConfiguration,
 } from "../../utility/api/configuration";
-import { getScenarioDetails, getUserScenarios } from "../../utility/api/scenario";
+import {
+  getScenarioDetails,
+  getUserScenarios,
+  deleteUserScenario,
+} from "../../utility/api/scenario";
 import "../../style/Workspace.css";
 import { IMG_BASE_URL } from "../../utility/config";
 
@@ -62,7 +66,7 @@ export default function UserWorkspace({
     useState<ConfigurationDetail | null>(null);
   const [scenarioLoading, setScenarioLoading] = useState(false);
 
-  // Delete confirmation states
+  // Delete confirmation states (Configuration)
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfigId, setDeleteConfigId] = useState<string | null>(null);
   const [deleteConfigDetailId, setDeleteConfigDetailId] = useState<
@@ -71,9 +75,14 @@ export default function UserWorkspace({
   const [isDeleting, setIsDeleting] = useState(false);
   const [linkedScenarios, setLinkedScenarios] = useState<UserScenario[]>([]);
   const [linkedScenariosLoading, setLinkedScenariosLoading] = useState(false);
-  const [linkedScenariosError, setLinkedScenariosError] = useState<string | null>(
-    null,
-  );
+  const [linkedScenariosError, setLinkedScenariosError] = useState<
+    string | null
+  >(null);
+
+  // Delete confirmation states (Scenario)
+  const [showDeleteScenarioModal, setShowDeleteScenarioModal] = useState(false);
+  const [deleteScenarioId, setDeleteScenarioId] = useState<string | null>(null);
+  const [isDeletingScenario, setIsDeletingScenario] = useState(false);
 
   // Filter states
   const [fileFilter, setFileFilter] = useState("All Files");
@@ -317,7 +326,9 @@ export default function UserWorkspace({
 
     try {
       setIsDeleting(true);
-      console.log(`Attempting to delete configuration with ID: ${deleteConfigId}`);
+      console.log(
+        `Attempting to delete configuration with ID: ${deleteConfigId}`,
+      );
       await deleteUserConfiguration(deleteConfigId);
       setUserConfigurations((prev) =>
         prev.filter(
@@ -341,6 +352,42 @@ export default function UserWorkspace({
     setDeleteConfigId(null);
     setDeleteConfigDetailId(null);
     setLinkedScenarios([]);
+  };
+
+  const handleDeleteScenario = async (
+    scenarioId: string,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    setDeleteScenarioId(scenarioId);
+    setShowDeleteScenarioModal(true);
+  };
+
+  const confirmDeleteScenario = async () => {
+    if (!deleteScenarioId) return;
+
+    try {
+      setIsDeletingScenario(true);
+      console.log(`Attempting to delete scenario with ID: ${deleteScenarioId}`);
+      await deleteUserScenario(deleteScenarioId);
+      setUserScenarios((prev) =>
+        prev.filter(
+          (scenario) => scenario.user_scenario_id !== deleteScenarioId,
+        ),
+      );
+      setShowDeleteScenarioModal(false);
+      setDeleteScenarioId(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setScenariosError(`Failed to delete project: ${msg}`);
+    } finally {
+      setIsDeletingScenario(false);
+    }
+  };
+
+  const cancelDeleteScenario = () => {
+    setShowDeleteScenarioModal(false);
+    setDeleteScenarioId(null);
   };
 
   const resetProjectModal = () => {
@@ -559,6 +606,26 @@ export default function UserWorkspace({
                       </svg>
                     </button>
                   )}
+                  {activeTab === "project" && (
+                    <button
+                      onClick={(e) => handleDeleteScenario(card.id, e)}
+                      className="absolute top-2 right-2 p-2 bg-white rounded-full hover:border-white transition-all shadow-md opacity-0 group-hover:opacity-100"
+                      aria-label="Delete project"
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M7 16C7.26522 16 7.51957 15.8946 7.70711 15.7071C7.89464 15.5196 8 15.2652 8 15V9C8 8.73478 7.89464 8.48043 7.70711 8.29289C7.51957 8.10536 7.26522 8 7 8C6.73478 8 6.48043 8.10536 6.29289 8.29289C6.10536 8.48043 6 8.73478 6 9V15C6 15.2652 6.10536 15.5196 6.29289 15.7071C6.48043 15.8946 6.73478 16 7 16ZM17 4H13V3C13 2.20435 12.6839 1.44129 12.1213 0.87868C11.5587 0.316071 10.7956 0 10 0H8C7.20435 0 6.44129 0.316071 5.87868 0.87868C5.31607 1.44129 5 2.20435 5 3V4H1C0.734784 4 0.48043 4.10536 0.292893 4.29289C0.105357 4.48043 0 4.73478 0 5C0 5.26522 0.105357 5.51957 0.292893 5.70711C0.48043 5.89464 0.734784 6 1 6H2V17C2 17.7956 2.31607 18.5587 2.87868 19.1213C3.44129 19.6839 4.20435 20 5 20H13C13.7956 20 14.5587 19.6839 15.1213 19.1213C15.6839 18.5587 16 17.7956 16 17V6H17C17.2652 6 17.5196 5.89464 17.7071 5.70711C17.8946 5.51957 18 5.26522 18 5C18 4.73478 17.8946 4.48043 17.7071 4.29289C17.5196 4.10536 17.2652 4 17 4ZM7 3C7 2.73478 7.10536 2.48043 7.29289 2.29289C7.48043 2.10536 7.73478 2 8 2H10C10.2652 2 10.5196 2.10536 10.7071 2.29289C10.8946 2.48043 11 2.73478 11 3V4H7V3ZM14 17C14 17.2652 13.8946 17.5196 13.7071 17.7071C13.5196 17.8946 13.2652 18 13 18H5C4.73478 18 4.48043 17.8946 4.29289 17.7071C4.10536 17.5196 4 17.2652 4 17V6H14V17ZM11 16C11.2652 16 11.5196 15.8946 11.7071 15.7071C11.8946 15.5196 12 15.2652 12 15V9C12 8.73478 11.8946 8.48043 11.7071 8.29289C11.5196 8.10536 11.2652 8 11 8C10.7348 8 10.4804 8.10536 10.2929 8.29289C10.1054 8.48043 10 8.73478 10 9V15C10 15.2652 10.1054 15.5196 10.2929 15.7071C10.4804 15.8946 10.7348 16 11 16Z"
+                          fill="red"
+                        />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               ))
             )}
@@ -674,7 +741,10 @@ export default function UserWorkspace({
               <label className="workspace-modal-label">
                 Configuration Data :
               </label>
-              <div className="workspace-modal-dropdown" style={{ width: "285px", flex: "0 0 285px" }}>
+              <div
+                className="workspace-modal-dropdown"
+                style={{ width: "285px", flex: "0 0 285px" }}
+              >
                 {configOptionNames.length > 0 ? (
                   <CustomDropdown
                     options={configOptionNames}
@@ -755,7 +825,7 @@ export default function UserWorkspace({
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal (Configuration) */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
           <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4 border-2">
@@ -802,6 +872,38 @@ export default function UserWorkspace({
                 className="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal (Project) */}
+      {showDeleteScenarioModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
+          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4 border-2">
+            <div className="flex items-center mb-4">
+              <span className="w-2 h-8 bg-red-600 mr-3" />
+              <h2 className="text-2xl text-gray-800">Delete Project</h2>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this project? This action cannot
+              be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDeleteScenario}
+                disabled={isDeletingScenario}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteScenario}
+                disabled={isDeletingScenario}
+                className="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeletingScenario ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

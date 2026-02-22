@@ -266,8 +266,10 @@ func DeleteUserConfigurationByID(configID string) error {
 
     // เตรียม ID และชื่อไฟล์สำหรับลบ
     var fileNameToDelete string
+    var coverImageID string
     if userConfig.CoverImage != nil {
         fileNameToDelete = userConfig.CoverImage.PathFile
+        coverImageID = userConfig.CoverImage.ID
     }
 
     // ดึง NetworkModelID ออกมาเก็บไว้ก่อนลบ Config
@@ -284,7 +286,14 @@ func DeleteUserConfigurationByID(configID string) error {
             return err
         }
 
-        // ข. ลบ ConfigurationDetail (ถ้ามี)
+        // ข. ลบ CoverImage (ถ้ามี)
+        if coverImageID != "" {
+            if err := tx.Delete(&model_database.CoverImageConf{}, "id = ?", coverImageID).Error; err != nil {
+                return err
+            }
+        }
+
+        // ค. ลบ ConfigurationDetail (ถ้ามี)
         // ตรงนี้จะลบ AlightingData, InterArrivalData ตาม Cascade
         if userConfig.ConfigurationDetailID != "" {
             if err := tx.Delete(&model_database.ConfigurationDetail{}, "id = ?", userConfig.ConfigurationDetailID).Error; err != nil {
@@ -292,7 +301,7 @@ func DeleteUserConfigurationByID(configID string) error {
             }
         }
 
-        // ค. ลบ NetworkModel (หัวใจสำคัญ)
+        // ง. ลบ NetworkModel (หัวใจสำคัญ)
         // เมื่อลบ NetworkModelID นี้ StationDetail และ StationPair จะถูกลบตาม Cascade ใน Model
         if networkModelID != "" {
             // เช็คก่อนว่ามี Config อื่นใช้ NetworkModel นี้อยู่ไหม (ป้องกันลบพลาดถ้ามีการแชร์ Network)

@@ -14,18 +14,10 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
           title: "Alighting Data Help",
           content: (
             <>
-              <p className="mb-3">
-                <strong>Alighting Data:</strong> Upload an Excel file (.xlsx)
-                containing passenger alighting data for each station.
-              </p>
-              <p className="mb-3">
-                <strong>Interarrival Data:</strong> Upload an Excel file (.xlsx)
-                containing bus interarrival time data.
-              </p>
-              <p>
-                Both files must be attached before you can proceed. Click the
-                template download link to get the correct file format.
-              </p>
+              <img
+                src="/public/AlightingDataHelp.jpg"
+                alt="Alighting Data Help"
+              ></img>
             </>
           ),
         };
@@ -34,14 +26,10 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
           title: "Interarrival Data Help",
           content: (
             <>
-              <p className="mb-3">
-                Configure your simulation scenario parameters including bus
-                capacity, number of buses, and simulation duration.
-              </p>
-              <p>
-                Adjust the settings according to your analysis requirements and
-                run the simulation to see results.
-              </p>
+              <img
+                src="/public/InterarrivalDataHelp.jpg"
+                alt="Interarrival Data Help"
+              ></img>
             </>
           ),
         };
@@ -77,11 +65,22 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
         };
       case "Map":
         return {
-          title: "Map Configuration Help",  
+          title: "Map Configuration Help",
           content: (
             <>
-              <p className="mb-3">
-                .
+              <img
+                src="/public/MapConfigurationHelp.jpg"
+                alt="Map Configuration Help"
+              ></img>
+              <p className="text-center">
+                link :{" "}
+                <a
+                  href="https://www.openstreetmap.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  https://www.openstreetmap.org/
+                </a>
               </p>
             </>
           ),
@@ -92,16 +91,7 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
           title: "Schedule Help",
           content: (
             <>
-              <p className="mb-3">
-                This is the configuration setup page. Follow the steps to
-                configure your transit system simulation:
-              </p>
-              <ol className="list-decimal ml-5">
-                <li>Configure the map area and select stations</li>
-                <li>Upload required data files</li>
-                <li>Set scenario parameters</li>
-                <li>Run the simulation</li>
-              </ol>
+              <img src="/public/ScheduleHelp.jpg" alt="Schedule Help"></img>
             </>
           ),
         };

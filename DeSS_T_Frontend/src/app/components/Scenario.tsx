@@ -1218,6 +1218,7 @@ export default function Scenario({
         inpage="Project"
         onBackClick={onBack}
         projectName={projectName}
+        hasProjectChanged={hasDataChangedRef.current}
       />
       <main className="">
         <div className="h-[85px]"></div>

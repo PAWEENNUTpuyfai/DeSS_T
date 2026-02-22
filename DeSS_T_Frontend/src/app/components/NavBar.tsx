@@ -18,6 +18,7 @@ interface NavProps {
   onBackClick?: () => void;
   userAvatarUrl?: string;
   userName?: string;
+  hasProjectChanged?: boolean;
 }
 
 export default function Nav({
@@ -28,6 +29,7 @@ export default function Nav({
   onBackClick,
   userAvatarUrl,
   userName,
+  hasProjectChanged,
 }: NavProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const { login } = useAuth();
@@ -117,7 +119,7 @@ export default function Nav({
                 handleConfirmLeave();
               } else if (!onBackClick) {
                 return;
-              } else if (inpage === "Output") {
+              } else if (inpage === "Output" || !hasProjectChanged) {
                 handleConfirmLeave();
               } else {
                 setShowConfirm(true);
@@ -219,10 +221,14 @@ export default function Nav({
         <div className="confirm-modal-overlay">
           <div className="confirm-modal">
             <h2 className="confirm-modal-title flex items-center justify-center">
-              Are you sure you want to discard all changes?
+              {inpage === "Project" && usermode === "user" && hasProjectChanged
+                ? "Are you sure you want to return to User Workspace without saving?"
+                : "Are you sure you want to discard all changes?"}
             </h2>
             <p className="confirm-modal-subtitle">
-              Your changes will not be saved if you leave this page.
+              {inpage === "Project" && usermode === "user" && hasProjectChanged
+                ? "Your project changes will not be saved."
+                : "Your changes will not be saved if you leave this page."}
             </p>
             <div className="confirm-modal-actions">
               <button

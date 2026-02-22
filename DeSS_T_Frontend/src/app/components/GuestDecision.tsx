@@ -9,7 +9,7 @@ export default function GuestDecision() {
     <div className="flex h-screen justify-center items-center bg-white">
       <div className="decision_container">
         <div className="decision_logobar">
-          <img src="/DeSS-T_logo.png" alt="DeSS-T Logo" className="logo" />
+          <a href="/"><img src="/DeSS-T_logo.png" alt="DeSS-T Logo" className="logo" /></a>
         </div>
         <div className="decision_content mb-14">
           <span className="flex mb-6 items-center">

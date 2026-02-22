@@ -38,26 +38,48 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
           title: "Passenger Waiting Density",
           content: (
             <>
-              <div className="px-4 py-2 border-b border-gray-200">
+              <div className=" rounded-lg p-4 space-y-4">
                 <div className="mb-3">
-                  <div className="text-sm mb-2">Queue Length (Color)</div>
+                  <div className="text-sm font-semibold text-gray-800 mb-3">Queue Length (Color)</div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600">Low</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-medium text-gray-700">Low</span>
+                      <span className="text-xs text-gray-600">จำนวนคนรอน้อย</span>
+                    </div>
                     <div
-                      className="flex-1 h-4 rounded"
+                      className="flex-1 h-5 rounded-full shadow-sm"
                       style={{
                         background:
                           "linear-gradient(to right, #0096ff, #00ff00, #ffff00, #ff8800, #ff0000)",
                       }}
                     ></div>
-                    <span className="text-xs text-gray-600">High</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-medium text-gray-700">High</span>
+                      <span className="text-xs text-gray-600">จำนวนคนรอมาก</span>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm mb-2">Waiting Time (Blur Width)</div>
-                  <p className="text-xs text-gray-600">
-                    Thicker/wider blur = longer waiting time
-                  </p>
+                <div className="border-t border-purple-200 pt-4">
+                  <div className="text-sm font-semibold text-gray-800 mb-3">Waiting Time (Blur Width)</div>
+                  <div className="space-y-2 text-xs text-gray-700">
+                    <p className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 bg-blue-400 rounded-full"></span>
+                      วงกลม <span className="font-semibold">เล็ก</span> = เวลารอสั้น
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span className="inline-block w-4 h-4 bg-red-400 rounded-full"></span>
+                      วงกลม <span className="font-semibold">ใหญ่</span> = เวลารอนาน
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-purple-200 pt-4 rounded p-3 text-xs text-gray-700 space-y-2 mt-3">
+                <p className="font-semibold">ตัวอย่างการอ่านแผนที่ :</p>
+                <div className="space-y-1.5">
+                  <p>• <span className="font-semibold text-red-600">สีแดง + วงกลมใหญ่</span> = ปัญหามาก (คนรอเยอะ + รอนาน)</p>
+                  <p>• <span className="font-semibold text-yellow-600">สีเหลือง + วงกลมปานกลาง</span> = ปัญหาปานกลาง</p>
+                  <p>• <span className="font-semibold text-blue-600">สีฟ้า + วงกลมเล็ก</span> = ไม่มีปัญหา (คนรอน้อย + รอสั้น)</p>
                 </div>
               </div>
             </>

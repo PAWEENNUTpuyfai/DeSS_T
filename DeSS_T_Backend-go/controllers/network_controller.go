@@ -38,11 +38,30 @@ func GetAreaCache(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "area code not found in cache"})
 	}
 
-	// อ่านจากไฟล์ JSON - ใช้ absolute path ใน Docker container
-	dataPath := filepath.Join("/data", fmt.Sprintf("area_cache_%s.json", areaCode))
-	data, err := os.ReadFile(dataPath)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to read cache file"})
+	// อ่านจากไฟล์ JSON - ลองหลายชื่นทาง (Docker container และ local development)
+	possiblePaths := []string{
+		filepath.Join("/data", fmt.Sprintf("area_cache_%s.json", areaCode)),  // Docker path
+		filepath.Join("data", fmt.Sprintf("area_cache_%s.json", areaCode)),   // Relative path
+		filepath.Join("./data", fmt.Sprintf("area_cache_%s.json", areaCode)), // Current working directory
+	}
+
+	var data []byte
+	var err error
+	found := false
+
+	for _, path := range possiblePaths {
+		data, err = os.ReadFile(path)
+		if err == nil {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to read cache file",
+			"code":  areaCode,
+		})
 	}
 
 	var cacheData AreaCacheData

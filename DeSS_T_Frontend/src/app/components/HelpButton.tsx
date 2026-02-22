@@ -89,7 +89,7 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
       case "Schedule":
       default:
         return {
-          title: "Help",
+          title: "Schedule Help",
           content: (
             <>
               <p className="mb-3">

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+// import { useNavigate } from "react-router-dom";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
@@ -14,7 +15,7 @@ import type {
 import type { NetworkModel } from "../../models/Network";
 import type { UserConfiguration } from "../../models/User";
 import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
-import { isDataFitResponse } from "../../models/DistributionFitModel";
+import { isDataFitResponse } from "../../models/DistriButionFitModel";
 import HelpButton from "../HelpButton";
 import { useAuth } from "../../contexts/useAuth";
 import {
@@ -45,6 +46,7 @@ export default function ConfigurationFiles({
   configurationName,
   configuration,
 }: GuestConfigurationFilesProps) {
+  // const navigate = useNavigate();
   const { user } = useAuth();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const makeId = (): string => {
@@ -261,20 +263,6 @@ export default function ConfigurationFiles({
     }
   };
 
-  const downloadJson = (data: unknown, filename: string) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
   const submitSelected = async () => {
     if (usermode === "user") {
       // For user mode, capture map and create UserConfiguration
@@ -289,6 +277,8 @@ export default function ConfigurationFiles({
         alert("Configuration name is required");
         return;
       }
+
+      let saveSuccess = false;
 
       try {
         setIsSubmitting(true);
@@ -384,18 +374,20 @@ export default function ConfigurationFiles({
         };
 
         // Download request payload for debugging/audit
-        downloadJson(
-          userConfigurationPayload,
-          `createUserConfiguration-${Date.now()}.json`,
-        );
+        // downloadJson(
+        //   userConfigurationPayload,
+        //   `createUserConfiguration-${Date.now()}.json`,
+        // );
 
         // Call createUserConfiguration API
         const userConfiguration = await createUserConfiguration(
           userConfigurationPayload,
         );
 
-        alert(`Configuration "${configurationName}" saved successfully!`);
         console.log("Created UserConfiguration:", userConfiguration);
+
+        // Mark success
+        saveSuccess = true;
 
         // Optionally call onSubmit with the configuration detail
         // if needed for further processing
@@ -404,6 +396,14 @@ export default function ConfigurationFiles({
         alert("Failed to save configuration: " + msg);
       } finally {
         setIsSubmitting(false);
+      }
+
+      // Navigate after cleanup if successful
+      if (saveSuccess) {
+        alert(`Configuration "${configurationName}" saved successfully!`);
+        // Use window.location to ensure navigation happens
+        window.location.href = "/user/workspace?tab=config";
+        return;
       }
 
       return;

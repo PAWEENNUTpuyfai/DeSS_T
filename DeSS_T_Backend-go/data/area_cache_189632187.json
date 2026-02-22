@@ -1,0 +1,950 @@
+{
+  "area_code": "189632187",
+  "bounds": {
+    "minLat": 18.782373999999997,
+    "maxLat": 18.8206533,
+    "minLon": 98.9379609,
+    "maxLon": 98.9702305
+  },
+  "stations": [
+    {
+      "station_detail_id": "2434739253",
+      "name": "คณะวิศวกรรมศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9526185,
+          18.7966977
+        ]
+      },
+      "lat": 18.7966977,
+      "lon": 98.9526185,
+      "station_id_osm": "2434739253"
+    },
+    {
+      "station_detail_id": "2434763308",
+      "name": "จุดจอดรถม่วง",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.956953,
+          18.79584
+        ]
+      },
+      "lat": 18.79584,
+      "lon": 98.956953,
+      "station_id_osm": "2434763308"
+    },
+    {
+      "station_detail_id": "2434765955",
+      "name": "จุดจอดรถม่วง",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.956967,
+          18.796015
+        ]
+      },
+      "lat": 18.796015,
+      "lon": 98.956967,
+      "station_id_osm": "2434765955"
+    },
+    {
+      "station_detail_id": "2434770159",
+      "name": "วิทยาลัยพหุวิทยาการและสหวิทยาการ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.958928,
+          18.794618
+        ]
+      },
+      "lat": 18.794618,
+      "lon": 98.958928,
+      "station_id_osm": "2434770159"
+    },
+    {
+      "station_detail_id": "2434781037",
+      "name": "สโมสรนักศึกษาบัณฑิตศึกษา",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9571539,
+          18.7944862
+        ]
+      },
+      "lat": 18.7944862,
+      "lon": 98.9571539,
+      "station_id_osm": "2434781037"
+    },
+    {
+      "station_detail_id": "2434784899",
+      "name": "อาคาร 1 คณะศึกษาศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9548248,
+          18.7935561
+        ]
+      },
+      "lat": 18.7935561,
+      "lon": 98.9548248,
+      "station_id_osm": "2434784899"
+    },
+    {
+      "station_detail_id": "2434788893",
+      "name": "ลานกิจกรรมหอพักหญิง 2",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9537143,
+          18.7994136
+        ]
+      },
+      "lat": 18.7994136,
+      "lon": 98.9537143,
+      "station_id_osm": "2434788893"
+    },
+    {
+      "station_detail_id": "2434789769",
+      "name": "คณะรัฐศาสตร์ฯ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.954412,
+          18.8027867
+        ]
+      },
+      "lat": 18.8027867,
+      "lon": 98.954412,
+      "station_id_osm": "2434789769"
+    },
+    {
+      "station_detail_id": "2434791738",
+      "name": "ลานจอดรถ อ.มช.",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9534206,
+          18.8002312
+        ]
+      },
+      "lat": 18.8002312,
+      "lon": 98.9534206,
+      "station_id_osm": "2434791738"
+    },
+    {
+      "station_detail_id": "2434809621",
+      "name": "คณะสถาปัตยกรรมศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9482003,
+          18.7981374
+        ]
+      },
+      "lat": 18.7981374,
+      "lon": 98.9482003,
+      "station_id_osm": "2434809621"
+    },
+    {
+      "station_detail_id": "2434815654",
+      "name": "ร้านสหกรณ์ มช.",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.951173,
+          18.8015571
+        ]
+      },
+      "lat": 18.8015571,
+      "lon": 98.951173,
+      "station_id_osm": "2434815654"
+    },
+    {
+      "station_detail_id": "2434815656",
+      "name": "Bus Stop 2434815656",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9540953,
+          18.8075494
+        ]
+      },
+      "lat": 18.8075494,
+      "lon": 98.9540953,
+      "station_id_osm": "2434815656"
+    },
+    {
+      "station_detail_id": "2639527925",
+      "name": "Doi Suthep red bus station",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9483688,
+          18.8106533
+        ]
+      },
+      "lat": 18.8106533,
+      "lon": 98.9483688,
+      "station_id_osm": "2639527925"
+    },
+    {
+      "station_detail_id": "3167968625",
+      "name": "หอพักหญิง 3",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9527359,
+          18.7996403
+        ]
+      },
+      "lat": 18.7996403,
+      "lon": 98.9527359,
+      "station_id_osm": "3167968625"
+    },
+    {
+      "station_detail_id": "3167972703",
+      "name": "หอพักชาย 3",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9532178,
+          18.7977555
+        ]
+      },
+      "lat": 18.7977555,
+      "lon": 98.9532178,
+      "station_id_osm": "3167972703"
+    },
+    {
+      "station_detail_id": "3167975394",
+      "name": "คณะสังคมศาสตร์ สาย 3, 4",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9504173,
+          18.8030242
+        ]
+      },
+      "lat": 18.8030242,
+      "lon": 98.9504173,
+      "station_id_osm": "3167975394"
+    },
+    {
+      "station_detail_id": "3167977788",
+      "name": "แฟลตฝายหิน",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9486169,
+          18.8018026
+        ]
+      },
+      "lat": 18.8018026,
+      "lon": 98.9486169,
+      "station_id_osm": "3167977788"
+    },
+    {
+      "station_detail_id": "3167978928",
+      "name": "คณะเศรษฐศาสตร์ สาย 4",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9499884,
+          18.8011466
+        ]
+      },
+      "lat": 18.8011466,
+      "lon": 98.9499884,
+      "station_id_osm": "3167978928"
+    },
+    {
+      "station_detail_id": "3195112872",
+      "name": "หอพักหญิง 6",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9533491,
+          18.7973203
+        ]
+      },
+      "lat": 18.7973203,
+      "lon": 98.9533491,
+      "station_id_osm": "3195112872"
+    },
+    {
+      "station_detail_id": "3195112873",
+      "name": "ภาควิชาอาชีวศึกษาฯ คณะศึกษาศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9542169,
+          18.7958033
+        ]
+      },
+      "lat": 18.7958033,
+      "lon": 98.9542169,
+      "station_id_osm": "3195112873"
+    },
+    {
+      "station_detail_id": "3195112879",
+      "name": "ลานจอดรถ ITSC",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9527141,
+          18.8041084
+        ]
+      },
+      "lat": 18.8041084,
+      "lon": 98.9527141,
+      "station_id_osm": "3195112879"
+    },
+    {
+      "station_detail_id": "3195112882",
+      "name": "จุดจอดรถม่วงสาย 1",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.953809,
+          18.806277
+        ]
+      },
+      "lat": 18.806277,
+      "lon": 98.953809,
+      "station_id_osm": "3195112882"
+    },
+    {
+      "station_detail_id": "3195112884",
+      "name": "สํานักบริการเทคโนโลยีสารสนเทศ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.952844,
+          18.8039022
+        ]
+      },
+      "lat": 18.8039022,
+      "lon": 98.952844,
+      "station_id_osm": "3195112884"
+    },
+    {
+      "station_detail_id": "3195112885",
+      "name": "สํานักหอสมุด",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9512897,
+          18.8016785
+        ]
+      },
+      "lat": 18.8016785,
+      "lon": 98.9512897,
+      "station_id_osm": "3195112885"
+    },
+    {
+      "station_detail_id": "4239074138",
+      "name": "หอพักสีชมพู",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9574002,
+          18.799143
+        ]
+      },
+      "lat": 18.799143,
+      "lon": 98.9574002,
+      "station_id_osm": "4239074138"
+    },
+    {
+      "station_detail_id": "4359723993",
+      "name": "อ่างแก้ว",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9502554,
+          18.8052011
+        ]
+      },
+      "lat": 18.8052011,
+      "lon": 98.9502554,
+      "station_id_osm": "4359723993"
+    },
+    {
+      "station_detail_id": "7116312057",
+      "name": "Bus Stop 7116312057",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9491099,
+          18.8044192
+        ]
+      },
+      "lat": 18.8044192,
+      "lon": 98.9491099,
+      "station_id_osm": "7116312057"
+    },
+    {
+      "station_detail_id": "7153515832",
+      "name": "สํานักงานมหาวิทยาลัย 1",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9544676,
+          18.8049385
+        ]
+      },
+      "lat": 18.8049385,
+      "lon": 98.9544676,
+      "station_id_osm": "7153515832"
+    },
+    {
+      "station_detail_id": "10651172144",
+      "name": "ห้องสมุด คณะวิศวกรรมศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.95092,
+          18.7942225
+        ]
+      },
+      "lat": 18.7942225,
+      "lon": 98.95092,
+      "station_id_osm": "10651172144"
+    },
+    {
+      "station_detail_id": "10651182179",
+      "name": "โรงจอดรถ คณะวิศวกรรมศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9503532,
+          18.7966482
+        ]
+      },
+      "lat": 18.7966482,
+      "lon": 98.9503532,
+      "station_id_osm": "10651182179"
+    },
+    {
+      "station_detail_id": "10651186748",
+      "name": "อาคาร 30 ปี คณะวิศวกรรมศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9525881,
+          18.7956119
+        ]
+      },
+      "lat": 18.7956119,
+      "lon": 98.9525881,
+      "station_id_osm": "10651186748"
+    },
+    {
+      "station_detail_id": "12886087009",
+      "name": "อาคาร 4 คณะศึกษาศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9567844,
+          18.7925498
+        ]
+      },
+      "lat": 18.7925498,
+      "lon": 98.9567844,
+      "station_id_osm": "12886087009"
+    },
+    {
+      "station_detail_id": "12886087010",
+      "name": "อาคารจอดรถ S1",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9575195,
+          18.792374
+        ]
+      },
+      "lat": 18.792374,
+      "lon": 98.9575195,
+      "station_id_osm": "12886087010"
+    },
+    {
+      "station_detail_id": "12886087011",
+      "name": "CMU Food Center",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9504862,
+          18.7989233
+        ]
+      },
+      "lat": 18.7989233,
+      "lon": 98.9504862,
+      "station_id_osm": "12886087011"
+    },
+    {
+      "station_detail_id": "12886087012",
+      "name": "อ.มช.",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9532765,
+          18.8002979
+        ]
+      },
+      "lat": 18.8002979,
+      "lon": 98.9532765,
+      "station_id_osm": "12886087012"
+    },
+    {
+      "station_detail_id": "12886087013",
+      "name": "ไปรษณีย์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9539214,
+          18.8044301
+        ]
+      },
+      "lat": 18.8044301,
+      "lon": 98.9539214,
+      "station_id_osm": "12886087013"
+    },
+    {
+      "station_detail_id": "12886087014",
+      "name": "ลานจอดรถหน้า มช.",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9552663,
+          18.8074496
+        ]
+      },
+      "lat": 18.8074496,
+      "lon": 98.9552663,
+      "station_id_osm": "12886087014"
+    },
+    {
+      "station_detail_id": "12898533385",
+      "name": "ลานจอดรถ CMU Food Center",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9515978,
+          18.7989474
+        ]
+      },
+      "lat": 18.7989474,
+      "lon": 98.9515978,
+      "station_id_osm": "12898533385"
+    },
+    {
+      "station_detail_id": "12898770709",
+      "name": "สถานีกลาง รถไฟฟ้า (หอพักหญิง 3)",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9527566,
+          18.7993267
+        ]
+      },
+      "lat": 18.7993267,
+      "lon": 98.9527566,
+      "station_id_osm": "12898770709"
+    },
+    {
+      "station_detail_id": "12898770710",
+      "name": "ศูนย์ ขส.มช.",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9602305,
+          18.7971692
+        ]
+      },
+      "lat": 18.7971692,
+      "lon": 98.9602305,
+      "station_id_osm": "12898770710"
+    },
+    {
+      "station_detail_id": "12898770711",
+      "name": "ภาควิชาสถิติ",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9542377,
+          18.8028802
+        ]
+      },
+      "lat": 18.8028802,
+      "lon": 98.9542377,
+      "station_id_osm": "12898770711"
+    },
+    {
+      "station_detail_id": "12898770712",
+      "name": "หอพักหญิง 4",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9533269,
+          18.7982945
+        ]
+      },
+      "lat": 18.7982945,
+      "lon": 98.9533269,
+      "station_id_osm": "12898770712"
+    },
+    {
+      "station_detail_id": "12898770713",
+      "name": "หมู่บ้านไผ่ล้อม",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9565311,
+          18.8011805
+        ]
+      },
+      "lat": 18.8011805,
+      "lon": 98.9565311,
+      "station_id_osm": "12898770713"
+    },
+    {
+      "station_detail_id": "12898770714",
+      "name": "หอพักหญิง 5",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9551596,
+          18.7983401
+        ]
+      },
+      "lat": 18.7983401,
+      "lon": 98.9551596,
+      "station_id_osm": "12898770714"
+    },
+    {
+      "station_detail_id": "12898770715",
+      "name": "หอพักหญิง 1",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9553077,
+          18.7988369
+        ]
+      },
+      "lat": 18.7988369,
+      "lon": 98.9553077,
+      "station_id_osm": "12898770715"
+    },
+    {
+      "station_detail_id": "12898770716",
+      "name": "หอพักหญิง 8",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9553178,
+          18.7980478
+        ]
+      },
+      "lat": 18.7980478,
+      "lon": 98.9553178,
+      "station_id_osm": "12898770716"
+    },
+    {
+      "station_detail_id": "12898770717",
+      "name": "สนามวอลเลย์บอล",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9565556,
+          18.7994953
+        ]
+      },
+      "lat": 18.7994953,
+      "lon": 98.9565556,
+      "station_id_osm": "12898770717"
+    },
+    {
+      "station_detail_id": "12898770718",
+      "name": "สนามเทนนิส",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9560333,
+          18.7996213
+        ]
+      },
+      "lat": 18.7996213,
+      "lon": 98.9560333,
+      "station_id_osm": "12898770718"
+    },
+    {
+      "station_detail_id": "12898770719",
+      "name": "หอพัก 40 ปี",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9587802,
+          18.798825
+        ]
+      },
+      "lat": 18.798825,
+      "lon": 98.9587802,
+      "station_id_osm": "12898770719"
+    },
+    {
+      "station_detail_id": "12898770720",
+      "name": "หมู่บ้านร่มสัก",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9491961,
+          18.7996015
+        ]
+      },
+      "lat": 18.7996015,
+      "lon": 98.9491961,
+      "station_id_osm": "12898770720"
+    },
+    {
+      "station_detail_id": "12898770721",
+      "name": "ลานจอดรถหอพัก 40 ปี",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9589385,
+          18.7987289
+        ]
+      },
+      "lat": 18.7987289,
+      "lon": 98.9589385,
+      "station_id_osm": "12898770721"
+    },
+    {
+      "station_detail_id": "12898770722",
+      "name": "ภาควิชาวิศวกรรมไฟฟ้า",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9513848,
+          18.7967662
+        ]
+      },
+      "lat": 18.7967662,
+      "lon": 98.9513848,
+      "station_id_osm": "12898770722"
+    },
+    {
+      "station_detail_id": "12898770723",
+      "name": "อาคาร 40 ปี คณะวิทยาศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.956216,
+          18.8010921
+        ]
+      },
+      "lat": 18.8010921,
+      "lon": 98.956216,
+      "station_id_osm": "12898770723"
+    },
+    {
+      "station_detail_id": "12898770724",
+      "name": "อาคารเทคโนโลยีไอออนบีม 2",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9557823,
+          18.8026889
+        ]
+      },
+      "lat": 18.8026889,
+      "lon": 98.9557823,
+      "station_id_osm": "12898770724"
+    },
+    {
+      "station_detail_id": "12898770725",
+      "name": "หอพักชาย 7",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9497199,
+          18.7990903
+        ]
+      },
+      "lat": 18.7990903,
+      "lon": 98.9497199,
+      "station_id_osm": "12898770725"
+    },
+    {
+      "station_detail_id": "12898770726",
+      "name": "คณะการสื่อสารมวลชน",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9484625,
+          18.8020951
+        ]
+      },
+      "lat": 18.8020951,
+      "lon": 98.9484625,
+      "station_id_osm": "12898770726"
+    },
+    {
+      "station_detail_id": "12898770727",
+      "name": "คณะสังคมศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9497331,
+          18.8031713
+        ]
+      },
+      "lat": 18.8031713,
+      "lon": 98.9497331,
+      "station_id_osm": "12898770727"
+    },
+    {
+      "station_detail_id": "12898770728",
+      "name": "อาคาร HB7",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9501405,
+          18.8032025
+        ]
+      },
+      "lat": 18.8032025,
+      "lon": 98.9501405,
+      "station_id_osm": "12898770728"
+    },
+    {
+      "station_detail_id": "12898770729",
+      "name": "คณะนิติศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9479609,
+          18.8043948
+        ]
+      },
+      "lat": 18.8043948,
+      "lon": 98.9479609,
+      "station_id_osm": "12898770729"
+    },
+    {
+      "station_detail_id": "12898770730",
+      "name": "อาคาร HB 6",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9515447,
+          18.8046748
+        ]
+      },
+      "lat": 18.8046748,
+      "lon": 98.9515447,
+      "station_id_osm": "12898770730"
+    },
+    {
+      "station_detail_id": "12898770731",
+      "name": "หอพักอ่างแก้ว",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9492161,
+          18.8045006
+        ]
+      },
+      "lat": 18.8045006,
+      "lon": 98.9492161,
+      "station_id_osm": "12898770731"
+    },
+    {
+      "station_detail_id": "12898770732",
+      "name": "โรงอาหารคณะรัฐศาสตร์และรัฐประศาสนศาสตร์",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9556922,
+          18.8027996
+        ]
+      },
+      "lat": 18.8027996,
+      "lon": 98.9556922,
+      "station_id_osm": "12898770732"
+    },
+    {
+      "station_detail_id": "12898770733",
+      "name": "ลานจอดรถ S2",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9521102,
+          18.794164
+        ]
+      },
+      "lat": 18.794164,
+      "lon": 98.9521102,
+      "station_id_osm": "12898770733"
+    },
+    {
+      "station_detail_id": "12898770734",
+      "name": "หอพักหญิง 12",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9503742,
+          18.7978677
+        ]
+      },
+      "lat": 18.7978677,
+      "lon": 98.9503742,
+      "station_id_osm": "12898770734"
+    },
+    {
+      "station_detail_id": "12898921896",
+      "name": "หอพักหญิง 5",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9542657,
+          18.7980725
+        ]
+      },
+      "lat": 18.7980725,
+      "lon": 98.9542657,
+      "station_id_osm": "12898921896"
+    },
+    {
+      "station_detail_id": "13452160410",
+      "name": "สถานีกลาง รถไฟฟ้า (หอพักหญิง 3)",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9527236,
+          18.7994376
+        ]
+      },
+      "lat": 18.7994376,
+      "lon": 98.9527236,
+      "station_id_osm": "13452160410"
+    },
+    {
+      "station_detail_id": "13452160411",
+      "name": "CMU Food Center",
+      "location": {
+        "type": "Point",
+        "coordinates": [
+          98.9504881,
+          18.798971
+        ]
+      },
+      "lat": 18.798971,
+      "lon": 98.9504881,
+      "station_id_osm": "13452160411"
+    }
+  ],
+  "timestamp": "2026-02-18T08:31:00.630Z"
+}

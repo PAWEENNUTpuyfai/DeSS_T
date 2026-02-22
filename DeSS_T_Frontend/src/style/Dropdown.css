@@ -18,3 +18,16 @@
   border: 3px solid #81069e;
   border-radius: 35px;
 }
+.dropdown-divider {
+  height: 1px;
+  background-color: #81069e;
+  margin: 0;
+}
+
+.dropdown-option-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

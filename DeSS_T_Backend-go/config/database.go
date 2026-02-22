@@ -141,6 +141,7 @@ func DropDatabase(db *gorm.DB, schema string) error {
 
 // 	return db, nil
 // }
+
 // func DropDatabase(db *gorm.DB, schema string) error {
 // 	log.Println("⚠️  Dropping schema...")
 

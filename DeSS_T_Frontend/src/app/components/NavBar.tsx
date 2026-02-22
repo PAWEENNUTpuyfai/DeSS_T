@@ -1,16 +1,24 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-// import { useEffect, useRef } from "react";
+import { useState, useRef } from "react";
+import { jwtDecode } from "jwt-decode";
+import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../contexts/useAuth";
+import { userLogin as userLoginAPI } from "../../utility/api/userLogin";
 import "../../style/navbar.css";
 
 interface NavProps {
   usermode: "guest" | "user";
   configurationName?: string;
   projectName?: string;
-  inpage?: "Configuration" | "Project" | "Output" | "Workspace";
+  inpage?:
+    | "Configuration"
+    | "Project"
+    | "Output"
+    | "Workspace"
+    | "configuration-detail";
   onBackClick?: () => void;
   userAvatarUrl?: string;
   userName?: string;
+  hasProjectChanged?: boolean;
 }
 
 export default function Nav({
@@ -21,14 +29,66 @@ export default function Nav({
   onBackClick,
   userAvatarUrl,
   userName,
+  hasProjectChanged,
 }: NavProps) {
   const [showConfirm, setShowConfirm] = useState(false);
-  const navigate = useNavigate();
+  const { login } = useAuth();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
 
   const handleConfirmLeave = () => {
-    onBackClick?.();
+    if (inpage === "configuration-detail") {
+      window.location.href = "/user/workspace?tab=config";
+    } else {
+      onBackClick?.();
+    }
   };
 
+  const handleCredentialResponse = (credentialResponse: any) => {
+    try {
+      const decoded = jwtDecode<any>(credentialResponse.credential);
+      console.log("User logged in:", decoded);
+
+      // Create User object with token expiration (Google tokens typically expire in 1 hour)
+      const tokenExpiresAt = new Date();
+      tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 1);
+
+      const userData = {
+        google_id: decoded.sub,
+        name: decoded.name,
+        email: decoded.email,
+        picture_url: decoded.picture || "",
+        access_token: credentialResponse.credential,
+        refresh_token: "",
+        token_expires_at: tokenExpiresAt.toISOString(),
+        last_login: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      // Use AuthContext login function
+      login(userData);
+
+      // Sync with backend database
+      userLoginAPI(userData)
+        .then((verifiedUser) => {
+          console.log("✓ Backend sync successful:", verifiedUser);
+        })
+        .catch((error) => {
+          console.error(
+            "⚠ Backend sync failed, but user logged in locally:",
+            error,
+          );
+        });
+
+      // Close modal and navigate to workspace
+      window.location.href = "/user/workspace";
+    } catch (error) {
+      console.error("Error decoding token:", error);
+    }
+  };
+
+  const handleGoogleLoginError = () => {
+    console.log("Login Failed");
+  };
   const handleCancelLeave = () => {
     setShowConfirm(false);
   };
@@ -55,11 +115,11 @@ export default function Nav({
             className="nav-icon"
             style={{ cursor: usermode === "guest" ? "pointer" : "default" }}
             onClick={() => {
-              if (!onBackClick) {
+              if (inpage === "configuration-detail") {
+                handleConfirmLeave();
+              } else if (!onBackClick) {
                 return;
-              }
-
-              if (inpage === "Output") {
+              } else if (inpage === "Output" || !hasProjectChanged) {
                 handleConfirmLeave();
               } else {
                 setShowConfirm(true);
@@ -104,6 +164,8 @@ export default function Nav({
               )
             ) : inpage === "Output" ? (
               "Simulation results"
+            ) : inpage === "configuration-detail" ? (
+              "Configuration Details"
             ) : (
               <>
                 Simulation results-{" "}
@@ -112,12 +174,33 @@ export default function Nav({
             )}
           </h1>
           {usermode === "guest" ? (
-            <button
-              className="login-btn mr-8"
-              onClick={() => navigate("/")}
-            >
-              Login
-            </button>
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button
+                className="login-btn mr-8"
+                style={{ position: "relative", zIndex: 1 }}
+              >
+                Login
+              </button>
+              <div
+                ref={googleButtonRef}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  opacity: 0,
+                  pointerEvents: "auto",
+                  zIndex: 2,
+                }}
+              >
+                <GoogleLogin
+                  onSuccess={handleCredentialResponse}
+                  onError={handleGoogleLoginError}
+                  width="100"
+                />
+              </div>
+            </div>
           ) : (
             <div className="nav-user">
               {userAvatarUrl && (
@@ -138,10 +221,14 @@ export default function Nav({
         <div className="confirm-modal-overlay">
           <div className="confirm-modal">
             <h2 className="confirm-modal-title flex items-center justify-center">
-              Are you sure you want to discard all changes?
+              {inpage === "Project" && usermode === "user" && hasProjectChanged
+                ? "Are you sure you want to return to User Workspace without saving?"
+                : "Are you sure you want to discard all changes?"}
             </h2>
             <p className="confirm-modal-subtitle">
-              Your changes will not be saved if you leave this page.
+              {inpage === "Project" && usermode === "user" && hasProjectChanged
+                ? "Your project changes will not be saved."
+                : "Your changes will not be saved if you leave this page."}
             </p>
             <div className="confirm-modal-actions">
               <button

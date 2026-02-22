@@ -28,8 +28,8 @@ type ConfigurationDetail struct {
 	NetworkModel          NetworkModel          `json:"network_model"`
 	AlightingData         []AlightingData       `json:"alighting_datas"`
 	InterArrivalData      []InterArrivalData    `json:"interarrival_datas"`
-	UserConfigurations    []UserConfiguration   `json:"user_configurations,omitempty"`
-	PublicConfigurations  []PublicConfiguration `json:"public_configurations,omitempty"`
+	// UserConfigurations    []UserConfiguration   `json:"user_configurations,omitempty"`
+	// PublicConfigurations  []PublicConfiguration `json:"public_configurations,omitempty"`
 }
 
 // ======================================================
@@ -42,7 +42,7 @@ type NetworkModel struct {
 
 	StationPairs   []StationPair   `json:"StationPair,omitempty"`
 	StationDetails []StationDetail `json:"Station_detail,omitempty"`
-	RouteScenario  RouteScenario   `json:"route_scenario,omitempty"`
+	// RouteScenario  RouteScenario   `json:"route_scenario,omitempty"`
 }
 
 // ======================================================
@@ -72,7 +72,7 @@ type StationPair struct {
 	NetworkModelID string `json:"network_model_id"`
 
 	RouteBetween RouteBetween `json:"RouteBetween"`
-	NetworkModel NetworkModel `json:"network_model,omitempty"`
+	// NetworkModel NetworkModel `json:"network_model,omitempty"`
 }
 
 // ======================================================
@@ -102,9 +102,10 @@ type RoutePath struct {
 	RoutePathID string `json:"route_path_id"`
 	Name        string `json:"name"`
 	Color       string `json:"color"`
-	Route       string `json:"route"`
+	Route       GeoLineString `json:"route"`
 
 	Orders []Order `json:"orders"`
+
 }
 
 // ======================================================
@@ -128,6 +129,7 @@ type ScenarioDetail struct {
 	ScenarioDetailID string `json:"scenario_detail_id"`
 	BusScenarioID    string `json:"bus_scenario_id"`
 	RouteScenarioID  string `json:"route_scenario_id"`
+	ConfigurationDetailID string `json:"configuration_detail_id"`
 
 	BusScenario   BusScenario   `json:"bus_scenario"`
 	RouteScenario RouteScenario `json:"route_scenario"`
@@ -154,7 +156,7 @@ type ScheduleData struct {
 	RoutePathID    string `json:"route_path_id"`
 	BusScenarioID  string `json:"bus_scenario_id"`
 
-	RoutePath RoutePath `json:"route_path_detail"`
+	// RoutePath RoutePath `json:"route_path_detail"`
 }
 
 // ======================================================
@@ -171,7 +173,7 @@ type BusInformation struct {
 	BusScenarioID    string  `json:"bus_scenario_id"`
 	RoutePathID      string  `json:"route_path_id"`
 
-	RoutePath RoutePath `json:"route_path_detail"`
+	// RoutePath RoutePath `json:"route_path_detail"`
 }
 
 // ======================================================
@@ -186,7 +188,7 @@ type AlightingData struct {
 	ArgumentList          string `json:"argument_list"`
 	StationID             string `json:"station_id"`
 
-	StationDetail StationDetail `json:"station_detail"`
+	// StationDetail StationDetail `json:"station_detail"`
 }
 
 // ======================================================
@@ -194,14 +196,14 @@ type AlightingData struct {
 // ======================================================
 
 type InterArrivalData struct {
-	InterArrivalDataID    string `json:"interarrival_data_id"`
+	InterArrivalDataID    string `json:"inter_arrival_data_id"`
 	ConfigurationDetailID string `json:"configuration_detail_id"`
 	TimePeriod            string `json:"time_period"`
 	Distribution          string `json:"distribution"`
 	ArgumentList          string `json:"argument_list"`
 	StationID             string `json:"station_id"`
 
-	StationDetail StationDetail `json:"station_detail"`
+	// StationDetail StationDetail `json:"station_detail"`
 }
 
 // ======================================================

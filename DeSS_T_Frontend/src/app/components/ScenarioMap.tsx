@@ -192,7 +192,7 @@ export default function ScenarioMap({
       {showConfirmModal && (
         <div className="absolute inset-0 z-[1100] flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-[20px] shadow-lg max-w-md w-full p-6 space-y-4 flex justify-center flex-col">
-            <div className="text-lg font-semibold text-gray-800 mx-10 text-center">
+            <div className="text-lg text-gray-800 mx-10 text-center">
               Are you sure you want to clear all selected stations?
             </div>
             <div className="text-sm text-gray-600 text-center">

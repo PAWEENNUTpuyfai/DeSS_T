@@ -1,16 +1,35 @@
 import { useState, useRef, useEffect } from "react";
 import "./../../style/Dropdown.css";
 
-interface CustomDropdownProps {
+interface OptionGroup {
+  label: string;
   options: string[];
+}
+
+interface CustomDropdownProps {
+  options?: string[];
+  groups?: OptionGroup[];
   selectedValue: string;
   onChange: (value: string) => void;
+  isGrouped?: boolean;
+  selectedGroupValues?: string[]; // Array of selected values for grouped dropdown
+  icon?: string;
+  width?: string; // e.g. "200px", "100%", "w-64"
+  height?: string; // e.g. "60px", "40px"
+  fontSize?: string; // e.g. "text-sm", "text-lg", "16px"
 }
 
 export default function CustomDropdown({
-  options,
+  options = [],
+  groups = [],
   selectedValue,
   onChange,
+  isGrouped = false,
+  selectedGroupValues = [],
+  icon = "",
+  width = "min-w-[200px]",
+  height = "h-[60px]",
+  fontSize = "text-lg",
 }: CustomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -35,18 +54,31 @@ export default function CustomDropdown({
     setIsOpen(false);
   };
 
+  // Determine if width/height are Tailwind classes or CSS values
+  const widthClass = width.startsWith("w-") || width.includes("min-w") ? width : "";
+  const widthStyle = !widthClass ? width : undefined;
+  const heightClass = height.startsWith("h-") ? height : "";
+  const heightStyle = !heightClass ? height : undefined;
+  const fontSizeClass = fontSize.startsWith("text-") ? fontSize : "";
+  const fontSizeStyle = !fontSizeClass ? fontSize : undefined;
+
   return (
     <div
       ref={dropdownRef}
-      className="relative inline-block min-w-[200px] z-[7000]"
+      className={`relative inline-block z-[7000] ${widthClass}`}
+      style={{ width: widthStyle }}
     >
       {/* Main Button */}
       <span
         onClick={() => setIsOpen(!isOpen)}
-        className="main-btn text-dropdown h-[60px] flex items-center justify-between px-4"
-      >
-        <span className="py-2 px-4">{selectedValue}</span>
-        <div className="h-full w-[2.5px] bg-[#76218a] mx-2"></div>
+        className={`main-btn text-dropdown ${heightClass} ${fontSizeClass} flex items-center px-4 cursor-pointer`}
+        style={{ height: heightStyle, fontSize: fontSizeStyle }}
+      > 
+        <span className="flex items-center py-2 px-4 flex-1 overflow-hidden">
+          {icon && <span className="mr-2 flex-shrink-0">{icon}</span>}
+          <span className="truncate">{selectedValue}</span>
+        </span>
+        <div className="h-full w-[2.5px] bg-[#76218a] mx-2 flex-shrink-0"></div>
         <svg
           className={`w-7 h-7 transition-transform duration-200 ${
             isOpen ? "transform rotate-180" : ""
@@ -67,23 +99,52 @@ export default function CustomDropdown({
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute top-full mt-2 w-full option-container z-[9999] overflow-hidden">
-          <ul className="py-2">
-            {options.map((option) => (
-              <li key={option}>
-                <span
-                  onClick={() => handleSelect(option)}
-                  className={`w-full text-left px-6 py-1 text-[#C296CD] text-lg font-medium hover:bg-gray-50 transition-colors flex items-center `}
-                >
-                  {selectedValue === option && (
-                    <span className="mr-3 text-[#81069e]">•</span>
-                  )}
-                  <span className={selectedValue === option ? "" : "ml-5"}>
-                    {option}
+          {isGrouped ? (
+            <div className="py-2">
+              {groups.map((group, groupIndex) => (
+                <div key={groupIndex}>
+                  {groupIndex > 0 && <div className="dropdown-divider"></div>}
+                  {group.options.map((option) => {
+                    const isSelected = selectedGroupValues.includes(option);
+                    return (
+                      <span
+                        key={option}
+                        onClick={() => handleSelect(option)}
+                        className={`w-full text-left px-6 py-2 text-[#C296CD] ${fontSizeClass} font-medium hover:bg-gray-50 transition-colors flex items-center`}
+                        style={{ fontSize: fontSizeStyle }}
+                      >
+                        {isSelected && (
+                          <span className="mr-3 text-[#81069e]">•</span>
+                        )}
+                        <span className={`dropdown-option-text ${isSelected ? "" : "ml-5"}`}>
+                          {option}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <ul className="py-2">
+              {options.map((option) => (
+                <li key={option}>
+                  <span
+                    onClick={() => handleSelect(option)}
+                    className={`w-full text-left px-6 py-1 text-[#C296CD] ${fontSizeClass} font-medium hover:bg-gray-50 transition-colors flex items-center `}
+                    style={{ fontSize: fontSizeStyle }}
+                  >
+                    {selectedValue === option && (
+                      <span className="mr-3 text-[#81069e]">•</span>
+                    )}
+                    <span className={`dropdown-option-text ${selectedValue === option ? "" : "ml-5"}`}>
+                      {option}
+                    </span>
                   </span>
-                </span>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>

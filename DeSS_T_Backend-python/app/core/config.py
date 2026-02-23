@@ -19,14 +19,14 @@ class Settings(BaseSettings):
         extra='ignore' # ไม่สนใจตัวแปรอื่น ๆ ที่ไม่ได้กำหนดใน Model
     )
     
-    # 2. ฟิลด์ Config ทั่วไป
-    APP_NAME: str = Field(default="Default FastAPI App", description="ชื่อของแอปพลิเคชัน")
-    ENVIRONMENT: EnvironmentType = Field(default="development", description="โหมดการทำงาน")
-    DEBUG: bool = Field(default=False, description="สถานะ Debug")
+    # # 2. ฟิลด์ Config ทั่วไป
+    # APP_NAME: str = Field(default="Default FastAPI App", description="ชื่อของแอปพลิเคชัน")
+    # ENVIRONMENT: EnvironmentType = Field(default="development", description="โหมดการทำงาน")
+    # DEBUG: bool = Field(default=False, description="สถานะ Debug")
     
-    # 3. ฟิลด์ที่สำคัญและละเอียดอ่อน
-    DATABASE_URL: str = Field(description="URL สำหรับเชื่อมต่อฐานข้อมูล")
-    SECRET_KEY: str = Field(description="คีย์ลับสำหรับเข้ารหัส/ถอดรหัส")
+    # # 3. ฟิลด์ที่สำคัญและละเอียดอ่อน
+    # DATABASE_URL: str = Field(description="URL สำหรับเชื่อมต่อฐานข้อมูล")
+    # SECRET_KEY: str = Field(description="คีย์ลับสำหรับเข้ารหัส/ถอดรหัส")
     
     # 4. Simulation Timeout Configuration
     SIMULATION_TIMEOUT: int = Field(

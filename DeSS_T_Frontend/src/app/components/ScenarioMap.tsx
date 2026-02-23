@@ -36,6 +36,7 @@ L.Icon.Default.mergeOptions({
 
 interface ScenarioMapProps {
   stations: StationDetail[];
+  allStations?: StationDetail[]; // All stations for bounds calculation (prevent zoom when filtering)
   route: EditableRoute | null;
   allRoutes?: EditableRoute[]; // For Route mode - show all non-hidden routes
   onSelectStation: (stationId: string) => void;
@@ -120,6 +121,7 @@ function BoundsUpdater({
 
 export default function ScenarioMap({
   stations,
+  allStations,
   route,
   allRoutes,
   onSelectStation,
@@ -128,13 +130,18 @@ export default function ScenarioMap({
 }: ScenarioMapProps) {
   const [center, setCenter] = useState<[number, number]>([13.75, 100.5]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
+  // Use allStations for bounds calculation to prevent zoom when filtering
+  // If not provided, fall back to stations
+  const stationsForBounds = allStations || stations;
+  
   const bounds = useMemo(() => {
-    if (!stations || stations.length === 0) return undefined;
+    if (!stationsForBounds || stationsForBounds.length === 0) return undefined;
     let minLat = Infinity,
       minLon = Infinity,
       maxLat = -Infinity,
       maxLon = -Infinity;
-    stations.forEach((s) => {
+    stationsForBounds.forEach((s) => {
       const [lat, lon] = stationToLatLng(s);
       if (lat < minLat) minLat = lat;
       if (lat > maxLat) maxLat = lat;
@@ -145,7 +152,7 @@ export default function ScenarioMap({
       [minLat, minLon],
       [maxLat, maxLon],
     ] as [[number, number], [number, number]];
-  }, [stations]);
+  }, [stationsForBounds]);
 
   useEffect(() => {
     if (bounds) {

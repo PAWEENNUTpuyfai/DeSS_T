@@ -164,17 +164,13 @@ export default function UserWorkspace({
   };
 
   useEffect(() => {
-    console.log("🔵 useEffect triggered - user:", user);
-
     // If user is already in AuthContext, no need to verify again
     if (user) {
-      console.log("✓ User already in AuthContext, skipping login");
       setLoading(false);
       return;
     }
 
     // If no user, redirect to login
-    console.log("❌ No user in context, redirecting to home...");
     setError("User not authenticated");
     setLoading(false);
   }, [user]);
@@ -326,9 +322,6 @@ export default function UserWorkspace({
 
     try {
       setIsDeleting(true);
-      console.log(
-        `Attempting to delete configuration with ID: ${deleteConfigId}`,
-      );
       await deleteUserConfiguration(deleteConfigId);
       setUserConfigurations((prev) =>
         prev.filter(
@@ -368,7 +361,6 @@ export default function UserWorkspace({
 
     try {
       setIsDeletingScenario(true);
-      console.log(`Attempting to delete scenario with ID: ${deleteScenarioId}`);
       await deleteUserScenario(deleteScenarioId);
       setUserScenarios((prev) =>
         prev.filter(

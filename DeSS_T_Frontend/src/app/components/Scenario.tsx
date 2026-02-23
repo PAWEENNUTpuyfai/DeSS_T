@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ConfigurationDetail } from "../models/Configuration";
 import type {
   StationDetail,
@@ -27,7 +27,6 @@ import type {
 import { getScheduleData } from "../../utility/api/simulation";
 import type { PaserSchedule } from "../models/ScheduleModel";
 import type { UserScenario } from "../models/User";
-// import { downloadJson } from "../../utility/helpers";
 import {
   createUserScenario,
   uploadScenarioCoverImage,
@@ -35,7 +34,7 @@ import {
 import { useAuth } from "../contexts/useAuth";
 import Nav from "./NavBar";
 import ExcelJS from "exceljs";
-import SimulationControls from "./Scenario/SimulationControls";
+import CustomDropdown from "./CustomDropdown";
 import ScheduleUploadSection from "./Scenario/ScheduleUploadSection";
 import BusInfoPanel from "./Scenario/BusInfoPanel";
 import RoutesList from "./Scenario/RoutesList";
@@ -60,17 +59,6 @@ export default function Scenario({
   idforUpdate?: string;
 }) {
   const { user } = useAuth();
-
-  useEffect(() => {
-    console.log("=== Scenario Component Loaded ===");
-    console.log("Configuration:", configuration);
-    console.log("Configuration Name:", configurationName);
-    console.log("Project Name:", projectName);
-    console.log("Network Model:", configuration?.network_model);
-    console.log("Alighting Data:", configuration?.alighting_datas);
-    console.log("InterArrival Data:", configuration?.interarrival_datas);
-    console.log("================================");
-  }, [configuration, configurationName, projectName]);
 
   const nodes: StationDetail[] = useMemo(() => {
     const networkModel = configuration?.network_model as
@@ -274,6 +262,9 @@ export default function Scenario({
   const [simStartHour, setSimStartHour] = useState<number>(8);
   const [simEndHour, setSimEndHour] = useState<number>(16);
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
+  
+  // Station filter state
+  const [stationFilter, setStationFilter] = useState<"all" | "with-data" | "no-data">("all");
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
   const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
@@ -283,6 +274,20 @@ export default function Scenario({
   );
   const hasExistingSchedule =
     (scenario?.bus_scenario?.schedule_data?.length ?? 0) > 0;
+
+  // Identify stations with data (alighting or interarrival)
+  const stationsWithDataIds = useMemo(() => {
+    const ids = new Set<string>();
+    configuration?.alighting_datas?.forEach((d) => {
+      if (d.station_id) ids.add(d.station_id);
+      if (d.station_detail?.station_detail_id) ids.add(d.station_detail.station_detail_id);
+    });
+    configuration?.interarrival_datas?.forEach((d) => {
+      if (d.station_id) ids.add(d.station_id);
+      if (d.station_detail?.station_detail_id) ids.add(d.station_detail.station_detail_id);
+    });
+    return ids;
+  }, [configuration?.alighting_datas, configuration?.interarrival_datas]);
 
   const buildStationsFromOrders = (orders?: Order[]): string[] => {
     if (!orders || orders.length === 0) return [];
@@ -529,12 +534,6 @@ export default function Scenario({
           ?.StationPair || [];
       const orders: Order[] = [];
 
-      // Debug: Show actual station sequence
-      console.log(
-        "📍 Station Sequence (route.stations):",
-        route.stations.map((sid, idx) => `${idx + 1}. ${getStationName(sid)}`),
-      );
-
       for (let i = 0; i < route.stations.length - 1; i++) {
         const currentStationId = route.stations[i];
         const nextStationId = route.stations[i + 1];
@@ -571,21 +570,6 @@ export default function Scenario({
           orders.push(order);
         }
       }
-
-      // Console log created orders with station names
-      console.log("🎯 Created Orders for Route:", route.name);
-      console.log("   Route ID:", routeId);
-      console.log("   Total Orders:", orders.length);
-      console.log(
-        "   Order Details:",
-        orders.map((o) => ({
-          order: o.order,
-          order_id: o.order_id,
-          station_pair_id: o.station_pair_id,
-          from: getStationName(o.station_pair?.FstStation || ""),
-          to: getStationName(o.station_pair?.SndStation || ""),
-        })),
-      );
 
       // Update route with segments and orders
       setRoutes((prev) =>
@@ -657,7 +641,7 @@ export default function Scenario({
   };
 
   // Helper: Get station name from ID
-  const getStationName = (stationId: string): string => {
+  const getStationName = useCallback((stationId: string): string => {
     const station = nodes.find((n) => n.station_detail_id === stationId);
     if (!station) return "Unnamed station";
 
@@ -671,7 +655,7 @@ export default function Scenario({
       (rec.station_id_osm as string | undefined) ||
       "Unnamed station"
     );
-  };
+  }, [nodes]);
 
   // Helper: Get pre-computed route geometry from network model if available
   // Note: route geometry is now computed on demand via API, not from model
@@ -848,7 +832,6 @@ export default function Scenario({
           currentScenarioId,
           busScheduleFile,
         );
-        console.log("Schedule Data received:", scheduleData);
 
         scheduleDatas = scheduleData.ScheduleData.map((sd) => {
           const matchingRoute = routes.find((r) => r.name === sd.RoutePathID);
@@ -975,6 +958,20 @@ export default function Scenario({
       alert("Failed to generate template");
     }
   };
+
+  // Filter stations based on filter criteria
+  const filteredNodes = useMemo(() => {
+    return nodes.filter((st) => {
+      const id = st.station_detail_id || "";
+      const hasData = stationsWithDataIds.has(id);
+      
+      return (
+        stationFilter === "all" ||
+        (stationFilter === "with-data" && hasData) ||
+        (stationFilter === "no-data" && !hasData)
+      );
+    });
+  }, [nodes, stationFilter, stationsWithDataIds]);
 
   const validStations = useMemo(
     () =>
@@ -1178,7 +1175,6 @@ export default function Scenario({
         if (mapFile) {
           const response = await uploadScenarioCoverImage(mapFile);
           coverImageId = response.cover_image_id;
-          console.log("Cover image uploaded successfully:", coverImageId);
         }
       } catch (uploadError) {
         console.error("Failed to upload cover image:", uploadError);
@@ -1205,7 +1201,6 @@ export default function Scenario({
         idforUpdate || currentScenarioId,
         userScenario,
       );
-      console.log("Scenario saved successfully:", result);
       
       // 🔹 Reset change flag after successful save
       hasDataChangedRef.current = false;
@@ -1351,20 +1346,86 @@ export default function Scenario({
 
                 {/* Shared map for both Route and Bus modes */}
                 <div className="map-container flex-1 h-[90vh] flex flex-col items-center px-16">
-                  <SimulationControls
-                    simStartHour={simStartHour}
-                    simEndHour={simEndHour}
-                    timeSlot={timeSlot}
-                    onStartHourChange={setSimStartHour}
-                    onEndHourChange={setSimEndHour}
-                    onTimeSlotChange={setTimeSlot}
-                  />
+                  <div className="my-4 flex w-full justify-between items-center">
+                    <div className="flex gap-10 items-center">
+                      <div className="flex items-center">
+                        <p className="text-[20px] text-[#323232]">Simulation Period :</p>
+                        <div className="time-inputs p-2 px-4 text-[#C296CD] ml-3 my-2 h-[60px] flex items-center text-lg">
+                          <input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={simStartHour}
+                            onChange={(e) => setSimStartHour(Number(e.target.value))}
+                            className="border p-2 rounded w-10 text-lg"
+                          />
+                          <span className="text-lg">:00</span>
+                          <span className="mx-2 text-lg">-</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={24}
+                            value={simEndHour}
+                            onChange={(e) => setSimEndHour(Number(e.target.value))}
+                            className="border p-2 rounded w-10 text-lg"
+                          />
+                          <span className="text-lg">:00</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <p className="text-[20px] text-[#323232]">Time Slot : </p>
+                        <div className="ml-3 my-2 h-full">
+                          <CustomDropdown
+                            options={["5 Minutes", "10 Minutes", "15 Minutes", "20 Minutes", "30 Minutes"]}
+                            selectedValue={timeSlot}
+                            onChange={setTimeSlot}
+                            fontSize="20px"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Station Filter Controls */}
+                    <div className="flex gap-2">
+                      <button
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 ${
+                          stationFilter === "all"
+                            ? "bg-[#81069e] text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
+                        onClick={() => setStationFilter("all")}
+                      >
+                        All Stations
+                      </button>
+                      <button
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 ${
+                          stationFilter === "with-data"
+                            ? "bg-[#81069e] text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
+                        onClick={() => setStationFilter("with-data")}
+                      >
+                        Has Data
+                      </button>
+                      <button
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 ${
+                          stationFilter === "no-data"
+                            ? "bg-[#81069e] text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
+                        onClick={() => setStationFilter("no-data")}
+                      >
+                        No Data
+                      </button>
+                    </div>
+                  </div>
                   <div
                     className="map w-full flex-1 min-h-[400px]"
                     ref={mapContainerRef}
                   >
                     <ScenarioMap
-                      stations={nodes}
+                      stations={filteredNodes}
+                      allStations={nodes}
                       route={
                         transportMode === "Route"
                           ? routes.find((r) => r.id === selectedRouteId) ||

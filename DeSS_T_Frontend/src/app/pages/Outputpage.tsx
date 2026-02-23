@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Dashboard from "../components/Dashboard/Dashboard";
 import InteractiveMap from "../components/InteractiveMap";
 import ExportPDF from "../components/ExportPDF";
@@ -45,6 +45,11 @@ export type PlaybackSeed = {
     max_dis: number; // ✅ maxDistance in km
   }>;
   routeResults?: ResultRoute[];
+  routeOrders?: Array<{
+    route_id: string;
+    orders: unknown[];
+    totalTravelTimeSeconds: number;
+  }>;
   scheduleData?: Array<{
     route_id: string;
     schedule_list: string; // Raw schedule string from Excel, e.g. "08:00,08:15,08:30..."
@@ -63,10 +68,6 @@ export default function Outputpage({
   usermode?: "guest" | "user";
 }) {
   const [mode, setMode] = useState<"dashboard" | "map">("map");
-
-  useEffect(() => {
-    console.log("simulationResponse:", simulationResponse);
-  }, [simulationResponse]);
 
   return (
     <>

@@ -549,12 +549,22 @@ export default function UserWorkspace({
             </div>
           )}
           <div className="workspace-cards">
-            {cards.length === 0 ? (
-              <div className="workspace-empty">
-                No items yet. Create a new one to get started.
-              </div>
-            ) : (
-              cards.map((card) => (
+            {(() => {
+              // Filter cards based on file filter
+              // All items are private, so "Public" filter shows nothing
+              const filteredCards =
+                fileFilter === "Public"
+                  ? []
+                  : fileFilter === "Private"
+                    ? cards
+                    : cards; // "All Files" shows everything
+
+              return filteredCards.length === 0 ? (
+                <div className="workspace-empty">
+                  No items yet. Create a new one to get started.
+                </div>
+              ) : (
+                filteredCards.map((card) => (
                 <div
                   key={card.id}
                   className="workspace-card cursor-pointer hover:shadow-lg transition-shadow relative group"
@@ -628,7 +638,8 @@ export default function UserWorkspace({
                   )}
                 </div>
               ))
-            )}
+              );
+            })()}
           </div>
 
           <button

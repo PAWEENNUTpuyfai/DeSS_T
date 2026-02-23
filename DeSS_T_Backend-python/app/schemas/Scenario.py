@@ -32,6 +32,7 @@ class BusInformation(BaseModel):
     MaxDistance: float
     MaxBus: int
     BusCapacity: int
+    AvgTravelTime: float = 0
 
 
 class BusScenario(BaseModel):

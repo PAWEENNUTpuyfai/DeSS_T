@@ -21,8 +21,8 @@ def fit_best_distribution(values: List[float]) -> Dict:
     # ---------- Guard: all values are zero ----------
     if values and all(v == 0 for v in values):
         return {
-            "name": "Constant",
-            "params": (0.0,)
+            "name": "No Arrival",  # เปลี่ยนชื่อเพื่อให้จัดการง่ายขึ้น
+            "params": (float('inf'),) # หรือ 999999.0
         }
 
     distributions = {
@@ -78,6 +78,10 @@ def fit_best_distribution(values: List[float]) -> Dict:
 def params_to_string(dist_name: str, params) -> str:
     params = list(params)
 
+    if dist_name == "No Arrival":
+        # ส่งค่าที่สูงมากๆ ไปยัง Simulation เพื่อไม่ให้เกิดการสร้าง Passenger
+        return f"value=999999.0"
+    
     if dist_name == "Constant":
         return f"value={params[0]:.4f}"
 

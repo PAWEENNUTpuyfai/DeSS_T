@@ -21,6 +21,16 @@ export type PlaybackSeed = {
     route_id: string;
     station_ids: string[];
   }>;
+  routeStationDetails?: Array<{
+    route_id: string;
+    route_name: string;
+    stations: Array<{
+      station_id: string;
+      station_name: string;
+      position: number;
+      coordinates: [number, number];
+    }>;
+  }>;
   simWindow?: string;
   timeSlotMinutes?: number;
   simulationResponse?: SimulationResponse | null;
@@ -29,6 +39,10 @@ export type PlaybackSeed = {
     max_bus: number;
     speed: number;
     capacity: number;
+  }>;
+  routeDetails?: Array<{
+    route_id: string;
+    max_dis: number; // ✅ maxDistance in km
   }>;
   routeResults?: ResultRoute[];
   scheduleData?: Array<{

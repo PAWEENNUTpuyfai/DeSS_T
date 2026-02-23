@@ -49,6 +49,17 @@ export default function InteractiveMap({
   // Use single-shot data from props only (no realtime playback)
   const activePlaybackData = playbackSeed;
 
+  // Debug: Log playbackSeed data on mount and when it changes
+  useEffect(() => {
+    console.log("=== InteractiveMap Data Debug ===");
+    console.log("PlaybackSeed:", playbackSeed);
+    console.log("Bus Info:", playbackSeed?.busInfo);
+    console.log("Route Results:", playbackSeed?.routeResults);
+    console.log("Schedule Data:", playbackSeed?.scheduleData);
+    console.log("Simulation Response:", playbackSeed?.simulationResponse || simulationResponse);
+    console.log("=================================");
+  }, [playbackSeed, simulationResponse]);
+
   const stations = useMemo(() => {
     const allStations = activePlaybackData?.stations ?? [];
     const routeStationIds = new Set(
@@ -225,32 +236,37 @@ export default function InteractiveMap({
       mockRoutes.forEach((r) => {
         if (r.coords.length < 2) return;
 
-        const routeSchedule = playbackSeed?.scheduleData?.find((s) =>
-          s.route_id.startsWith(r.name),
+        // Try multiple matching strategies to find schedule
+        const routeSchedule = 
+          playbackSeed?.scheduleData?.find((s) => s.route_id === r.id) || // Exact ID match first
+          playbackSeed?.scheduleData?.find((s) => s.route_id.startsWith(r.name)) || // Name prefix match
+          playbackSeed?.scheduleData?.find((s) => s.route_id.includes(r.name)) || // Name contains
+          playbackSeed?.scheduleData?.[0]; // Fallback to first schedule if only one exists
+          
+        // ✅ ใช้ busInfo.speed และ routeDistance แทน routeResult
+        const busInfo = playbackSeed?.busInfo?.find(
+          (bi) => bi.route_id === r.id,
         );
-        const routeResult = playbackSeed?.routeResults?.find(
-          (rr) => rr.route_id === r.id,
+        
+        // ดึง maxDistance จาก playbackSeed.routeDetails หรือ busInfo
+        const routeDetails = playbackSeed?.routeDetails?.find(
+          (rd) => rd?.route_id === r.id,
         );
-        const totalTravelTimeSeconds = routeResult?.average_travel_time
-          ? routeResult.average_travel_time * 60
-          : 300;
+        const maxDistance = routeDetails?.max_dis || 68; // Fallback to 68 km
+        
+        // คำนวณ travel time จาก speed และ distance
+        let totalTravelTimeSeconds = 300; // default 5 minutes
+        if (busInfo?.speed && busInfo.speed > 0) {
+          const travelTimeMinutes = (maxDistance / busInfo.speed) * 60;
+          totalTravelTimeSeconds = travelTimeMinutes * 60;
+        }
 
         if (logDebug) {
-          console.log(`🚌 Route ${r.name} (${r.id}):`, {
-            scheduleFound: !!routeSchedule,
-            schedule_list: routeSchedule?.schedule_list,
-            totalTravelTimeSeconds,
-            simWindow: activePlaybackData?.simWindow,
-          });
-          console.log(`  DEBUG: Checking schedule data match:`);
-          console.log(`    Looking for route_name starting with '${r.name}'`);
-          console.log(
-            `    Available schedules:`,
-            playbackSeed?.scheduleData?.map((s) => ({
-              route_id: s.route_id,
-              has_schedule: !!s.schedule_list,
-            })),
-          );
+          console.log(`🚌 Route: ${r.name}`);
+          console.log(`   busInfo.speed: ${busInfo?.speed} km/h`);
+          console.log(`   maxDistance: ${maxDistance} km`);
+          console.log(`   Calculated travelTimeSeconds: ${totalTravelTimeSeconds}`);
+          console.log(`   Expected: ${maxDistance} km ÷ ${busInfo?.speed} km/h = ${(maxDistance / (busInfo?.speed || 1)).toFixed(2)} hours`);
         }
 
         const departureTimes =
@@ -261,60 +277,58 @@ export default function InteractiveMap({
 
         const validDepartureTimes = departureTimes.filter((depTime) => {
           const depTimeMinutes = timeToMinutes(depTime);
-          return (
-            depTimeMinutes >= simStartMinutes && depTimeMinutes <= simEndMinutes
-          );
+          return depTimeMinutes >= simStartMinutes && depTimeMinutes <= simEndMinutes;
         });
 
-        if (logDebug && validDepartureTimes.length > 0) {
-          console.log(
-            `  Valid Departure times (within sim period):`,
-            validDepartureTimes,
-          );
-          console.log(`  Schedule list raw:`, routeSchedule?.schedule_list);
+        if (validDepartureTimes.length === 0) {
+          if (logDebug) {
+            console.log(`❌ No valid departure times for route ${r.name} (check schedule)`);
+          }
+          return;
         }
 
-        if (validDepartureTimes.length === 0) return;
-
         const travelTimeMinutes = totalTravelTimeSeconds / 60;
-        const activeDeparture = [...validDepartureTimes]
+        
+        if (logDebug) {
+          console.log(`   travelTimeMinutes: ${travelTimeMinutes.toFixed(2)} min`);
+          console.log(`   Expected: ~68 km ÷ 30 km/h = ~136 minutes`);
+        }
+        
+        // Find active buses: those that have departed but not yet finished
+        const activeDepartures = [...validDepartureTimes]
           .map((dep) => {
             const depMin = timeToMinutes(dep);
             const arrivalMin = depMin + travelTimeMinutes;
-            const slotIndex = Math.floor(
-              (arrivalMin - simStartMinutes) / timeSlotMinutes,
-            );
-            const hideAtMin =
-              simStartMinutes + (slotIndex + 1) * timeSlotMinutes;
-            return { dep, depMin, arrivalMin, hideAtMin };
+            return { dep, depMin, arrivalMin };
           })
           .filter(
-            ({ depMin, hideAtMin }) =>
-              depMin <= currentMinutes && currentMinutes < hideAtMin,
-          )
-          .sort((a, b) => b.depMin - a.depMin)[0];
+            ({ depMin, arrivalMin }) =>
+              depMin <= currentMinutes && currentMinutes <= arrivalMin,
+          );
 
-        if (!activeDeparture) return;
+        // Show all active buses (can have multiple buses on same route)
+        activeDepartures.forEach((activeDeparture, busIdx) => {
+          const timeSinceDepartureMinutes =
+            currentMinutes - activeDeparture.depMin;
+          const timeSinceDepartureSeconds = timeSinceDepartureMinutes * 60;
 
-        const timeSinceDepartureMinutes =
-          currentMinutes - activeDeparture.depMin;
-        const timeSinceDepartureSeconds = timeSinceDepartureMinutes * 60;
+          const progress =
+            totalTravelTimeSeconds > 0
+              ? Math.min(timeSinceDepartureSeconds / totalTravelTimeSeconds, 1)
+              : 1;
 
-        const progress =
-          totalTravelTimeSeconds > 0
-            ? Math.min(timeSinceDepartureSeconds / totalTravelTimeSeconds, 1)
-            : 1;
+          const coordIdx = Math.min(
+            Math.floor(progress * r.coords.length),
+            r.coords.length - 1,
+          );
 
-        const coordIdx = Math.min(
-          Math.floor(progress * r.coords.length),
-          r.coords.length - 1,
-        );
-
-        const coord = r.coords[coordIdx];
-        buses.push({
-          id: `${r.name || "route"}-bus1`,
-          coord: [coord[0], coord[1]] as [number, number],
-          color: r.color,
+          const coord = r.coords[coordIdx];
+          
+          buses.push({
+            id: `${r.name || "route"}-bus${busIdx + 1}`,
+            coord: [coord[0], coord[1]] as [number, number],
+            color: r.color,
+          });
         });
       });
 
@@ -323,11 +337,10 @@ export default function InteractiveMap({
     [
       mockRoutes,
       playbackSeed?.scheduleData,
-      playbackSeed?.routeResults,
+      playbackSeed?.busInfo,
+      playbackSeed?.routeDetails,
       simEndMinutes,
       simStartMinutes,
-      activePlaybackData?.simWindow,
-      timeSlotMinutes,
     ],
   );
 
@@ -347,24 +360,14 @@ export default function InteractiveMap({
     stations.find((st) => st.id === selectedStationId) ?? stations[0];
 
   // Build the correct slot_name from current time and timeSlotMinutes
+  // Use currentSlotLabel which is already correctly calculated
   let matchingSlot: SimulationSlotResult | undefined;
 
-  if (currentTimeLabel && timeSlotMinutes) {
-    // Convert time string to minutes
-    const [hours, mins] = currentTimeLabel.split(":").map(Number);
-    const currentMinutes = hours * 60 + mins;
-    const endMinutes = currentMinutes + timeSlotMinutes;
-    const endHours = Math.floor(endMinutes / 60);
-    const endMins = endMinutes % 60;
-
-    // Build slot name in format "HH:MM-HH:MM"
-    const slotName = `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}-${String(endHours).padStart(2, "0")}:${String(endMins).padStart(2, "0")}`;
-
-    // Find matching slot
-    matchingSlot =
-      activeSimulationResponse?.simulation_result?.slot_results?.find(
-        (slot) => slot.slot_name === slotName,
-      );
+  if (currentSlotLabel && activeSimulationResponse?.simulation_result?.slot_results) {
+    // Use currentSlotLabel directly as it matches the slot_name format "HH:MM-HH:MM"
+    matchingSlot = activeSimulationResponse.simulation_result.slot_results.find(
+      (slot) => slot.slot_name === currentSlotLabel,
+    );
   }
 
   // Match by station ID (station_detail_id), not display name

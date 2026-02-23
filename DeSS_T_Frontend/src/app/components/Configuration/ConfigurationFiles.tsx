@@ -14,6 +14,7 @@ import type {
 } from "../../models/Configuration";
 import type { NetworkModel } from "../../models/Network";
 import type { UserConfiguration } from "../../models/User";
+import buildNetworkModelFromStations from "../../../utility/api/openRouteService";
 import { isDataFitResponse } from "../../models/DistributionFitModel";
 import HelpButton from "../HelpButton";
 import { useAuth } from "../../contexts/useAuth";
@@ -312,13 +313,28 @@ export default function ConfigurationFiles({
           if (outI) interRes = outI;
         }
 
-        // For Configuration phase, we only store stations
-        // Network routes and station pairs will be computed in Scenario phase
-        // This avoids ORS API rate limit issues during configuration
-        const network: NetworkModel = {
-          network_model_id: "guest_network",
-          StationPair: [], // Will be computed in Scenario phase
-        };
+        let network: NetworkModel;
+        if (stationDetails && stationDetails.length > 0) {
+          try {
+            network = await buildNetworkModelFromStations(
+              stationDetails,
+              "guest_network",
+            );
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.error("Failed to build network - Full error:", err);
+            console.error("Error message:", errorMsg);
+            throw new Error(
+              "Failed to build network. Ensure the backend is running and try again.\n\nDetails: " +
+                errorMsg,
+            );
+          }
+        } else {
+          network = {
+            network_model_id: "",
+            StationPair: [],
+          };
+        }
 
         const networkData = network as NetworkModel & {
           StationPair?: StationPair[];
@@ -412,14 +428,32 @@ export default function ConfigurationFiles({
         if (outI) interRes = outI;
       }
 
-      // For Configuration phase, we only store stations
-      // Network routes and station pairs will be computed in Scenario phase
-      // This avoids ORS API rate limit issues during configuration
-      const network: NetworkModel = {
-        network_model_id: "guest_network",
-        StationPair: [], // Will be computed in Scenario phase
-      };
+      let network: NetworkModel;
+      if (stationDetails && stationDetails.length > 0) {
+        try {
+          network = await buildNetworkModelFromStations(
+            stationDetails,
+            "guest_network",
+          );
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          console.error("Failed to build network - Full error:", err);
+          console.error("Error message:", errorMsg);
+          // Surface a single clear error; outer catch will alert
+          throw new Error(
+            "Failed to build network. Ensure the backend is running and try again.\n\nDetails: " +
+              errorMsg,
+          );
+        }
+      } else {
+        network = {
+          network_model_id: "guest_network",
+          StationPair: [],
+        };
+      }
 
+      // For Configuration, only save the station data and station pairs
+      // Routes will be created in the Scenario phase
       const networkData = network as NetworkModel & {
         StationPair?: StationPair[];
       };

@@ -857,6 +857,7 @@ export default function UserWorkspace({
                     width="w-full"
                     height="h-[50px]"
                     fontSize="text-base"
+                    maxHeight="300px"
                   />
                 ) : (
                   <div className="workspace-modal-dropdown-disabled">

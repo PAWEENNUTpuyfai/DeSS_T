@@ -148,7 +148,10 @@ def build_distribution(name: str, args: str):
     params = {k: float(v) for k, v in params.items()}
 
     name = name.strip().lower()
-
+    # ⭐ เพิ่ม: จัดการกรณี No Arrival หรือ ค่าเป็น 0
+    if name == "no arrival" or (name == "constant" and params.get("value") == 0):
+        # ให้ค่า Interarrival สูงมาก (เช่น 999,999 วินาที) เพื่อไม่ให้เกิด Passenger
+        return sim.Constant(999999)
     # =====================================================
     # CONSTANT
     # =====================================================
@@ -221,11 +224,21 @@ def map_time_based_distributions(simdata_list, time_ctx):
         t0, t1 = time_ctx.range_to_sim(simdata.time_range)
 
         for rec in simdata.records:
-            rules[(rec.station, t0, t1)] = \
-                build_distribution(
-                    rec.distribution,
-                    rec.argument_list
-                )
+            # ⭐ แก้ไข: ตรวจสอบก่อนสร้าง distribution
+            dist_name = rec.distribution.strip().lower()
+            
+            # ถ้าชื่อเป็น no arrival ไม่ต้องใส่กฎลงใน dictionary เลย
+            if dist_name == "no arrival":
+                continue
+
+            dist_obj = build_distribution(rec.distribution, rec.argument_list)
+            
+            # ⭐ แก้ไข: ตรวจสอบว่าถ้าเป็น Constant(0) ก็ไม่ควรใส่เข้ามา
+            if isinstance(dist_obj, sim.Constant) and dist_obj.v == 0:
+                continue
+
+            rules[(rec.station, t0, t1)] = dist_obj
+            
     return rules
 
 def map_bus_information(scenarios):

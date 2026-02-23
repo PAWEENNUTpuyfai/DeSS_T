@@ -714,7 +714,7 @@ export default function InteractiveMap({
         </div>
 
         {/* Right: Stats */}
-        <div className="w-full lg:w-[340px] flex flex-col">
+        <div className="w-full lg:w-[450px] flex flex-col">
           <p className="text-[18px] text-[#4B4B4B]">
             Simulation Results by Time Slot{" "}
           </p>

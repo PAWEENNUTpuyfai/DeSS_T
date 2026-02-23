@@ -85,6 +85,7 @@ export default function ConfigurationMap({
             tags: { name: stop.name },
             lat: stop.lat,
             lon: stop.lon,
+            station_id_osm: stop.station_id_osm,
           }));
 
           const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
@@ -100,6 +101,7 @@ export default function ConfigurationMap({
             },
             lat: stop.lat,
             lon: stop.lon,
+            station_id_osm: stop.station_id_osm ? String(stop.station_id_osm) : undefined,
           }));
 
           setMapBounds(cacheData.bounds);
@@ -223,6 +225,7 @@ export default function ConfigurationMap({
             tags: { name: stop.name },
             lat: stop.lat,
             lon: stop.lon,
+            station_id_osm: stop.station_id_osm,
           }));
 
           const stationDetails: StationDetail[] = busStopsData.map((stop) => ({
@@ -238,6 +241,7 @@ export default function ConfigurationMap({
             },
             lat: stop.lat,
             lon: stop.lon,
+            station_id_osm: stop.station_id_osm ? String(stop.station_id_osm) : undefined,
           }));
 
           setMapBounds(cacheData.bounds);

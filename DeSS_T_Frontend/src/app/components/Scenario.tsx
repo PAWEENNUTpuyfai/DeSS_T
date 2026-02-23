@@ -485,6 +485,14 @@ export default function Scenario({
       return;
     }
 
+    // Validate: Check for consecutive duplicate stations
+    for (let i = 0; i < route.stations.length - 1; i++) {
+      if (route.stations[i] === route.stations[i + 1]) {
+        alert(`Route "${route.name}" contains consecutive duplicate stations. Please remove duplicates before confirming.`);
+        return;
+      }
+    }
+
     setIsFetchingSegment(true);
     try {
       // Build input points for backend: [lon,lat]
@@ -1125,6 +1133,18 @@ export default function Scenario({
       return;
     }
 
+    // Validation: Check for consecutive duplicate stations in all routes
+    for (const route of activeRoutes) {
+      if (route.stations && route.stations.length > 1) {
+        for (let i = 0; i < route.stations.length - 1; i++) {
+          if (route.stations[i] === route.stations[i + 1]) {
+            alert(`Route "${route.name}" contains consecutive duplicate stations. Please fix before saving.`);
+            return;
+          }
+        }
+      }
+    }
+
     try {
       if (!user) {
         alert("User not authenticated");
@@ -1387,36 +1407,24 @@ export default function Scenario({
                     
                     {/* Station Filter Controls */}
                     <div className="flex gap-2">
-                      <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
+                      <CustomDropdown
+                        options={["All Stations", "Has Data", "No Data"]}
+                        selectedValue={
                           stationFilter === "all"
-                            ? "bg-[#81069e] text-white"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        }`}
-                        onClick={() => setStationFilter("all")}
-                      >
-                        All Stations
-                      </button>
-                      <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
-                          stationFilter === "with-data"
-                            ? "bg-[#81069e] text-white"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        }`}
-                        onClick={() => setStationFilter("with-data")}
-                      >
-                        Has Data
-                      </button>
-                      <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
-                          stationFilter === "no-data"
-                            ? "bg-[#81069e] text-white"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        }`}
-                        onClick={() => setStationFilter("no-data")}
-                      >
-                        No Data
-                      </button>
+                            ? "All Stations"
+                            : stationFilter === "with-data"
+                            ? "Has Data"
+                            : "No Data"
+                        }
+                        onChange={(value) => {
+                          if (value === "All Stations") setStationFilter("all");
+                          else if (value === "Has Data") setStationFilter("with-data");
+                          else if (value === "No Data") setStationFilter("no-data");
+                        }}
+                        width="200px"
+                        height="40px"
+                        fontSize="14px"
+                      />
                     </div>
                   </div>
                   <div

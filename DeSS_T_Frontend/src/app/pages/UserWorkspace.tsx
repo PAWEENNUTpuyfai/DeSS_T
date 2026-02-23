@@ -101,7 +101,13 @@ export default function UserWorkspace({
       options: ["Ascending", "Descending"],
     },
   ];
-  const currentSortDisplay = `${sortBy} - ${sortOrder}`;
+  
+  // Format display: "Name Asc", "Name Des", "Date Asc", "Date Des"
+  const currentSortDisplay = useMemo(() => {
+    const sortByShort = sortBy === "Date modify" ? "Date" : sortBy;
+    const sortOrderShort = sortOrder === "Ascending" ? "Asc" : "Des";
+    return `${sortByShort} ${sortOrderShort}`;
+  }, [sortBy, sortOrder]);
 
   const configOptions = useMemo(() => {
     if (!user) {
@@ -558,7 +564,7 @@ export default function UserWorkspace({
                 selectedGroupValues={[sortBy, sortOrder]}
                 onChange={(value) => {
                   // Check if value is from first group (Sort By)
-                  if (["Name", "Date modify", "Date Upload"].includes(value)) {
+                  if (["Name", "Date modify"].includes(value)) {
                     setSortBy(value);
                   }
                   // Check if value is from second group (Order)

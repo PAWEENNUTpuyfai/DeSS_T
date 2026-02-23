@@ -264,7 +264,7 @@ export default function Scenario({
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
   
   // Station filter state
-  const [stationFilter, setStationFilter] = useState<"all" | "with-data" | "no-data">("all");
+  const [stationFilter, setStationFilter] = useState<"all" | "with-data" | "no-data">("with-data");
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
   const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
@@ -1388,7 +1388,7 @@ export default function Scenario({
                     {/* Station Filter Controls */}
                     <div className="flex gap-2">
                       <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 ${
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
                           stationFilter === "all"
                             ? "bg-[#81069e] text-white"
                             : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -1398,7 +1398,7 @@ export default function Scenario({
                         All Stations
                       </button>
                       <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 ${
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
                           stationFilter === "with-data"
                             ? "bg-[#81069e] text-white"
                             : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -1408,7 +1408,7 @@ export default function Scenario({
                         Has Data
                       </button>
                       <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 ${
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
                           stationFilter === "no-data"
                             ? "bg-[#81069e] text-white"
                             : "bg-gray-200 text-gray-700 hover:bg-gray-300"

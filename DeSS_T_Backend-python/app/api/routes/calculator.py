@@ -4,6 +4,7 @@ from app.schemas.calculation import CalculationRequest, CalculationResponse
 # Real
 from app.schemas.calculation import DataModelDistRequest, DataFitResponse
 from app.services.calculate import power_number, distribution_fitting
+from app.services.calculateAlighting import fit_alighting_distribution as alighting_distribution_fitting
 # from app.services.simulation import run_simulation
 # from app.schemas.Simulation import SimulationResponse, SimulationRequest
 # from app.services.simulation_runner import run_simulation
@@ -18,6 +19,12 @@ def calculate_power(data: CalculationRequest):
 def fit_distribution(data: DataModelDistRequest):
     # Mockup implementation
     result = distribution_fitting(data)
+    return result
+
+@router.post("/alighting_distribution_fit",response_model=DataFitResponse)
+def fit_alighting_distribution(data: DataModelDistRequest):
+    # Mockup implementation
+    result = alighting_distribution_fitting(data)
     return result
 
 # @router.get("/simulate")

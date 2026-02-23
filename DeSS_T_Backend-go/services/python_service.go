@@ -107,13 +107,54 @@ func CallPythonDistributionFit(data interface{}) (map[string]interface{}, error)
 	return result, nil
 }
 
+// เริ่มโค้ดของจริง
+func CallPythonAlightingDistributionFit(data interface{}) (map[string]interface{}, error) {
+
+	payload, _ := json.Marshal(data)
+
+	base := getPythonServiceBaseURL()
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Post(base+"/api/alighting_distribution_fit", "application/json", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	responseData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %v", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("python service returned status %d: %s", resp.StatusCode, string(responseData))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(responseData, &result); err != nil {
+		return nil, fmt.Errorf("decoding json response: %v; body: %s", err, string(responseData))
+	}
+
+	return result, nil
+}
+
+
 func CallPythonSimulation(data interface{}) (map[string]interface{}, error) {
     payload, _ := json.Marshal(data)
 
     base := getPythonServiceBaseURL()
-    resp, err := http.Post(base+"/api/simulate", "application/json", bytes.NewBuffer(payload))  
+    // ⚠️ 중요: Simulation은 오래 걸릴 수 있으므로 timeout을 길게 설정 (기본 600초 = 10분)
+    // 환경변수 PYTHON_SIMULATION_TIMEOUT으로 커스터마이징 가능
+    timeout := 600 * time.Second
+    if envTimeout := os.Getenv("PYTHON_SIMULATION_TIMEOUT"); envTimeout != "" {
+        if val, err := time.ParseDuration(envTimeout); err == nil {
+            timeout = val
+        }
+    }
+    
+    client := &http.Client{Timeout: timeout}
+    resp, err := client.Post(base+"/api/simulate", "application/json", bytes.NewBuffer(payload))  
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to call Python Simulation API (timeout=%v): %v", timeout, err)
     }
     defer resp.Body.Close()
 

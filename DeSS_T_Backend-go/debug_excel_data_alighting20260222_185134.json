@@ -1,0 +1,1412 @@
+{
+  "Data": [
+    {
+      "Station": "2434739253",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 1,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 2,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 3,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 4,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 5,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 6,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 7,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 8,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 9,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 10,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 11,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 12,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 13,
+          "Numeric_Value": 60
+        },
+        {
+          "Record_ID": 14,
+          "Numeric_Value": 60
+        }
+      ]
+    },
+    {
+      "Station": "2434739253",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 15,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434763308",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 16,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434763308",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 17,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434765955",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 18,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434765955",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 19,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434770159",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 20,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434770159",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 21,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434781037",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 22,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434781037",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 23,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434784899",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 24,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434784899",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 25,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434788893",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 26,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434788893",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 27,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434789769",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 28,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434789769",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 29,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434791738",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 30,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434791738",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 31,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434809621",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 32,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434809621",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 33,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434815654",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 34,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434815654",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 35,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434815656",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 36,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2434815656",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 37,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2639527925",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 38,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "2639527925",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 39,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167968625",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 40,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167968625",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 41,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167972703",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 42,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167972703",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 43,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167975394",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 44,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167975394",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 45,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167977788",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 46,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167977788",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 47,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167978928",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 48,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3167978928",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 49,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112872",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 50,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112872",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 51,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112873",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 52,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112873",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 53,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112879",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 54,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112879",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 55,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112882",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 56,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112882",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 57,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112884",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 58,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112884",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 59,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112885",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 60,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "3195112885",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 61,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "4239074138",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 62,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "4239074138",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 63,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "4359723993",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 64,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "4359723993",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 65,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "7116312057",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 66,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "7116312057",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 67,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "7153515832",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 68,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "7153515832",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 69,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "10651172144",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 70,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "10651172144",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 71,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "10651182179",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 72,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "10651182179",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 73,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "10651186748",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 74,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "10651186748",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 75,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087009",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 76,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087009",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 77,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087010",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 78,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087010",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 79,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087011",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 80,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087011",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 81,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087012",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 82,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087012",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 83,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087013",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 84,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087013",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 85,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087014",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 86,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12886087014",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 87,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898533385",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 88,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898533385",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 89,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770709",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 90,
+          "Numeric_Value": 5
+        },
+        {
+          "Record_ID": 91,
+          "Numeric_Value": 4
+        }
+      ]
+    },
+    {
+      "Station": "12898770709",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 92,
+          "Numeric_Value": 4
+        },
+        {
+          "Record_ID": 93,
+          "Numeric_Value": 2
+        },
+        {
+          "Record_ID": 94,
+          "Numeric_Value": 1
+        },
+        {
+          "Record_ID": 95,
+          "Numeric_Value": 2
+        }
+      ]
+    },
+    {
+      "Station": "12898770710",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 96,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770710",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 97,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770711",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 98,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770711",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 99,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770712",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 100,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770712",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 101,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770713",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 102,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770713",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 103,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770714",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 104,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770714",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 105,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770715",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 106,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770715",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 107,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770716",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 108,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770716",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 109,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770717",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 110,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770717",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 111,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770718",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 112,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770718",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 113,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770719",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 114,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770719",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 115,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770720",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 116,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770720",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 117,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770721",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 118,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770721",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 119,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770722",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 120,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770722",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 121,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770723",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 122,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770723",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 123,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770724",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 124,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770724",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 125,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770725",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 126,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770725",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 127,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770726",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 128,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770726",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 129,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770727",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 130,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770727",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 131,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770728",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 132,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770728",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 133,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770729",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 134,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770729",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 135,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770730",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 136,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770730",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 137,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770731",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 138,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770731",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 139,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770732",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 140,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770732",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 141,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770733",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 142,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770733",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 143,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770734",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 144,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898770734",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 145,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898921896",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 146,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "12898921896",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 147,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "13452160410",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 148,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "13452160410",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 149,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "13452160411",
+      "Time_Range": "08:00-08:59",
+      "Records": [
+        {
+          "Record_ID": 150,
+          "Numeric_Value": 0
+        }
+      ]
+    },
+    {
+      "Station": "13452160411",
+      "Time_Range": "09:00-09:59",
+      "Records": [
+        {
+          "Record_ID": 151,
+          "Numeric_Value": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,808 @@
+{
+  "DataFitResponse": [
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434739253",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434739253",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434763308",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434763308",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434765955",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434765955",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434770159",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "shape=0.1051, loc=15.0000, scale=3.3098",
+      "Distribution": "Weibull",
+      "Station": "2434770159",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434781037",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434781037",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "shape=0.7136, loc=-0.0000, scale=5.6421",
+      "Distribution": "Weibull",
+      "Station": "2434784899",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "shape=0.5406, loc=-0.0000, scale=6.2321",
+      "Distribution": "Gamma",
+      "Station": "2434784899",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434788893",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434788893",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434789769",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434789769",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434791738",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434791738",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434809621",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434809621",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434815654",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434815654",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434815656",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2434815656",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2639527925",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "2639527925",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167968625",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167968625",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167972703",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167972703",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167975394",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167975394",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167977788",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167977788",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167978928",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3167978928",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112872",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112872",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112873",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112873",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112879",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112879",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112882",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112882",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112884",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112884",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112885",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "3195112885",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "4239074138",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "4239074138",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "4359723993",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "4359723993",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "7116312057",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "7116312057",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "7153515832",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "7153515832",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "10651172144",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "10651172144",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "10651182179",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "10651182179",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "10651186748",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "shape=0.0193, loc=23.0000, scale=0.0003",
+      "Distribution": "Weibull",
+      "Station": "10651186748",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "min=8.2200, max=23.6500",
+      "Distribution": "Uniform",
+      "Station": "12886087009",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "min=0.0000, max=54.5500",
+      "Distribution": "Uniform",
+      "Station": "12886087009",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "shape=0.1109, loc=-0.0000, scale=247.8655",
+      "Distribution": "Gamma",
+      "Station": "12886087010",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "shape=0.2721, loc=-0.0000, scale=1.2756",
+      "Distribution": "Weibull",
+      "Station": "12886087010",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "shape=0.6041, loc=15.5000, scale=3.4926",
+      "Distribution": "Gamma",
+      "Station": "12886087011",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "shape=0.1724, loc=-0.0000, scale=4.9272",
+      "Distribution": "Weibull",
+      "Station": "12886087011",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12886087012",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12886087012",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12886087013",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12886087013",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12886087014",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12886087014",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898533385",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898533385",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "shape=0.3973, loc=-0.0000, scale=3.2407",
+      "Distribution": "Weibull",
+      "Station": "12898770709",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "shape=0.5220, loc=-0.0000, scale=2.7830",
+      "Distribution": "Weibull",
+      "Station": "12898770709",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770710",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770710",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770711",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770711",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "shape=0.3745, loc=4.0000, scale=25.3274",
+      "Distribution": "Weibull",
+      "Station": "12898770712",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "shape=0.7361, loc=-0.0000, scale=6.0651",
+      "Distribution": "Gamma",
+      "Station": "12898770712",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770713",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770713",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770714",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770714",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770715",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770715",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770716",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770716",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770717",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770717",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770718",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770718",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770719",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770719",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770720",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770720",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770721",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770721",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770722",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770722",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770723",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770723",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770724",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770724",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770725",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770725",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770726",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770726",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770727",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770727",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770728",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770728",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770729",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770729",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770730",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770730",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770731",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770731",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770732",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770732",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770733",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770733",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770734",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898770734",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898921896",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "12898921896",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "13452160410",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "13452160410",
+      "Time_Range": "09:00-09:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "13452160411",
+      "Time_Range": "08:00-08:59"
+    },
+    {
+      "ArgumentList": "value=0.0000",
+      "Distribution": "Constant",
+      "Station": "13452160411",
+      "Time_Range": "09:00-09:59"
+    }
+  ]
+}

@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     DATABASE_URL: str = Field(description="URL สำหรับเชื่อมต่อฐานข้อมูล")
     SECRET_KEY: str = Field(description="คีย์ลับสำหรับเข้ารหัส/ถอดรหัส")
     
+    # 4. Simulation Timeout Configuration
+    SIMULATION_TIMEOUT: int = Field(
+        default=300,
+        description="Maximum time in seconds for simulation execution (default 300s = 5min)"
+    )
+    
     # 4. Property สำหรับตรวจสอบสถานะ
     @property
     def is_production(self) -> bool:

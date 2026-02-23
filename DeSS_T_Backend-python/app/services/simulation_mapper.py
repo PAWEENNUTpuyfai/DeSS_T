@@ -232,10 +232,19 @@ def map_time_based_distributions(simdata_list, time_ctx):
                 continue
 
             dist_obj = build_distribution(rec.distribution, rec.argument_list)
-            
-            # ⭐ แก้ไข: ตรวจสอบว่าถ้าเป็น Constant(0) ก็ไม่ควรใส่เข้ามา
-            if isinstance(dist_obj, sim.Constant) and dist_obj.v == 0:
-                continue
+
+            # Skip Constant(0) without relying on salabim internals
+            if dist_name == "constant":
+                try:
+                    arg_map = dict(
+                        kv.strip().split("=")
+                        for kv in rec.argument_list.split(",")
+                        if "=" in kv
+                    )
+                    if float(arg_map.get("value", "nan")) == 0.0:
+                        continue
+                except ValueError:
+                    pass
 
             rules[(rec.station, t0, t1)] = dist_obj
             

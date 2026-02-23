@@ -40,7 +40,7 @@ import BusInfoPanel from "./Scenario/BusInfoPanel";
 import RoutesList from "./Scenario/RoutesList";
 import SuccessModal from "./Scenario/SuccessModal";
 import type { SimpleRoute } from "./Scenario/RouteCard";
-import { downloadJson } from "../../utility/helpers";
+// import { downloadJson } from "../../utility/helpers";
 
 export default function Scenario({
   configuration,
@@ -878,7 +878,7 @@ export default function Scenario({
         time_slot: timeSlot.split(" ")[0],
       };
 
-      downloadJson(simulationRequest, `simulationRequest.json`);
+      // downloadJson(simulationRequest, `simulationRequest.json`);
 
       const response = await runSimulation(simulationRequest);
       setSimulationResponse(response);

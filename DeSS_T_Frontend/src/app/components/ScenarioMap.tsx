@@ -256,14 +256,19 @@ export default function ScenarioMap({
             fillOpacity={0.9}
             eventHandlers={{
               click: () => {
-                // In editing mode: only prevent clicking if it's the last station (consecutive duplicate)
-                // Otherwise allow re-selection at different positions
                 const stId = stationIdFor(st);
-                const isLastStation = route?.stations[route.stations.length - 1] === stId;
                 
-                if (!isEditingMode || !isLastStation) {
-                  onSelectStation(stId);
+                // Prevent consecutive duplicate stations (same station back-to-back)
+                if (isEditingMode && route) {
+                  const lastStation = route.stations[route.stations.length - 1];
+                  if (lastStation === stId) {
+                    // Don't allow clicking the same station consecutively
+                    return;
+                  }
                 }
+                
+                // Allow selection in all other cases
+                onSelectStation(stId);
               },
             }}
           >

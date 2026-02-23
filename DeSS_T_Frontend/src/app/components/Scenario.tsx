@@ -1385,45 +1385,44 @@ export default function Scenario({
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Station Filter Controls */}
-                    <div className="flex gap-2">
+                  </div>
+                  <div
+                    className="map w-full flex-1 min-h-[400px] relative"
+                    ref={mapContainerRef}
+                  >
+                    {/* Station Filter Controls - Overlay on Map */}
+                    <div className="absolute left-3 bottom-3 z-[1000] flex gap-2">
                       <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap shadow-md ${
                           stationFilter === "all"
                             ? "bg-[#81069e] text-white"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            : "bg-white text-gray-700 hover:bg-gray-100"
                         }`}
                         onClick={() => setStationFilter("all")}
                       >
                         All Stations
                       </button>
                       <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap shadow-md ${
                           stationFilter === "with-data"
                             ? "bg-[#81069e] text-white"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            : "bg-white text-gray-700 hover:bg-gray-100"
                         }`}
                         onClick={() => setStationFilter("with-data")}
                       >
                         Has Data
                       </button>
                       <button
-                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
+                        className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap shadow-md ${
                           stationFilter === "no-data"
                             ? "bg-[#81069e] text-white"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            : "bg-white text-gray-700 hover:bg-gray-100"
                         }`}
                         onClick={() => setStationFilter("no-data")}
                       >
                         No Data
                       </button>
                     </div>
-                  </div>
-                  <div
-                    className="map w-full flex-1 min-h-[400px]"
-                    ref={mapContainerRef}
-                  >
                     <ScenarioMap
                       stations={filteredNodes}
                       allStations={nodes}

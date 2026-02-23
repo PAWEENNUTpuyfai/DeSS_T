@@ -285,51 +285,49 @@ def build_travel_times(
     travel_times = {}
 
     for route_id, stations in bus_routes.items():
-        avg_time = bus_info.get(route_id, {}).get("avg_travel_time", 0)
+        # 1. ดึงข้อมูลพื้นฐานจาก bus_info
+        info = bus_info.get(route_id, {})
+        speed_m_per_s = info.get("speed", 0)           # ความเร็ว (m/s)
+        avg_total_time_sec = info.get("avg_travel_time", 0) # เวลาเฉลี่ยรวมทั้งสาย (seconds)
 
         travel_times[route_id] = {}
-
-        # ----------------------------------
-        # สร้าง list ของ segment จาก key เดิม
-        # ----------------------------------
-        segments = []
+        
+        # 2. คำนวณระยะทางรวมของสาย (สำหรับใช้แบ่งสัดส่วน avg_travel_time)
         total_distance = 0.0
-
+        route_segments = []
         for i in range(len(stations) - 1):
             key = (stations[i], stations[i + 1])
+            if key not in travel_distances:
+                raise KeyError(f"Route {route_id} missing distance for {key}")
+            
+            dist = travel_distances[key]
+            route_segments.append((key, dist))
+            total_distance += dist
 
-            # ❗ ใช้ key เดิมเป็นหลัก
-            if key not in travel_times_ideal:
-                raise KeyError(
-                    f"Route {route_id} missing travel_time for {key}"
-                )
+        # 3. คำนวณเวลาเดินทางของแต่ละ Segment
+        for key, dist_m in route_segments:
+            candidates = []
 
-            if avg_time and avg_time > 0:
-                dist = travel_distances[key]
-                segments.append((key, dist))
-                total_distance += dist
-            else:
-                # ไม่มี avg_travel_time → ใช้ของเดิมทันที
-                travel_times[route_id][key] = travel_times_ideal[key]
+            # --- แบบที่ 1: คำนวณจาก Speed ---
+            if speed_m_per_s > 0:
+                time_from_speed = dist_m / speed_m_per_s
+                candidates.append(time_from_speed)
 
-        # ----------------------------------
-        # ถ้าไม่มี avg_travel_time → จบ route นี้
-        # ----------------------------------
-        if not avg_time or avg_time <= 0:
-            continue
+            # --- แบบที่ 2: คำนวณจาก Average Travel Time (เฉลี่ยตามระยะทาง) ---
+            if avg_total_time_sec > 0 and total_distance > 0:
+                time_from_avg = (dist_m / total_distance) * avg_total_time_sec
+                candidates.append(time_from_avg)
 
-        if total_distance <= 0:
-            raise ValueError(
-                f"Total distance is zero for route {route_id}"
-            )
+            # --- แบบที่ 3: ค่าจาก Database (Ideal Time) ---
+            if key in travel_times_ideal:
+                candidates.append(travel_times_ideal[key])
 
-        # ----------------------------------
-        # แจกเวลาใหม่ตามสัดส่วน distance
-        # ----------------------------------
-        for key, dist in segments:
-            travel_times[route_id][key] = (
-                dist / total_distance
-            ) * avg_time
+            # --- การเปรียบเทียบเพื่อเลือกค่าที่มากที่สุด ---
+            if not candidates:
+                raise ValueError(f"No travel time data available for route {route_id} segment {key}")
+            
+            # เลือกค่าที่มากที่สุดตามเงื่อนไข (ค่าที่มากกว่าหมายถึงเดินทางช้ากว่า/ปลอดภัยกว่าในการคำนวณ)
+            travel_times[route_id][key] = max(candidates)
 
     return travel_times
 

@@ -1390,7 +1390,7 @@ export default function Scenario({
                     ref={mapContainerRef}
                   >
                     {/* Station Filter Controls - Overlay on Map */}
-                    <div className="absolute right-3 top-3 z-[1000] flex gap-2">
+                    <div className="absolute left-3 bottom-3 z-[1000] flex gap-2">
                       <button
                         className={`px-4 py-1.5 rounded-full text-sm transition-colors border-0 outline-none focus:outline-none focus:ring-0 whitespace-nowrap shadow-md ${
                           stationFilter === "all"

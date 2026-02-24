@@ -411,7 +411,7 @@ export default function InteractiveMap({
   // Calculate bus positions at an arbitrary time (supports intra-slot interpolation)
   const computeBusesAtTime = useCallback(
     (currentMinutes: number) => {
-      const buses: { id: string; coord: [number, number]; color: string }[] =
+      const buses: { id: string; coord: [number, number]; color: string; routeId: string; displayName: string }[] =
         [];
 
       if (busLogEvents.length > 0) {
@@ -464,10 +464,13 @@ export default function InteractiveMap({
             lon = prev.station.lon + (next.station.lon - prev.station.lon) * t;
           }
 
+          const routeId = route?.id || "";
           buses.push({
             id: busId,
             coord: [lat, lon],
             color: color,
+            routeId: routeId,
+            displayName: `Bus ${route?.name || "Unknown"} #1`,
           });
         });
 
@@ -568,6 +571,8 @@ export default function InteractiveMap({
             id: `${r.name || "route"}-bus${busIdx + 1}`,
             coord: [coord[0], coord[1]] as [number, number],
             color: r.color,
+            routeId: r.id,
+            displayName: `Bus ${r.name} #${busIdx + 1}`,
           });
         });
       });
@@ -589,12 +594,18 @@ export default function InteractiveMap({
     ],
   );
 
-  const currentBuses = useMemo(
+  const allBuses = useMemo(
     () =>
       computeBusesAtTime(
         clampTimeMinutes,
       ),
     [clampTimeMinutes, computeBusesAtTime],
+  );
+
+  // Filter buses to only show those from visible routes
+  const currentBuses = useMemo(
+    () => allBuses.filter((bus) => visibleRoutes.has(bus.routeId)),
+    [allBuses, visibleRoutes],
   );
 
   // Find station data from simulation response based on selected station and current time slot
@@ -770,7 +781,7 @@ export default function InteractiveMap({
                     permanent
                   >
                     <span className="text-xs">
-                      {b.id} @ {currentTimeLabel}
+                      {b.displayName} @ {currentTimeLabel}
                     </span>
                   </Tooltip>
                 </Marker>

@@ -78,13 +78,41 @@ func CallPythonAPIPOWER(number int) (int, error) {
 }
 
 // เริ่มโค้ดของจริง
-func CallPythonDistributionFit(data interface{}) (map[string]interface{}, error) {
+func CallPythonInterarrivalDistributionFit(data interface{}) (map[string]interface{}, error) {
 
 	payload, _ := json.Marshal(data)
 
 	base := getPythonServiceBaseURL()
 	client := &http.Client{Timeout: 60 * time.Second}
-	resp, err := client.Post(base+"/api/distribution_fit", "application/json", bytes.NewBuffer(payload))
+	resp, err := client.Post(base+"/api/interarrival_distribution_fit", "application/json", bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	responseData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %v", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("python service returned status %d: %s", resp.StatusCode, string(responseData))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(responseData, &result); err != nil {
+		return nil, fmt.Errorf("decoding json response: %v; body: %s", err, string(responseData))
+	}
+
+	return result, nil
+}
+func CallPythonAlightingDistributionFit(data interface{}) (map[string]interface{}, error) {
+
+	payload, _ := json.Marshal(data)
+
+	base := getPythonServiceBaseURL()
+	client := &http.Client{Timeout: 60 * time.Second}
+	resp, err := client.Post(base+"/api/alighting_distribution_fit", "application/json", bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}

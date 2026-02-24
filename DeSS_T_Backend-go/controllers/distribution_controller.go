@@ -47,7 +47,7 @@ func UploadGuestAlightingFit(c *fiber.Ctx) error {
     }
 
     // ส่ง JSON ไป Python
-    result, err := services.CallPythonDistributionFit(jsonData)
+    result, err := services.CallPythonAlightingDistributionFit(jsonData)
     if err != nil {
         return c.Status(500).JSON(fiber.Map{"error": err.Error()})
     }
@@ -87,7 +87,7 @@ func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
     }
 
     // ส่ง JSON ไป Python
-    result, err := services.CallPythonDistributionFit(jsonData)
+    result, err := services.CallPythonInterarrivalDistributionFit(jsonData)
 
     if err != nil {
         return c.Status(500).JSON(fiber.Map{"error": err.Error()})

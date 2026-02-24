@@ -92,7 +92,7 @@ export default function UserWorkspace({
   const cardsPerPage = 12;
   const fileFilterOptions = ["All Files", "Public", "Private"];
   const sortGroups = [
-    {
+    { 
       label: "Sort By",
       options: ["Name", "Date modify"],
     },

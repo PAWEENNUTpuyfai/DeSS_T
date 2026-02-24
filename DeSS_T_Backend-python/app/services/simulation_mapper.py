@@ -44,10 +44,10 @@ def build_simulation_config(req):
         time_ctx
     )
     dwell_time={
-        "door_open_time": 0.1,   
-        "door_close_time": 0.1,  
-        "boarding_time": 0.05,   
-        "alighting_time": 0.04   
+        "door_open_time": 0.05,   
+        "door_close_time": 0.05,  
+        "boarding_time": 0.025,   
+        "alighting_time": 0.025   
     }
     config = {
         "STATION_LIST": req.configuration_data.station_list,
@@ -59,7 +59,7 @@ def build_simulation_config(req):
         "BUS_SCHEDULES": bus_schedules,
         "INTERARRIVAL_RULES": interarrival_rules,
         "ALIGHTING_RULES": alighting_rules,
-        "USE_DWELL_TIME": False,
+        "USE_DWELL_TIME": True,
         "DWELL_TIME":dwell_time
     }
 

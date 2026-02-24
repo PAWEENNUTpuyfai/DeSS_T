@@ -1,12 +1,11 @@
-
 from typing import List, Dict
 from scipy import stats
 import numpy as np
 from app.schemas.calculation import DataFitResponse, FitItem , RecordDistRequest , DataModelDistRequest
 
 
-def power_number(n: int) -> int:
-    return (n * n)  # ยกกำลัง 2
+# def power_number(n: int) -> int:
+#     return (n * n)  # ยกกำลัง 2
 
 
 

@@ -1377,7 +1377,7 @@ export default function Scenario({
                         <p className="text-[20px] text-[#323232]">Time Slot : </p>
                         <div className="ml-3 my-2 h-full">
                           <CustomDropdown
-                            options={["5 Minutes", "10 Minutes", "15 Minutes", "20 Minutes", "30 Minutes"]}
+                            options={["5 Minutes", "10 Minutes", "15 Minutes", "20 Minutes", "30 Minutes", "60 Minutes"]}
                             selectedValue={timeSlot}
                             onChange={setTimeSlot}
                             fontSize="20px"

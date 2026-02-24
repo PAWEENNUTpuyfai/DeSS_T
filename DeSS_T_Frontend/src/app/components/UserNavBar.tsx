@@ -117,24 +117,27 @@ export default function UserNavBar({
       </nav>
 
       {showConfirm && inpage !== "Output" && (
-        <div className="confirm-modal-overlay">
-          <div className="confirm-modal">
-            <h2 className="confirm-modal-title flex items-center justify-center">
-              Are you sure you want to discard all changes?
-            </h2>
-            <p className="confirm-modal-subtitle">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
+          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <span className="w-2 h-8 bg-[#81069e] mr-3" />
+              <h2 className="text-2xl text-gray-800">
+                Are you sure you want to discard all changes?
+              </h2>
+            </div>
+            <p className="text-gray-600 mb-6">
               Your changes will not be saved if you leave this page.
             </p>
-            <div className="confirm-modal-actions">
+            <div className="flex gap-3 justify-end">
               <button
-                className="modal-btn modal-btn-secondary"
                 onClick={handleCancelLeave}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-full transition duration-200 outline-none focus:outline-none hover:outline-none active:outline-none focus:ring-0 hover:ring-0 active:ring-0 border-0"
               >
                 Stay on page
               </button>
               <button
-                className="modal-btn modal-btn-primary"
                 onClick={handleConfirmLeave}
+                className="bg-[#81069e] hover:bg-[#6a0585] text-white py-2 px-6 rounded-full transition duration-200 outline-none focus:outline-none hover:outline-none active:outline-none focus:ring-0 hover:ring-0 active:ring-0 border-0"
               >
                 Discard and leave
               </button>

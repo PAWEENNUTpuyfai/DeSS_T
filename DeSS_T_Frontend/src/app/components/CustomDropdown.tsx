@@ -17,6 +17,7 @@ interface CustomDropdownProps {
   width?: string; // e.g. "200px", "100%", "w-64"
   height?: string; // e.g. "60px", "40px"
   fontSize?: string; // e.g. "text-sm", "text-lg", "16px"
+  maxHeight?: string; // e.g. "300px", "max-h-96"
 }
 
 export default function CustomDropdown({
@@ -30,6 +31,7 @@ export default function CustomDropdown({
   width = "min-w-[200px]",
   height = "h-[60px]",
   fontSize = "text-lg",
+  maxHeight,
 }: CustomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -61,6 +63,8 @@ export default function CustomDropdown({
   const heightStyle = !heightClass ? height : undefined;
   const fontSizeClass = fontSize.startsWith("text-") ? fontSize : "";
   const fontSizeStyle = !fontSizeClass ? fontSize : undefined;
+  const maxHeightClass = maxHeight?.startsWith("max-h-") ? maxHeight : "";
+  const maxHeightStyle = maxHeight && !maxHeightClass ? maxHeight : undefined;
 
   return (
     <div
@@ -98,7 +102,10 @@ export default function CustomDropdown({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full mt-2 w-full option-container z-[9999] overflow-hidden">
+        <div 
+          className={`absolute top-full mt-2 w-full option-container z-[9999] overflow-y-auto ${maxHeightClass}`}
+          style={{ maxHeight: maxHeightStyle }}
+        >
           {isGrouped ? (
             <div className="py-2">
               {groups.map((group, groupIndex) => (

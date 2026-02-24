@@ -24,7 +24,6 @@ export async function createUserConfiguration(
 export async function getUserConfigurations(
   userId: string,
 ): Promise<UserConfiguration[]> {
-  console.log(`Fetching user configurations for user ID: ${userId}`);
   const response = await fetch(
     `${API_BASE_URL}/user-configurations/${encodeURIComponent(userId)}`,
   );

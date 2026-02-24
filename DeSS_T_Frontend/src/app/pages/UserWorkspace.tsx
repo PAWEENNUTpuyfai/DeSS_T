@@ -88,18 +88,26 @@ export default function UserWorkspace({
   const [fileFilter, setFileFilter] = useState("All Files");
   const [sortBy, setSortBy] = useState("Date modify");
   const [sortOrder, setSortOrder] = useState("Ascending");
+  const [currentPage, setCurrentPage] = useState(1);
+  const cardsPerPage = 18;
   const fileFilterOptions = ["All Files", "Public", "Private"];
   const sortGroups = [
     {
       label: "Sort By",
-      options: ["Name", "Date modify", "Date Upload"],
+      options: ["Name", "Date modify"],
     },
     {
       label: "Order",
       options: ["Ascending", "Descending"],
     },
   ];
-  const currentSortDisplay = `${sortBy} - ${sortOrder}`;
+  
+  // Format display: "Name Asc", "Name Des", "Date Asc", "Date Des"
+  const currentSortDisplay = useMemo(() => {
+    const sortByShort = sortBy === "Date modify" ? "Date" : sortBy;
+    const sortOrderShort = sortOrder === "Ascending" ? "Asc" : "Des";
+    return `${sortByShort} ${sortOrderShort}`;
+  }, [sortBy, sortOrder]);
 
   const configOptions = useMemo(() => {
     if (!user) {
@@ -144,6 +152,48 @@ export default function UserWorkspace({
     }));
   }, [user, userConfigurations, userScenarios, activeTab]);
 
+  const sortedAndFilteredCards = useMemo(() => {
+    // Filter cards based on file filter
+    // All items are private, so "Public" filter shows nothing
+    const filtered =
+      fileFilter === "Public"
+        ? []
+        : fileFilter === "Private"
+          ? cards
+          : cards; // "All Files" shows everything
+
+    // Sort cards
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "Name") {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        const comparison = nameA.localeCompare(nameB);
+        return sortOrder === "Ascending" ? comparison : -comparison;
+      } else if (sortBy === "Date modify") {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        const comparison = dateA - dateB;
+        return sortOrder === "Ascending" ? comparison : -comparison;
+      }
+      return 0;
+    });
+
+    return sorted;
+  }, [cards, fileFilter, sortBy, sortOrder]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(sortedAndFilteredCards.length / cardsPerPage);
+  const paginatedCards = useMemo(() => {
+    const startIndex = (currentPage - 1) * cardsPerPage;
+    const endIndex = startIndex + cardsPerPage;
+    return sortedAndFilteredCards.slice(startIndex, endIndex);
+  }, [sortedAndFilteredCards, currentPage, cardsPerPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [fileFilter, sortBy, sortOrder, activeTab]);
+
   const formatDate = (date?: string) => {
     if (!date) {
       return "";
@@ -164,17 +214,13 @@ export default function UserWorkspace({
   };
 
   useEffect(() => {
-    console.log("🔵 useEffect triggered - user:", user);
-
     // If user is already in AuthContext, no need to verify again
     if (user) {
-      console.log("✓ User already in AuthContext, skipping login");
       setLoading(false);
       return;
     }
 
     // If no user, redirect to login
-    console.log("❌ No user in context, redirecting to home...");
     setError("User not authenticated");
     setLoading(false);
   }, [user]);
@@ -326,9 +372,6 @@ export default function UserWorkspace({
 
     try {
       setIsDeleting(true);
-      console.log(
-        `Attempting to delete configuration with ID: ${deleteConfigId}`,
-      );
       await deleteUserConfiguration(deleteConfigId);
       setUserConfigurations((prev) =>
         prev.filter(
@@ -368,7 +411,6 @@ export default function UserWorkspace({
 
     try {
       setIsDeletingScenario(true);
-      console.log(`Attempting to delete scenario with ID: ${deleteScenarioId}`);
       await deleteUserScenario(deleteScenarioId);
       setUserScenarios((prev) =>
         prev.filter(
@@ -522,7 +564,7 @@ export default function UserWorkspace({
                 selectedGroupValues={[sortBy, sortOrder]}
                 onChange={(value) => {
                   // Check if value is from first group (Sort By)
-                  if (["Name", "Date modify", "Date Upload"].includes(value)) {
+                  if (["Name", "Date modify"].includes(value)) {
                     setSortBy(value);
                   }
                   // Check if value is from second group (Order)
@@ -549,22 +591,12 @@ export default function UserWorkspace({
             </div>
           )}
           <div className="workspace-cards">
-            {(() => {
-              // Filter cards based on file filter
-              // All items are private, so "Public" filter shows nothing
-              const filteredCards =
-                fileFilter === "Public"
-                  ? []
-                  : fileFilter === "Private"
-                    ? cards
-                    : cards; // "All Files" shows everything
-
-              return filteredCards.length === 0 ? (
-                <div className="workspace-empty">
-                  No items yet. Create a new one to get started.
-                </div>
-              ) : (
-                filteredCards.map((card) => (
+            {sortedAndFilteredCards.length === 0 ? (
+              <div className="workspace-empty">
+                No items yet. Create a new one to get started.
+              </div>
+            ) : (
+              paginatedCards.map((card) => (
                 <div
                   key={card.id}
                   className="workspace-card cursor-pointer hover:shadow-lg transition-shadow relative group"
@@ -638,8 +670,7 @@ export default function UserWorkspace({
                   )}
                 </div>
               ))
-              );
-            })()}
+            )}
           </div>
 
           <button
@@ -657,6 +688,62 @@ export default function UserWorkspace({
           >
             + {activeTab === "config" ? "New Configuration" : "New Project"}
           </button>
+
+          {/* Pagination Controls */}
+          {sortedAndFilteredCards.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-6 mb-6 text-sm text-gray-500 select-none">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="border-0 bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none hover:text-[#81069e] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                const showPage =
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= currentPage - 1 && page <= currentPage + 1);
+
+                const showEllipsis =
+                  (page === currentPage - 2 && currentPage > 3) ||
+                  (page === currentPage + 2 && currentPage < totalPages - 2);
+
+                if (showEllipsis) {
+                  return (
+                    <span key={`ellipsis-${page}`} className="text-gray-400">
+                      ...
+                    </span>
+                  );
+                }
+
+                if (!showPage) return null;
+
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`border-0 bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none transition-colors ${
+                      currentPage === page
+                        ? "text-[#81069e] font-semibold"
+                        : "hover:text-[#81069e]"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="border-0 bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none hover:text-[#81069e] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </main>
       </div>
 
@@ -770,6 +857,7 @@ export default function UserWorkspace({
                     width="w-full"
                     height="h-[50px]"
                     fontSize="text-base"
+                    maxHeight="300px"
                   />
                 ) : (
                   <div className="workspace-modal-dropdown-disabled">

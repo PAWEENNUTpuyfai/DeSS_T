@@ -44,10 +44,10 @@ def build_simulation_config(req):
         time_ctx
     )
     dwell_time={
-        "door_open_time": 0.1,   
-        "door_close_time": 0.1,  
-        "boarding_time": 0.05,   
-        "alighting_time": 0.04   
+        "door_open_time": 0.05,   
+        "door_close_time": 0.05,  
+        "boarding_time": 0.025,   
+        "alighting_time": 0.025   
     }
     config = {
         "STATION_LIST": req.configuration_data.station_list,
@@ -59,7 +59,7 @@ def build_simulation_config(req):
         "BUS_SCHEDULES": bus_schedules,
         "INTERARRIVAL_RULES": interarrival_rules,
         "ALIGHTING_RULES": alighting_rules,
-        "USE_DWELL_TIME": False,
+        "USE_DWELL_TIME": True,
         "DWELL_TIME":dwell_time
     }
 
@@ -232,10 +232,19 @@ def map_time_based_distributions(simdata_list, time_ctx):
                 continue
 
             dist_obj = build_distribution(rec.distribution, rec.argument_list)
-            
-            # ⭐ แก้ไข: ตรวจสอบว่าถ้าเป็น Constant(0) ก็ไม่ควรใส่เข้ามา
-            if isinstance(dist_obj, sim.Constant) and dist_obj.v == 0:
-                continue
+
+            # Skip Constant(0) without relying on salabim internals
+            if dist_name == "constant":
+                try:
+                    arg_map = dict(
+                        kv.strip().split("=")
+                        for kv in rec.argument_list.split(",")
+                        if "=" in kv
+                    )
+                    if float(arg_map.get("value", "nan")) == 0.0:
+                        continue
+                except ValueError:
+                    pass
 
             rules[(rec.station, t0, t1)] = dist_obj
             

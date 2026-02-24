@@ -48,17 +48,8 @@ export default function InteractiveMap({
 }) {
   // Use single-shot data from props only (no realtime playback)
   const activePlaybackData = playbackSeed;
-
-  // Debug: Log playbackSeed data on mount and when it changes
-  useEffect(() => {
-    console.log("=== InteractiveMap Data Debug ===");
-    console.log("PlaybackSeed:", playbackSeed);
-    console.log("Bus Info:", playbackSeed?.busInfo);
-    console.log("Route Results:", playbackSeed?.routeResults);
-    console.log("Schedule Data:", playbackSeed?.scheduleData);
-    console.log("Simulation Response:", playbackSeed?.simulationResponse || simulationResponse);
-    console.log("=================================");
-  }, [playbackSeed, simulationResponse]);
+  const activeSimulationResponse =
+    playbackSeed?.simulationResponse || simulationResponse;
 
   const stations = useMemo(() => {
     const allStations = activePlaybackData?.stations ?? [];
@@ -165,6 +156,196 @@ export default function InteractiveMap({
     return h * 60 + m;
   };
 
+  const stationById = useMemo(() => {
+    const entries = stations.map((st) => [st.id, st] as const);
+    return new Map(entries);
+  }, [stations]);
+
+  const busLogEvents = useMemo(() => {
+    const logs = activeSimulationResponse?.logs ?? [];
+    const arrivalPattern = /^Bus\s+(.+?)\s+arrives at\s+([\w-]+)$/;
+    const events: Array<{
+      busId: string;
+      timeMinutes: number;
+      station: { id: string; name: string; lat: number; lon: number };
+    }> = [];
+
+    logs.forEach((log) => {
+      if (log.component !== "Bus") return;
+      const match = arrivalPattern.exec(log.message || "");
+      if (!match) return;
+      const busId = match[1];
+      const stationId = match[2];
+      const station = stationById.get(stationId);
+      if (!station) return;
+      events.push({
+        busId,
+        timeMinutes: timeToMinutes(log.time),
+        station: {
+          id: station.id,
+          name: station.name,
+          lat: station.lat,
+          lon: station.lon,
+        },
+      });
+    });
+
+    events.sort((a, b) => a.timeMinutes - b.timeMinutes);
+    return events;
+  }, [activeSimulationResponse?.logs, stationById]);
+
+  const busEventByBus = useMemo(() => {
+    const grouped = new Map<string, typeof busLogEvents>();
+    busLogEvents.forEach((ev) => {
+      const list = grouped.get(ev.busId) || [];
+      list.push(ev);
+      grouped.set(ev.busId, list);
+    });
+    grouped.forEach((list) =>
+      list.sort((a, b) => a.timeMinutes - b.timeMinutes),
+    );
+    return grouped;
+  }, [busLogEvents]);
+
+  // Map bus to route: identify which route each bus belongs to based on visited stations
+  const busToRoute = useMemo(() => {
+    const mapping = new Map<string, MockRoute>();
+    
+    busEventByBus.forEach((events, busId) => {
+      if (events.length === 0) return;
+      
+      const visitedStationIds = events.map((ev) => ev.station.id);
+      
+      // Find route that contains all visited stations in order
+      const matchingRoute = mockRoutes.find((route) => {
+        if (!activePlaybackData?.routeStations) return false;
+        
+        const routeStationIds = activePlaybackData.routeStations.find(
+          (rs) => rs.route_id === route.id
+        )?.station_ids || [];
+        
+        if (routeStationIds.length === 0) return false;
+        
+        // Check if visited stations are subset of route stations (in order)
+        let routeIdx = 0;
+        for (const visitedId of visitedStationIds) {
+          const foundIdx = routeStationIds.indexOf(visitedId, routeIdx);
+          if (foundIdx === -1) return false;
+          routeIdx = foundIdx + 1;
+        }
+        return true;
+      });
+      
+      if (matchingRoute) {
+        mapping.set(busId, matchingRoute);
+      }
+    });
+    
+    return mapping;
+  }, [busEventByBus, mockRoutes, activePlaybackData?.routeStations]);
+
+  // Helper: interpolate along route geometry between two stations
+  const interpolateOnRoute = useCallback(
+    (
+      route: MockRoute,
+      fromStation: { lat: number; lon: number },
+      toStation: { lat: number; lon: number },
+      t: number // 0..1
+    ): [number, number] => {
+      if (route.coords.length < 2) {
+        // Fallback to linear interpolation
+        const lat = fromStation.lat + (toStation.lat - fromStation.lat) * t;
+        const lon = fromStation.lon + (toStation.lon - fromStation.lon) * t;
+        return [lat, lon];
+      }
+
+      // Find closest points on route to fromStation and toStation
+      const distance = (
+        p1: [number, number],
+        p2: { lat: number; lon: number }
+      ) => {
+        const dLat = p1[0] - p2.lat;
+        const dLon = p1[1] - p2.lon;
+        return Math.sqrt(dLat * dLat + dLon * dLon);
+      };
+
+      let fromIdx = 0;
+      let fromDist = distance(route.coords[0], fromStation);
+      for (let i = 1; i < route.coords.length; i++) {
+        const d = distance(route.coords[i], fromStation);
+        if (d < fromDist) {
+          fromDist = d;
+          fromIdx = i;
+        }
+      }
+
+      let toIdx = route.coords.length - 1;
+      let toDist = distance(route.coords[toIdx], toStation);
+      for (let i = fromIdx; i < route.coords.length; i++) {
+        const d = distance(route.coords[i], toStation);
+        if (d < toDist) {
+          toDist = d;
+          toIdx = i;
+        }
+      }
+
+      // Ensure toIdx > fromIdx (forward direction)
+      if (toIdx <= fromIdx) {
+        const lat = fromStation.lat + (toStation.lat - fromStation.lat) * t;
+        const lon = fromStation.lon + (toStation.lon - fromStation.lon) * t;
+        return [lat, lon];
+      }
+
+      // Get segment between fromIdx and toIdx
+      const segment = route.coords.slice(fromIdx, toIdx + 1);
+      
+      if (segment.length === 0) {
+        const lat = fromStation.lat + (toStation.lat - fromStation.lat) * t;
+        const lon = fromStation.lon + (toStation.lon - fromStation.lon) * t;
+        return [lat, lon];
+      }
+
+      // Calculate total distance along segment
+      const segmentDistances: number[] = [0];
+      for (let i = 1; i < segment.length; i++) {
+        const dLat = segment[i][0] - segment[i - 1][0];
+        const dLon = segment[i][1] - segment[i - 1][1];
+        const dist = Math.sqrt(dLat * dLat + dLon * dLon);
+        segmentDistances.push(segmentDistances[i - 1] + dist);
+      }
+
+      const totalDist = segmentDistances[segmentDistances.length - 1];
+      if (totalDist === 0) {
+        return segment[0];
+      }
+
+      // Find position along segment based on t
+      const targetDist = totalDist * t;
+      let segIdx = 0;
+      for (let i = 1; i < segmentDistances.length; i++) {
+        if (segmentDistances[i] >= targetDist) {
+          segIdx = i - 1;
+          break;
+        }
+      }
+
+      if (segIdx >= segment.length - 1) {
+        return segment[segment.length - 1];
+      }
+
+      // Interpolate between segment[segIdx] and segment[segIdx + 1]
+      const segStart = segmentDistances[segIdx];
+      const segEnd = segmentDistances[segIdx + 1];
+      const segT = segEnd > segStart ? (targetDist - segStart) / (segEnd - segStart) : 0;
+
+      const lat = segment[segIdx][0] + (segment[segIdx + 1][0] - segment[segIdx][0]) * segT;
+      const lon = segment[segIdx][1] + (segment[segIdx + 1][1] - segment[segIdx][1]) * segT;
+
+      return [lat, lon];
+    },
+    []
+  );
+
   const [playbackState, setPlaybackState] = useState({ idx: 0, progress: 0 }); // progress: 0..1 within slot
   const { idx: frameIdx, progress: frameProgress } = playbackState;
   const [playing, setPlaying] = useState(false);
@@ -229,9 +410,69 @@ export default function InteractiveMap({
 
   // Calculate bus positions at an arbitrary time (supports intra-slot interpolation)
   const computeBusesAtTime = useCallback(
-    (currentMinutes: number, logDebug = false) => {
+    (currentMinutes: number) => {
       const buses: { id: string; coord: [number, number]; color: string }[] =
         [];
+
+      if (busLogEvents.length > 0) {
+        const colorFallback = mockRoutes[0]?.color || "#81069E";
+
+        busEventByBus.forEach((events, busId) => {
+          if (events.length === 0) return;
+
+          if (currentMinutes < events[0].timeMinutes) return;
+          const lastEvent = events[events.length - 1];
+          if (currentMinutes > lastEvent.timeMinutes) return;
+
+          let prev = events[0];
+          let next = events[events.length - 1];
+          for (let i = 0; i < events.length; i++) {
+            if (events[i].timeMinutes <= currentMinutes) {
+              prev = events[i];
+              next = events[i + 1] || events[i];
+            } else {
+              next = events[i];
+              break;
+            }
+          }
+
+          const span = Math.max(1, next.timeMinutes - prev.timeMinutes);
+          const t = Math.min(
+            1,
+            Math.max(0, (currentMinutes - prev.timeMinutes) / span),
+          );
+
+          let lat: number;
+          let lon: number;
+          let color = colorFallback;
+
+          // Use route geometry if available
+          const route = busToRoute.get(busId);
+          if (route && prev !== next) {
+            const [routeLat, routeLon] = interpolateOnRoute(
+              route,
+              prev.station,
+              next.station,
+              t
+            );
+            lat = routeLat;
+            lon = routeLon;
+            color = route.color;
+          } else {
+            // Fallback to linear interpolation
+            lat = prev.station.lat + (next.station.lat - prev.station.lat) * t;
+            lon = prev.station.lon + (next.station.lon - prev.station.lon) * t;
+          }
+
+          buses.push({
+            id: busId,
+            coord: [lat, lon],
+            color: color,
+          });
+        });
+
+        return buses;
+      }
 
       mockRoutes.forEach((r) => {
         if (r.coords.length < 2) return;
@@ -243,31 +484,38 @@ export default function InteractiveMap({
           playbackSeed?.scheduleData?.find((s) => s.route_id.includes(r.name)) || // Name contains
           playbackSeed?.scheduleData?.[0]; // Fallback to first schedule if only one exists
           
-        // ✅ ใช้ busInfo.speed และ routeDistance แทน routeResult
+        // ✅ Prefer routeOrders-derived travel time for consistency with simulation
         const busInfo = playbackSeed?.busInfo?.find(
           (bi) => bi.route_id === r.id,
         );
-        
-        // ดึง maxDistance จาก playbackSeed.routeDetails หรือ busInfo
+
         const routeDetails = playbackSeed?.routeDetails?.find(
           (rd) => rd?.route_id === r.id,
         );
         const maxDistance = routeDetails?.max_dis || 68; // Fallback to 68 km
-        
-        // คำนวณ travel time จาก speed และ distance
-        let totalTravelTimeSeconds = 300; // default 5 minutes
-        if (busInfo?.speed && busInfo.speed > 0) {
+
+        const routeOrderInfo = playbackSeed?.routeOrders?.find(
+          (ro) => ro.route_id === r.id,
+        );
+        const orderTravelTimeSeconds = routeOrderInfo?.totalTravelTimeSeconds;
+
+        // Use orders if available; fallback to speed/distance estimate
+        let totalTravelTimeSeconds =
+          typeof orderTravelTimeSeconds === "number" &&
+          orderTravelTimeSeconds > 0
+            ? orderTravelTimeSeconds
+            : 300; // default 5 minutes
+
+        if (
+          totalTravelTimeSeconds === 300 &&
+          busInfo?.speed &&
+          busInfo.speed > 0
+        ) {
           const travelTimeMinutes = (maxDistance / busInfo.speed) * 60;
           totalTravelTimeSeconds = travelTimeMinutes * 60;
         }
 
-        if (logDebug) {
-          console.log(`🚌 Route: ${r.name}`);
-          console.log(`   busInfo.speed: ${busInfo?.speed} km/h`);
-          console.log(`   maxDistance: ${maxDistance} km`);
-          console.log(`   Calculated travelTimeSeconds: ${totalTravelTimeSeconds}`);
-          console.log(`   Expected: ${maxDistance} km ÷ ${busInfo?.speed} km/h = ${(maxDistance / (busInfo?.speed || 1)).toFixed(2)} hours`);
-        }
+
 
         const departureTimes =
           routeSchedule?.schedule_list
@@ -281,18 +529,10 @@ export default function InteractiveMap({
         });
 
         if (validDepartureTimes.length === 0) {
-          if (logDebug) {
-            console.log(`❌ No valid departure times for route ${r.name} (check schedule)`);
-          }
           return;
         }
 
         const travelTimeMinutes = totalTravelTimeSeconds / 60;
-        
-        if (logDebug) {
-          console.log(`   travelTimeMinutes: ${travelTimeMinutes.toFixed(2)} min`);
-          console.log(`   Expected: ~68 km ÷ 30 km/h = ~136 minutes`);
-        }
         
         // Find active buses: those that have departed but not yet finished
         const activeDepartures = [...validDepartureTimes]
@@ -335,10 +575,15 @@ export default function InteractiveMap({
       return buses;
     },
     [
+      busLogEvents,
+      busEventByBus,
+      busToRoute,
+      interpolateOnRoute,
       mockRoutes,
       playbackSeed?.scheduleData,
       playbackSeed?.busInfo,
       playbackSeed?.routeDetails,
+      playbackSeed?.routeOrders,
       simEndMinutes,
       simStartMinutes,
     ],
@@ -348,14 +593,11 @@ export default function InteractiveMap({
     () =>
       computeBusesAtTime(
         clampTimeMinutes,
-        frameIdx === 0 && frameProgress === 0,
       ),
-    [clampTimeMinutes, computeBusesAtTime, frameIdx, frameProgress],
+    [clampTimeMinutes, computeBusesAtTime],
   );
 
   // Find station data from simulation response based on selected station and current time slot
-  const activeSimulationResponse =
-    playbackSeed?.simulationResponse || simulationResponse;
   const selectedStation =
     stations.find((st) => st.id === selectedStationId) ?? stations[0];
 
@@ -714,7 +956,7 @@ export default function InteractiveMap({
         </div>
 
         {/* Right: Stats */}
-        <div className="w-full lg:w-[340px] flex flex-col">
+        <div className="w-full lg:w-[450px] flex flex-col">
           <p className="text-[18px] text-[#4B4B4B]">
             Simulation Results by Time Slot{" "}
           </p>

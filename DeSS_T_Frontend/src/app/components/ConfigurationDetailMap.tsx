@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -28,11 +28,12 @@ export default function ConfigurationDetailMap({
   onStationClick,
   selectedStationIds = [null, null],
 }: ConfigurationDetailMapProps) {
-  const [center, setCenter] = useState<LatLng>([13.75, 100.5]);
+  const initialCenter = useRef<LatLng>([13.75, 100.5]);
+  const initialZoom = useRef(12);
   const [bounds, setBounds] = useState<
     [[number, number], [number, number]] | undefined
   >();
-  const [initialBoundsSet, setInitialBoundsSet] = useState(false);
+  const boundsCalculated = useRef(false);
 
   // Safe station to LatLng conversion with fallback
   const stationToLatLng = (s: StationDetail): LatLng => {
@@ -42,9 +43,9 @@ export default function ConfigurationDetailMap({
     return [13.75, 100.5];
   };
 
-  // Auto calculate bounds from stations (only on initial load)
+  // Auto calculate bounds from stations (only once on initial load)
   useEffect(() => {
-    if (!stations || stations.length === 0 || initialBoundsSet) return;
+    if (!stations || stations.length === 0 || boundsCalculated.current) return;
 
     let minLat = Infinity,
       minLon = Infinity,
@@ -63,14 +64,16 @@ export default function ConfigurationDetailMap({
     const latPadding = (maxLat - minLat) * 0.25;
     const lonPadding = (maxLon - minLon) * 0.25;
 
-    setBounds([
+    const calculatedBounds: [[number, number], [number, number]] = [
       [minLat - latPadding, minLon - lonPadding],
       [maxLat + latPadding, maxLon + lonPadding],
-    ]);
+    ];
 
-    setCenter([(minLat + maxLat) / 2, (minLon + maxLon) / 2]);
-    setInitialBoundsSet(true);
-  }, [stations, initialBoundsSet]);
+    setBounds(calculatedBounds);
+    
+    initialCenter.current = [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
+    boundsCalculated.current = true;
+  }, [stations]);
 
   function UpdateMapView({
     boundsProp,
@@ -78,9 +81,12 @@ export default function ConfigurationDetailMap({
     boundsProp?: [[number, number], [number, number]];
   }) {
     const map = useMap();
+    const boundsApplied = useRef(false);
+    
     useEffect(() => {
-      if (!boundsProp) return;
+      if (!boundsProp || boundsApplied.current) return;
       map.fitBounds(boundsProp);
+      boundsApplied.current = true;
     }, [map, boundsProp]);
     return null;
   }
@@ -91,18 +97,14 @@ export default function ConfigurationDetailMap({
     useEffect(() => {
       const container = map.getContainer();
 
-      const invalidate = () => {
-        map.invalidateSize();
-      };
-
-      invalidate();
-
       if (typeof ResizeObserver === "undefined" || !container) {
         return undefined;
       }
 
       const observer = new ResizeObserver(() => {
-        window.setTimeout(invalidate, 0);
+        window.setTimeout(() => {
+          map.invalidateSize({ pan: false });
+        }, 0);
       });
 
       observer.observe(container);
@@ -120,8 +122,8 @@ export default function ConfigurationDetailMap({
 
   return (
     <MapContainer
-      center={center}
-      zoom={12}
+      center={initialCenter.current}
+      zoom={initialZoom.current}
       style={{ width: "100%", height: "100%" }}
       dragging={true}
       doubleClickZoom={false}
@@ -154,7 +156,12 @@ export default function ConfigurationDetailMap({
             }}
           >
             {isSelected && (
-              <Tooltip permanent direction="top" offset={[0, -10]}>
+              <Tooltip 
+                permanent 
+                direction="top" 
+                offset={[0, -10]}
+                autoPan={false}
+              >
                 <strong>{st.name || stationId}</strong>
               </Tooltip>
             )}

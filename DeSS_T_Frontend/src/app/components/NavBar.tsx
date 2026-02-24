@@ -215,7 +215,7 @@ export default function Nav({
             </div>
           )}
         </div>
-      </nav>
+      </nav> 
 
       {showConfirm && inpage !== "Output" && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">

@@ -6,6 +6,7 @@ interface HelpButtonProps {
 
 export default function HelpButton({ helpType }: HelpButtonProps) {
   const [showHelp, setShowHelp] = useState(false);
+  const baseUrl = "https://desst.cpe.eng.cmu.ac.th";
 
   const getHelpContent = () => {
     switch (helpType) {
@@ -14,7 +15,10 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
           title: "Alighting Data Help",
           content: (
             <>
-              <img src="/AlightingDataHelp.jpg" alt="Alighting Data Help"></img>
+              <img
+                src={`${baseUrl}/AlightingDataHelp.jpg`}
+                alt="Alighting Data Help"
+              ></img>
             </>
           ),
         };
@@ -24,7 +28,7 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
           content: (
             <>
               <img
-                src="/InterarrivalDataHelp.jpg"
+                src={`${baseUrl}/InterarrivalDataHelp.jpg`}
                 alt="Interarrival Data Help"
               ></img>
             </>
@@ -120,7 +124,7 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
           content: (
             <>
               <img
-                src="/MapConfigurationHelp.jpg"
+                src={`${baseUrl}/MapConfigurationHelp.jpg`}
                 alt="Map Configuration Help"
               ></img>
               <p className="text-center">
@@ -142,7 +146,10 @@ export default function HelpButton({ helpType }: HelpButtonProps) {
           title: "Schedule Help",
           content: (
             <>
-              <img src="/ScheduleHelp.jpg" alt="Schedule Help"></img>
+              <img
+                src={`${baseUrl}/ScheduleHelp.jpg`}
+                alt="Schedule Help"
+              ></img>
             </>
           ),
         };

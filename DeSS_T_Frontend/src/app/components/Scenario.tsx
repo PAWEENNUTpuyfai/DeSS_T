@@ -1377,7 +1377,7 @@ export default function Scenario({
                         <p className="text-[20px] text-[#323232]">Time Slot : </p>
                         <div className="ml-3 my-2 h-full">
                           <CustomDropdown
-                            options={["5 Minutes", "10 Minutes", "15 Minutes", "20 Minutes", "30 Minutes", "60 Minutes"]}
+                            options={["5 Minutes", "10 Minutes", "15 Minutes", "20 Minutes", "30 Minutes"]}
                             selectedValue={timeSlot}
                             onChange={setTimeSlot}
                             fontSize="20px"
@@ -1494,32 +1494,31 @@ export default function Scenario({
 
       {/* Unsaved Changes Modal */}
       {showUnsavedModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000]">
-          <div className="bg-white rounded-[40px] p-8 max-w-md w-full mx-4">
-            <div className="flex items-center mb-4">
-              <span className="w-2 h-8 bg-[#81069e] mr-3" />
-              <h2 className="text-2xl text-gray-800">Unsaved Changes</h2>
-            </div>
-            <p className="text-gray-600 mb-6">
+        <div className="confirm-modal-overlay">
+          <div className="confirm-modal">
+            <h2 className="confirm-modal-title flex items-center justify-center">
+              Unsaved Changes
+            </h2>
+            <p className="confirm-modal-subtitle">
               You have unsaved changes. Running the simulation without saving
               will not persist these changes.
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="confirm-modal-actions">
               <button
+                className="modal-btn modal-btn-secondary"
                 onClick={() => setShowUnsavedModal(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-6 rounded-full transition duration-200 outline-none focus:outline-none hover:outline-none active:outline-none focus:ring-0 hover:ring-0 active:ring-0 border-0"
               >
                 Cancel
               </button>
               <button
+                className="modal-btn modal-btn-primary"
                 onClick={() => {
                   setShowUnsavedModal(false);
                   executeSimulation();
                 }}
-                className="bg-[#81069e] hover:bg-[#6a0585] text-white py-2 px-6 rounded-full transition duration-200 outline-none focus:outline-none hover:outline-none active:outline-none focus:ring-0 hover:ring-0 active:ring-0 border-0"
               >
                 Continue
-              </button> 
+              </button>
             </div>
           </div>
         </div>

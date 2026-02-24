@@ -89,7 +89,7 @@ export default function UserWorkspace({
   const [sortBy, setSortBy] = useState("Date modify");
   const [sortOrder, setSortOrder] = useState("Ascending");
   const [currentPage, setCurrentPage] = useState(1);
-  const cardsPerPage = 18;
+  const cardsPerPage = 12;
   const fileFilterOptions = ["All Files", "Public", "Private"];
   const sortGroups = [
     {

@@ -779,7 +779,7 @@ export default function InteractiveMap({
                     offset={[0, -38]}
                     opacity={0.95}
                     permanent
-                  >
+                  > 
                     <span className="text-xs">
                       {b.displayName} @ {currentTimeLabel}
                     </span>

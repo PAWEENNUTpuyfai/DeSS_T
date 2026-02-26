@@ -1,4 +1,6 @@
 import math
+import random
+import time
 import salabim as sim
 from app.services.simulation_logger import add_log, SimulationLogger
 
@@ -14,7 +16,9 @@ from app.schemas.Simulation import (
 class SimulationEngine:
     def __init__(self, config):
         sim.yieldless(False)
-        self.env = sim.Environment()
+        seed = int(time.time())
+        random.seed(seed)
+        self.env = sim.Environment(random_seed=seed)
         self.config = config
         self.env.logger = SimulationLogger(self.config["TIME_CTX"])
         self.env.sim_engine = self   # 👈 สำคัญ

@@ -773,7 +773,7 @@ export default function InteractiveMap({
                   key={b.id}
                   position={[b.coord[0], b.coord[1]]}
                   icon={createBusIcon(b.color)}
-                >
+                > 
                   <Tooltip
                     direction="top"
                     offset={[0, -38]}

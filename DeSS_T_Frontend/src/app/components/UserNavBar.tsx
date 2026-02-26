@@ -114,7 +114,7 @@ export default function UserNavBar({
             )}
           </div>
         </div>
-      </nav>
+      </nav> 
 
       {showConfirm && inpage !== "Output" && (
         <div className="confirm-modal-overlay">

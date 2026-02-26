@@ -215,7 +215,7 @@ export default function Nav({
             </div>
           )}
         </div>
-      </nav>
+      </nav> 
 
       {showConfirm && inpage !== "Output" && (
         <div className="confirm-modal-overlay">

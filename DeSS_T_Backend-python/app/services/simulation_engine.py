@@ -1,6 +1,6 @@
 import math
 import random
-import time
+# import time
 import salabim as sim
 from app.services.simulation_logger import add_log, SimulationLogger
 
@@ -16,9 +16,10 @@ from app.schemas.Simulation import (
 class SimulationEngine:
     def __init__(self, config):
         sim.yieldless(False)
-        seed = int(time.time())
-        random.seed(seed)
-        self.env = sim.Environment(random_seed=seed)
+        # seed = int(time.time())
+        # random.seed(seed)
+        # self.env = sim.Environment(random_seed=seed)
+        self.env = sim.Environment()
         self.config = config
         self.env.logger = SimulationLogger(self.config["TIME_CTX"])
         self.env.sim_engine = self   # 👈 สำคัญ
@@ -144,18 +145,35 @@ class SimulationEngine:
     def run(self):
         self.build()
         self._init_all_slots()
-        # run simulation
+        
+        # 1. รัน Simulation จนจบเวลาที่กำหนด
         self.env.run(
             till=self.config["TIME_CTX"].real_end -
                 self.config["TIME_CTX"].real_start
         )
-        all_station_q = []
 
+        # 2. 🚩 ปิดยอด Global Monitor สำหรับคนที่ยังไม่ได้ขึ้นรถเมื่อจบวัน
+        now = self.env.now()
+        for station_name, station_obj in self.stations.items():
+            for p in station_obj.wait_store:
+                waiting_time_so_far = now - p.arrival_time
+                
+                # Tally ลงใน Global Monitor อย่างเดียว
+                self.env.global_waiting_mon.tally(waiting_time_so_far)
+                
+                # (ลบโค้ดส่วน Slot ออกไป เพราะ SlotTicker เป็นคนทำให้แล้ว)
+
+        # 3. รวบรวมข้อมูล Queue Length (คงเดิม)
+        all_station_q = []
         for slot_data in self.slots.values():
             for v in slot_data["station_queue"].values():
                 all_station_q.append(safe_mean(v))
+
         # =====================================================
-        # SUMMARY (ทั้ง simulation)
+        # SUMMARY & SLOT RESULTS (ส่วนที่เหลือคงเดิมทั้งหมด)
+        # =====================================================
+        # =====================================================
+        # SUMMARY (ค่าเฉลี่ยรวมจะสะท้อนความจริงมากขึ้น)
         # =====================================================
         summary = ResultSummary(
             average_waiting_time=safe_mean(self.env.global_waiting_mon),
@@ -164,6 +182,7 @@ class SimulationEngine:
             average_travel_time=safe_mean(self.env.global_travel_time_mon),
             average_travel_distance=safe_mean(self.env.global_travel_dist_mon),
         )
+
 
 
         # =====================================================
@@ -240,11 +259,25 @@ class SlotTicker(sim.Component):
             now = self.env.now()
             engine = self.env.sim_engine
 
-            slot = self.time_ctx.slot_index(now)
-            engine._ensure_slot(slot)
+            # 1. หาว่าเรากำลังอยู่ใน Slot ไหน
+            current_slot = self.time_ctx.slot_index(now)
+            engine._ensure_slot(current_slot)
 
-
+            # 2. ให้ Ticker รอจนกระทั่ง "หมดเวลาของ Slot นี้"
             yield self.hold(self.time_ctx.slot_length)
+
+            # 3. 🚩 เมื่อหมด Slot ให้ทำการ Snapshot ถ่ายรูปคิวที่ตกค้าง
+            end_now = self.env.now()
+            slots = engine.slots
+            
+            for station_name, station_obj in engine.stations.items():
+                for p in station_obj.wait_store:
+                    # คำนวณเวลาที่คนตกค้างรอมาตั้งแต่เริ่มจนถึงสิ้นสุด Slot นี้
+                    wait_so_far = end_now - p.arrival_time
+                    
+                    # บันทึกเป็น Waiting Time ของ Slot นี้ (ป้องกันค่าเป็น 0.0)
+                    if current_slot in slots:
+                        slots[current_slot]["station_waiting"][station_name].tally(wait_so_far)
 
 def safe_mean(mon, default=0.0):
     if mon is None:

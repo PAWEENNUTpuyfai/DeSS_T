@@ -144,17 +144,18 @@ def map_bus_routes(scenarios, route_pairs):
 
 
 # --- แก้ไข build_distribution ---
-def build_distribution(name: str, args: str): # เอา env ออกจาก parameter ตรงนี้
+def build_distribution(name: str, args: str):
     params = dict(kv.strip().split("=") for kv in args.split(","))
     params = {k: float(v) for k, v in params.items()}
     name = name.strip().lower()
 
-    # เปลี่ยนเป็น return lambda เพื่อไปสร้างจริงใน SimulationEngine
     if name == "constant":
-        return lambda env: sim.Constant(params["value"], env=env)
+        # Constant ไม่ต้องการ env ในการระบุตัวเลขคงที่
+        return lambda env: sim.Constant(params["value"])
 
     if name == "poisson":
-        return lambda env: sim.Poisson(params["lambda"], env=env)
+        # Poisson ใน Salabim ไม่รับ env ใน __init__
+        return lambda env: sim.Poisson(params["lambda"])
 
     if name == "exponential":
         return lambda env: sim.Exponential(1.0 / params["rate"], env=env) + params.get("loc", 0.0)

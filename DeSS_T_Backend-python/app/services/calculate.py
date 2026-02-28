@@ -24,6 +24,9 @@ def fit_best_distribution(values: List[float]) -> Dict:
             "params": (float('inf'),) # หรือ 999999.0
         }
 
+    # กำหนดค่าเฉลี่ยของข้อมูลเพื่อใช้เป็นตัวอ้างอิง
+    avg_val = np.mean(values) if values else 0
+
     distributions = {
         "Exponential": stats.expon,
         "Weibull": stats.weibull_min,
@@ -31,13 +34,33 @@ def fit_best_distribution(values: List[float]) -> Dict:
         "Uniform": stats.uniform,
     }
 
-    best_name = None
-    best_params = None
+    best_name = "Exponential" # เริ่มต้นด้วย Exponential มักจะปลอดภัยสุด
+    best_params = stats.expon.fit(values)
     best_aic = float("inf")
 
     for name, dist in distributions.items():
         try:
             params = dist.fit(values)
+            
+            # --- กฎเหล็ก: ถ้า Weibull/Gamma หางยาวเกินไป (shape < 0.2) ให้ข้ามไป ---
+            if name in ["Weibull", "Gamma"]:
+                shape = params[0]
+                if shape < 0.2: # ค่า 0.0193 ของคุณจะติดลบที่นี่และถูกข้ามไป
+                    continue 
+
+            logL = np.sum(dist.logpdf(values, *params))
+            # --- แก้ไขจุดนี้: ป้องกัน Extreme Parameters ---
+            if name == "Weibull":
+                shape, loc, scale = params
+                # ถ้า shape ต่ำกว่า 0.1 มันจะเริ่มสุ่มได้เลขระดับ 1,000+ บ่อยครั้ง
+                # เราสามารถ "ลงโทษ" (Penalty) AIC ของมันเพื่อให้ระบบไปเลือกตัวอื่นแทน
+                if shape < 0.2: 
+                    continue # ไม่ใช้ Weibull ถ้าหางมันยาวเกินไป
+
+            if name == "Gamma":
+                shape, loc, scale = params
+                if shape < 0.2:
+                    continue
 
             logL = np.sum(dist.logpdf(values, *params))
             k = len(params)
@@ -116,7 +139,15 @@ def distribution_fitting(request: DataModelDistRequest) -> DataFitResponse:
     results: List[FitItem] = []
 
     for item in request.Data:
-        values = [rec.NumericValue for rec in item.Records]
+        raw_values = [rec.NumericValue for rec in item.Records]
+        
+        # --- กรอง Outliers (ใช้ Percentile 95 หรือ 99) ---
+        # ตัดค่าที่โด่งเกินไปออกก่อนฟิต เพื่อให้ได้ Distribution ที่เป็นตัวแทนของคนส่วนใหญ่
+        if len(raw_values) > 10:
+            upper_limit = np.percentile(raw_values, 99) 
+            values = [v for v in raw_values if v <= upper_limit]
+        else:
+            values = raw_values
 
         fit_result = fit_best_distribution(values)
 

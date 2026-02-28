@@ -49,32 +49,38 @@ class SimulationEngine:
 
 
     def build(self):
-
-        # Collect stations
+        # 1. สร้างสถานี
         station_names = set()
         for route in self.config["BUS_ROUTES"].values():
             station_names.update(route)
-
-        # Create stations
         for name in station_names:
             self.stations[name] = Station(name, env=self.env)
             self.env.station_waiting_mon[name] = sim.Monitor()
 
+        # 2. ปรุง Distribution (Execution)
+        # แปลงจาก Lambda Factory ให้กลายเป็น Salabim Distribution Object จริงๆ
+        processed_interarrival = {
+            key: factory(self.env) 
+            for key, factory in self.config["INTERARRIVAL_RULES"].items()
+        }
+        processed_alighting = {
+            key: factory(self.env) 
+            for key, factory in self.config["ALIGHTING_RULES"].items()
+        }
 
-        # Arrival generators
+        # 3. สร้าง Arrival Generators
         for station in self.stations.values():
             ArrivalGenerator(
                 station,
-                self.config["INTERARRIVAL_RULES"],
+                processed_interarrival, # ใช้ตัวที่ปรุงเสร็จแล้ว
                 self.config["TIME_CTX"],
                 env=self.env
             )
 
-        # Buses
+        # 4. สร้าง Buses
         for route_id, route_stations in self.config["BUS_ROUTES"].items():
             info = self.config["BUS_INFO"][route_id]
             route_objs = [self.stations[s] for s in route_stations]
-
             rid = route_id
             self.env.route_util_mon.setdefault(rid, sim.Monitor())
             self.env.route_travel_time_mon.setdefault(rid, sim.Monitor())
@@ -91,22 +97,18 @@ class SimulationEngine:
             self.env.route_max_bus[rid] = max_bus
 
             for depart_time in self.config["BUS_SCHEDULES"][route_id]:
-            
                 Bus(
                     route_id=route_id,
                     route=route_objs,
                     capacity=info["capacity"],
                     max_distance=info["max_distance"],
                     depart_time=depart_time,
-                    alighting_rules=self.config["ALIGHTING_RULES"],
+                    alighting_rules=processed_alighting, # ใช้ตัวที่ปรุงเสร็จแล้ว
                     time_ctx=self.config["TIME_CTX"],
-                    travel_times={
-                        k: v / 60 for k, v in self.config["TRAVEL_TIMES"][route_id].items()
-                    },
+                    travel_times={k: v / 60 for k, v in self.config["TRAVEL_TIMES"][route_id].items()},
                     travel_distances=self.config["TRAVEL_DISTANCES"][route_id],
                     env=self.env
                 )
-
         # Slot ticker
         SlotTicker(
             time_ctx=self.config["TIME_CTX"],
@@ -174,21 +176,20 @@ class SimulationEngine:
         for slot_idx in sorted(self.slots.keys()):
             slot_data = self.slots[slot_idx]
 
+            # คำนวณค่าเฉลี่ยของสถานีใน slot นี้
+            station_waiting_values = [safe_mean(m) for m in slot_data["station_waiting"].values() if safe_mean(m) != -99999.9]
+            station_queue_values = [safe_mean(m) for m in slot_data["station_queue"].values() if safe_mean(m) != -99999.9]
 
+            avg_wait_total = sum(station_waiting_values) / len(station_waiting_values) if station_waiting_values else -99999.0
+            avg_queue_total = sum(station_queue_values) / len(station_queue_values) if station_queue_values else -99999.0
             slot_results.append(
                 SimulationSlotResult(
                     slot_name=self.config["TIME_CTX"].slot_label(slot_idx),
 
                     # ⭐ เพิ่มส่วนนี้
                     result_total_station=TotalStation(
-                        average_waiting_time=
-                            sum(safe_mean(m) for m in slot_data["station_waiting"].values())
-                            / max(1, len(slot_data["station_waiting"])),
-                        average_queue_length =
-                            sum(
-                                safe_mean(m)
-                                for m in slot_data["station_queue"].values()
-                            ) / max(1, len(slot_data["station_queue"]))
+                        average_waiting_time=avg_wait_total,
+                        average_queue_length=avg_queue_total
                     ),
 
                     # ---------- PER STATION ----------
@@ -246,7 +247,7 @@ class SlotTicker(sim.Component):
 
             yield self.hold(self.time_ctx.slot_length)
 
-def safe_mean(mon, default=0.0):
+def safe_mean(mon, default=-99999.9):
     if mon is None:
         return default
     v = mon.mean()
@@ -256,7 +257,7 @@ def safe_mean(mon, default=0.0):
 
 def conditional_avg(d):
     if d["count"] == 0:
-        return 0.0
+        return -99999.9
     return d["sum"] / d["count"]
 
 
@@ -296,18 +297,26 @@ class ArrivalGenerator(sim.Component):
     def process(self):
         while True:
             sim_now = self.env.now()
-
             for (st, t0, t1), dist in self.rules.items():
                 if st == self.station.name and t0 <= sim_now < t1:
+                    
+                    # --- RESAMPLING LOGIC ---
                     wait = dist.sample()
+                    attempts = 0
+                    # ถ้าค่ามหาศาล (เกิน 1 วัน) หรือเป็น NaN ให้สุ่มใหม่
+                    while (math.isnan(wait) or wait > 1440 or wait < 0) and attempts < 10:
+                        wait = dist.sample()
+                        attempts += 1
+                    
+                    # ถ้ายังพังอยู่ ให้ใช้ค่า Default ที่ปลอดภัย
+                    if math.isnan(wait) or wait > 1440:
+                        wait = 10.0 # หรือค่าเฉลี่ยที่เหมาะสม
+                        add_log(self.env, "Error", f"Dist failed at {self.station.name}, using fallback 10.0")
+                    # -------------------------
 
-                    add_log(
-                        self.env,
-                        "ArrivalGenerator",
-                        f"Arrival at {self.station.name}, wait={wait:.2f}"
-                    )
-                    if wait <= 0 or math.isnan(wait):
-                        wait = 0.0001 # avoid zero or negative wait time
+                    add_log(self.env, "ArrivalGenerator", f"Arrival at {self.station.name}, wait={wait:.2f}")
+                    
+                    if wait <= 0: wait = 0.0001
                     yield self.hold(wait)
                     Passenger(self.station, env=self.env)
                     break

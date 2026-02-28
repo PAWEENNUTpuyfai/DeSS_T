@@ -143,71 +143,34 @@ def map_bus_routes(scenarios, route_pairs):
     return bus_routes
 
 
-def build_distribution(name: str, args: str):
+# --- แก้ไข build_distribution ---
+def build_distribution(name: str, args: str): # เอา env ออกจาก parameter ตรงนี้
     params = dict(kv.strip().split("=") for kv in args.split(","))
     params = {k: float(v) for k, v in params.items()}
-
     name = name.strip().lower()
-    # ⭐ เพิ่ม: จัดการกรณี No Arrival หรือ ค่าเป็น 0
-    if name == "no arrival" or (name == "constant" and params.get("value") == 0):
-        # ให้ค่า Interarrival สูงมาก (เช่น 999,999 วินาที) เพื่อไม่ให้เกิด Passenger
-        return sim.Constant(999999)
-    # =====================================================
-    # CONSTANT
-    # =====================================================
+
+    # เปลี่ยนเป็น return lambda เพื่อไปสร้างจริงใน SimulationEngine
     if name == "constant":
-        if "value" not in params:
-            raise ValueError("Constant requires value")
-        return sim.Constant(params["value"])
+        return lambda env: sim.Constant(params["value"], env=env)
 
     if name == "poisson":
-        return sim.Poisson(params["lambda"])
+        return lambda env: sim.Poisson(params["lambda"], env=env)
 
     if name == "exponential":
-        rate = params["rate"]
-        loc = params.get("loc", 0.0)
-
-        dist = sim.Exponential(1.0 / rate)
-        return dist + loc if loc != 0.0 else dist
+        return lambda env: sim.Exponential(1.0 / params["rate"], env=env) + params.get("loc", 0.0)
 
     if name == "weibull":
-        shape = params["shape"]
-        scale = params["scale"]
-        loc = params.get("loc", 0.0)
-
-        dist = sim.Weibull(shape=shape, scale=scale)
-        return dist + loc if loc != 0.0 else dist
+        return lambda env: sim.Weibull(shape=params["shape"], scale=params["scale"], env=env) + params.get("loc", 0.0)
 
     if name == "gamma":
-        shape = params["shape"]
-        scale = params["scale"]
-        loc = params.get("loc", 0.0)
+        return lambda env: sim.Gamma(shape=params["shape"], scale=params["scale"], env=env) + params.get("loc", 0.0)
 
-        dist = sim.Gamma(shape=shape, scale=scale)
-        return dist + loc if loc != 0.0 else dist
-
-    # =====================================================
-    # UNIFORM
-    # =====================================================
     if name == "uniform":
         low = params.get("low", params.get("min"))
         high = params.get("high", params.get("max"))
-        loc = params.get("loc", 0.0)
+        return lambda env: sim.Uniform(low, high, env=env) + params.get("loc", 0.0)
 
-        if low is None or high is None:
-            raise ValueError("Uniform requires low/high or min/max")
-
-        if high < low:
-            raise ValueError("Uniform requires high >= low")
-
-        # (ยังคงไว้เพื่อ backward compatibility)
-        if high == low:
-            return sim.Constant(low + loc)
-
-        dist = sim.Uniform(low, high)
-        return dist + loc if loc != 0.0 else dist
-
-    raise ValueError(f"Unsupported distribution: {name}")
+    return lambda env: sim.Constant(999999, env=env)
 
 
 def parse_time_range(tr: str):
@@ -217,36 +180,18 @@ def parse_time_range(tr: str):
 
     return h1 * 60 + m1, h2 * 60 + m2
 
+# --- แก้ไข map_time_based_distributions ---
 def map_time_based_distributions(simdata_list, time_ctx):
     rules = {}
-
     for simdata in simdata_list:
         t0, t1 = time_ctx.range_to_sim(simdata.time_range)
-
         for rec in simdata.records:
-            # ⭐ แก้ไข: ตรวจสอบก่อนสร้าง distribution
             dist_name = rec.distribution.strip().lower()
+            if dist_name == "no arrival": continue
             
-            # ถ้าชื่อเป็น no arrival ไม่ต้องใส่กฎลงใน dictionary เลย
-            if dist_name == "no arrival":
-                continue
-
-            dist_obj = build_distribution(rec.distribution, rec.argument_list)
-
-            # Skip Constant(0) without relying on salabim internals
-            if dist_name == "constant":
-                try:
-                    arg_map = dict(
-                        kv.strip().split("=")
-                        for kv in rec.argument_list.split(",")
-                        if "=" in kv
-                    )
-                    if float(arg_map.get("value", "nan")) == 0.0:
-                        continue
-                except ValueError:
-                    pass
-
-            rules[(rec.station, t0, t1)] = dist_obj
+            # ตรงนี้ไม่ต้องส่ง env เข้าไป เพราะ build_distribution จะคืนค่าเป็น lambda
+            dist_factory = build_distribution(rec.distribution, rec.argument_list)
+            rules[(rec.station, t0, t1)] = dist_factory 
             
     return rules
 

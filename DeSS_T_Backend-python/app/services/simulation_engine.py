@@ -578,21 +578,34 @@ class Bus(sim.Component):
                 self.total_travel_time += travel_time
                 self.total_travel_dist += travel_dist
 
-                if current_dwell > 0:
+                # ✅ แก้ไขจุดนี้: คำนวณ Utilization ทั้งในช่วง Dwell และช่วง Travel
+                # รวมเวลาทั้งหมดใน Segment นี้ (เวลาจอด + เวลาวิ่งไปสถานีถัดไป)
+                segment_duration = current_dwell + travel_time
+                
+                if segment_duration > 0:
                     utilization = len(self.passengers) / self.capacity
 
+                    # บันทึกค่าโดยใช้ segment_duration เป็น weight
                     self.env.route_util_mon[self.route_id].tally(
                         utilization,
-                        weight=current_dwell
+                        weight=segment_duration
                     )
                     self.env.global_utilization_mon.tally(
                         utilization,
-                        weight=current_dwell
+                        weight=segment_duration
                     )
-                    slots[slot]["route_util"][self.route_id].tally(
+                    
+                    # ตรวจสอบ slot ปัจจุบันอีกครั้งก่อนบันทึก
+                    slot = self.time_ctx.slot_index(self.env.now())
+                    self.env.sim_engine._ensure_slot(slot)
+                    self.env.sim_engine.slots[slot]["route_util"][self.route_id].tally(
                         utilization,
-                        weight=current_dwell
+                        weight=segment_duration
                     )
+
+                # สะสมสถิติรวม
+                self.total_travel_time += travel_time
+                self.total_travel_dist += travel_dist
 
                 if travel_time <= 0:
                     travel_time = 0.0001

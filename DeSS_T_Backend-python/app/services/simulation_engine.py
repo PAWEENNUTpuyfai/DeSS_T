@@ -174,21 +174,20 @@ class SimulationEngine:
         for slot_idx in sorted(self.slots.keys()):
             slot_data = self.slots[slot_idx]
 
+            # คำนวณค่าเฉลี่ยของสถานีใน slot นี้
+            station_waiting_values = [safe_mean(m) for m in slot_data["station_waiting"].values() if safe_mean(m) != -99999.9]
+            station_queue_values = [safe_mean(m) for m in slot_data["station_queue"].values() if safe_mean(m) != -99999.9]
 
+            avg_wait_total = sum(station_waiting_values) / len(station_waiting_values) if station_waiting_values else -99999.0
+            avg_queue_total = sum(station_queue_values) / len(station_queue_values) if station_queue_values else -99999.0
             slot_results.append(
                 SimulationSlotResult(
                     slot_name=self.config["TIME_CTX"].slot_label(slot_idx),
 
                     # ⭐ เพิ่มส่วนนี้
                     result_total_station=TotalStation(
-                        average_waiting_time=
-                            sum(safe_mean(m) for m in slot_data["station_waiting"].values())
-                            / max(1, len(slot_data["station_waiting"])),
-                        average_queue_length =
-                            sum(
-                                safe_mean(m)
-                                for m in slot_data["station_queue"].values()
-                            ) / max(1, len(slot_data["station_queue"]))
+                        average_waiting_time=avg_wait_total,
+                        average_queue_length=avg_queue_total
                     ),
 
                     # ---------- PER STATION ----------
@@ -246,7 +245,7 @@ class SlotTicker(sim.Component):
 
             yield self.hold(self.time_ctx.slot_length)
 
-def safe_mean(mon, default=0.0):
+def safe_mean(mon, default=-99999.9):
     if mon is None:
         return default
     v = mon.mean()
@@ -256,7 +255,7 @@ def safe_mean(mon, default=0.0):
 
 def conditional_avg(d):
     if d["count"] == 0:
-        return 0.0
+        return -99999.9
     return d["sum"] / d["count"]
 
 

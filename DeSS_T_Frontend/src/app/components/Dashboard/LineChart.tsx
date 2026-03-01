@@ -1,4 +1,5 @@
 import "../../../style/Output.css";
+import { useState } from "react";
 
 interface LineChartProps {
   timeslot?: number; // minutes between x-axis ticks
@@ -30,6 +31,7 @@ export default function LineChart({
   mode = "avg-waiting-time",
   compactMode = false,
 }: LineChartProps = {}) {
+  const [selectedPoint, setSelectedPoint] = useState<{ x: number; y: number; v: number } | null>(null);
   const slot = timeslot > 0 ? timeslot : 15;
   // Build route meta (id, name, color)
   const fallbackColors = [
@@ -80,7 +82,7 @@ export default function LineChart({
   }));
 
   const allValues = dataset.map((d) => d[2]);
-  const yMin = allValues.length ? Math.min(...allValues) : 0;
+  const yMin = 0; // Always start from 0, don't show negative values
   const yMaxRaw = allValues.length ? Math.max(...allValues) : 1;
   const yMax = yMaxRaw === yMin ? yMin + 1 : yMaxRaw;
 
@@ -135,16 +137,33 @@ export default function LineChart({
     if (!points.length) return "";
     const validPoints = points.filter(p => Number.isFinite(p.t) && Number.isFinite(p.v));
     if (!validPoints.length) return "";
-    return validPoints
-      .map((p, idx) => {
-        const cmd = idx === 0 ? "M" : "L";
-        const x = xPos(p.t);
-        const y = yPos(p.v);
-        if (!Number.isFinite(x) || !Number.isFinite(y)) return "";
-        return `${cmd}${x.toFixed(1)},${y.toFixed(1)}`;
-      })
-      .filter(s => s.length > 0)
-      .join(" ");
+    
+    const pathSegments: string[] = [];
+    
+    for (let idx = 0; idx < validPoints.length; idx++) {
+      const p = validPoints[idx];
+      
+      // Only draw lines for points with value >= 0
+      if (p.v < 0) continue;
+      
+      const x = xPos(p.t);
+      const y = yPos(p.v);
+      
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      
+      // Check if the immediate previous point is >= 0 (no negative in between)
+      const hasPrevPositive = idx > 0 && validPoints[idx - 1].v >= 0;
+      
+      if (hasPrevPositive) {
+        // Continue line only if previous point was also >= 0
+        pathSegments.push(`L${x.toFixed(1)},${y.toFixed(1)}`);
+      } else {
+        // Start new segment (first point or after negative value)
+        pathSegments.push(`M${x.toFixed(1)},${y.toFixed(1)}`);
+      }
+    }
+    
+    return pathSegments.join(" ");
   };
 
   return (
@@ -271,17 +290,55 @@ export default function LineChart({
               );
             })}
 
+            {/* Crosshair lines when hovering point */}
+            {selectedPoint && (
+              <>
+                {/* Vertical line - down to bottom */}
+                <line
+                  x1={selectedPoint.x}
+                  x2={selectedPoint.x}
+                  y1={selectedPoint.y}
+                  y2={paddingTop + innerHeight}
+                  stroke="#999"
+                  strokeDasharray="4 4"
+                  strokeWidth={1}
+                  opacity={0.6}
+                  pointerEvents="none"
+                />
+                {/* Horizontal line - to the left */}
+                <line
+                  x1={0}
+                  x2={selectedPoint.x}
+                  y1={selectedPoint.y}
+                  y2={selectedPoint.y}
+                  stroke="#999"
+                  strokeDasharray="4 4"
+                  strokeWidth={1}
+                  opacity={0.6}
+                  pointerEvents="none"
+                />
+              </>
+            )}
+
             {/* Data points with labels */}
             {dataByRoute.map(({ id, points }, idx) => {
               const [, , color] = routes[idx];
-              return points
-                .filter(p => Number.isFinite(p.t) && Number.isFinite(p.v))
+              const validPoints = points.filter(p => Number.isFinite(p.t) && Number.isFinite(p.v));
+              return validPoints
                 .map((p, i) => {
+                  // Only show points with value >= 0
+                  if (p.v < 0) return null;
+                  
                   const svgX = xPos(p.t) - paddingLeft;
                   const svgY = yPos(p.v);
                   if (!Number.isFinite(svgX) || !Number.isFinite(svgY)) return null;
                   return (
-                    <g key={`${id}-${i}`}>
+                    <g 
+                      key={`${id}-${i}`}
+                      onMouseEnter={() => setSelectedPoint({ x: svgX, y: svgY, v: p.v })}
+                      onMouseLeave={() => setSelectedPoint(null)}
+                      style={{ cursor: "pointer" }}
+                    >
                       <circle cx={svgX} cy={svgY} r={3} fill={color} />
                     {/* <text
                       x={svgX}

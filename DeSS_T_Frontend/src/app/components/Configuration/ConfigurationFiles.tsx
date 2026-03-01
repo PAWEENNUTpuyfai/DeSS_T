@@ -111,12 +111,14 @@ export default function ConfigurationFiles({
 
   const [interarrivalFile, setInterarrivalFile] = useState<File | null>(null);
   const [interarrivalResult, setInterarrivalResult] = useState<unknown>(null);
+  const [interarrivalValues, setInterarrivalValues] = useState<unknown>(null);
   const [loadingI, setLoadingI] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [startHour, setStartHour] = useState<number>(8);
   const [endHour, setEndHour] = useState<number>(16);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [isDayTemplate, setIsDayTemplate] = useState(false);
 
   // File Upload Functions
   const submitAlighting = async () => {
@@ -144,8 +146,17 @@ export default function ConfigurationFiles({
       const output = await InterarrivalFitFromXlsx(
         interarrivalFile,
         stationDetails,
+        isDayTemplate,
       );
-      setInterarrivalResult(output);
+      // output อาจมี structure: { DataFitResponse: [...], InterarrivalValues: [...] }
+      // หรือเป็น { DataFitResponse: [...] } ตามการเปลี่ยนแปลง
+      const fitResponse = (output as any)?.DataFitResponse || output;
+      const interVals = (output as any)?.InterarrivalValues || null;
+
+      setInterarrivalResult(
+        fitResponse ? { DataFitResponse: fitResponse } : output,
+      );
+      setInterarrivalValues(interVals);
       return output;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -225,6 +236,152 @@ export default function ConfigurationFiles({
       a.remove();
       URL.revokeObjectURL(url);
       setShowTemplateModal(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert("Failed to create file: " + msg);
+    }
+  };
+
+  const downloadDayTemplate = async () => {
+    if (!stationDetails || stationDetails.length === 0) {
+      return alert("No station details available to create template");
+    }
+
+    const dayHeaders = Array.from(
+      { length: 10 },
+      (_, index) => `Day ${index + 1}`,
+    );
+
+    try {
+      const ExcelJS = await import("exceljs");
+      const wb = new ExcelJS.Workbook();
+
+      const usedNames = new Set<string>();
+      stationDetails.forEach((s, idx) => {
+        const raw = s.name ?? `Station-${s.station_detail_id ?? idx + 1}`;
+        const cleaned = raw.replace(/[\\/*?:[\]]/g, "");
+        const base = (cleaned || `Sheet${idx + 1}`).slice(0, 31);
+
+        let safe = base;
+        if (usedNames.has(safe)) {
+          const idSuffix = s.station_detail_id
+            ? `-${s.station_detail_id}`
+            : undefined;
+          if (idSuffix) {
+            const maxBase = Math.max(0, 31 - idSuffix.length);
+            safe = (base.slice(0, maxBase) + idSuffix).slice(0, 31);
+          }
+        }
+
+        let counter = 1;
+        while (usedNames.has(safe)) {
+          const suffix = `(${counter})`;
+          const maxBase = Math.max(0, 31 - suffix.length);
+          safe = (base.slice(0, maxBase) + suffix).slice(0, 31);
+          counter++;
+        }
+
+        usedNames.add(safe);
+        const ws = wb.addWorksheet(safe);
+        ws.addRow([...dayHeaders]);
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "template_station_list_10_days.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert("Failed to create file: " + msg);
+    }
+  };
+
+  const downloadInterarrivalValues = async () => {
+    if (!interarrivalValues) {
+      return alert("No interarrival values to download");
+    }
+
+    try {
+      const ExcelJS = await import("exceljs");
+      const wb = new ExcelJS.Workbook();
+
+      const data = interarrivalValues as Array<{
+        Station: string;
+        StationName?: string; // ชื่อสถานีสำหรับแสดงผล
+        Time_Range: string;
+        OriginalValues: number[];
+        InterarrivalValues: number[];
+      }>;
+
+      // จัดกลุ่มข้อมูลตามสถานี (ใช้ StationName ถ้ามี, ถ้าไม่มีใช้ Station)
+      const stationMap = new Map<string, typeof data>();
+      data.forEach((item) => {
+        // ใช้ StationName (ชื่อจริง) ถ้ามี ถ้าไม่มีก็ใช้ Station (ID)
+        const displayName = item.StationName || item.Station;
+        if (!stationMap.has(displayName)) {
+          stationMap.set(displayName, []);
+        }
+        stationMap.get(displayName)!.push(item);
+      });
+
+      // สร้าง worksheet สำหรับแต่ละสถานี
+      const usedSheetNames = new Set<string>();
+      stationMap.forEach((stationData, stationName) => {
+        // สร้างชื่อ sheet ที่ไม่ซ้ำ (max 31 ตัวอักษร) แบบเดียวกับ downloadTemplate
+        const raw = stationName || "Station";
+        const base = raw.replace(/[\\/*?:[\]]/g, "").slice(0, 31) || "Station";
+        let safe = base;
+        let counter = 1;
+        while (usedSheetNames.has(safe)) {
+          const suffix = `(${counter})`;
+          safe = (base.slice(0, 31 - suffix.length) + suffix).slice(0, 31);
+          counter++;
+        }
+        usedSheetNames.add(safe);
+
+        const ws = wb.addWorksheet(safe);
+
+        // แถวหัวตาราง = time ranges (แบบเดียวกับที่ template ใช้)
+        const timeRanges = stationData.map((item) => item.Time_Range);
+        ws.addRow(timeRanges);
+
+        // หา max จำนวนค่า interarrival ในทุก time range
+        const maxRows = Math.max(
+          ...stationData.map((item) => item.InterarrivalValues.length),
+          0,
+        );
+
+        // แต่ละแถว = 1 ค่าต่อ column (1 row = 1 interarrival value)
+        for (let i = 0; i < maxRows; i++) {
+          const row = stationData.map((item) =>
+            i < item.InterarrivalValues.length
+              ? item.InterarrivalValues[i]
+              : "",
+          );
+          ws.addRow(row);
+        }
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "interarrival_values.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       alert("Failed to create file: " + msg);
@@ -398,13 +555,13 @@ export default function ConfigurationFiles({
         setIsSubmitting(false);
       }
 
-      // Navigate after cleanup if successful
-      if (saveSuccess) {
-        alert(`Configuration "${configurationName}" saved successfully!`);
-        // Use window.location to ensure navigation happens
-        window.location.href = "/user/workspace?tab=config";
-        return;
-      }
+      // // Navigate after cleanup if successful
+      // if (saveSuccess) {
+      //   alert(`Configuration "${configurationName}" saved successfully!`);
+      //   // Use window.location to ensure navigation happens
+      //   window.location.href = "/user/workspace?tab=config";
+      //   return;
+      // }
 
       return;
     }
@@ -545,6 +702,19 @@ export default function ConfigurationFiles({
                   <span className="ml-3">to download the .xlsx template</span>
                 </span>
               </div>
+              <div>
+                <span>
+                  <span
+                    onClick={downloadDayTemplate}
+                    className="text-[#81069e] underline hover:text-[#323232] cursor-pointer"
+                  >
+                    Click here
+                  </span>
+                  <span className="ml-3">
+                    to download the 10-day .xlsx template
+                  </span>
+                </span>
+              </div>
 
               {/* Template Download Modal */}
               {showTemplateModal && (
@@ -623,10 +793,13 @@ export default function ConfigurationFiles({
                     ) as HTMLInputElement | null
                   )?.click()
                 }
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={(e) => {
+                  (e as React.DragEvent<HTMLDivElement>).preventDefault();
+                }}
                 onDrop={(e) => {
-                  e.preventDefault();
-                  const f = e.dataTransfer?.files?.[0];
+                  (e as React.DragEvent<HTMLDivElement>).preventDefault();
+                  const f = (e as React.DragEvent<HTMLDivElement>).dataTransfer
+                    ?.files?.[0];
                   if (f) setAlightingFile(f);
                 }}
               >
@@ -666,10 +839,13 @@ export default function ConfigurationFiles({
                     ) as HTMLInputElement | null
                   )?.click()
                 }
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={(e) => {
+                  (e as React.DragEvent<HTMLDivElement>).preventDefault();
+                }}
                 onDrop={(e) => {
-                  e.preventDefault();
-                  const f = e.dataTransfer?.files?.[0];
+                  (e as React.DragEvent<HTMLDivElement>).preventDefault();
+                  const f = (e as React.DragEvent<HTMLDivElement>).dataTransfer
+                    ?.files?.[0];
                   if (f) setInterarrivalFile(f);
                 }}
               >
@@ -685,6 +861,56 @@ export default function ConfigurationFiles({
                 </p>
               )}
 
+              {interarrivalFile && (
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="checkbox"
+                    id="isDayTemplate"
+                    checked={isDayTemplate}
+                    onChange={(e) => setIsDayTemplate(e.target.checked)}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="isDayTemplate"
+                    className="cursor-pointer text-sm text-gray-700"
+                  >
+                    This file is from the 10-day template (Day 1-10)
+                  </label>
+                </div>
+              )}
+
+              {/* Display Interarrival Values */}
+              {interarrivalValues && Array.isArray(interarrivalValues) ? (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">
+                    ✓ Interarrival Values Calculated
+                  </h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    {`${(interarrivalValues as Array<unknown>).length} time period(s) processed`}
+                  </p>
+                  <button
+                    onClick={() => downloadInterarrivalValues()}
+                    className="btn_primary text-sm"
+                  >
+                    Download Interarrival Values
+                  </button>
+                </div>
+              ) : interarrivalValues ? (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">
+                    ✓ Interarrival Values Calculated
+                  </h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Interarrival values computed successfully
+                  </p>
+                  <button
+                    onClick={() => downloadInterarrivalValues()}
+                    className="btn_primary text-sm"
+                  >
+                    Download Interarrival Values
+                  </button>
+                </div>
+              ) : null}
               {/* Action Buttons */}
               <div className="mt-2 flex justify-end">
                 <button

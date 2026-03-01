@@ -35,3 +35,17 @@ type FitItem struct {
 type DataFitResponse struct {
     DataFitResponse []FitItem `json:"DataFitResponse"`
 }
+// ------------------ InterarrivalValuesResponse ------------------
+// ส่งค่า interarrival ที่คำนวณได้กลับไปให้ frontend
+
+type InterarrivalItem struct {
+    Station        string    `json:"Station"`
+    StationName    string    `json:"StationName"`        // ชื่อสถานีดั้งเดิม (สำหรับแสดงผล)
+    TimeRange      string    `json:"Time_Range"`
+    OriginalValues []float64 `json:"OriginalValues"`    // ค่าดั้งเดิมจาก Excel
+    InterarrivalValues []float64 `json:"InterarrivalValues"` // ค่าที่คำนวณได้ (ความแตกต่าง)
+}
+
+type InterarrivalValuesResponse struct {
+    Data []InterarrivalItem `json:"Data"`
+}

@@ -38,11 +38,13 @@ export async function AlightingFitFromXlsx(
 export async function InterarrivalFitFromXlsx(
   file: File,
   stationDetails: StationDetail[],
+  isDayTemplate: boolean = false,
 ): Promise<DataFitResponse> {
   const form = new FormData();
   const stationMap = buildStationNameToIdMap(stationDetails);
   form.append("file", file);
   form.append("station_map", JSON.stringify(stationMap));
+  form.append("is_day_template", String(isDayTemplate));
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);

@@ -24,6 +24,9 @@ def fit_best_distribution(values: List[float]) -> Dict:
             "params": (float('inf'),) # หรือ 999999.0
         }
 
+    # กำหนดค่าเฉลี่ยของข้อมูลเพื่อใช้เป็นตัวอ้างอิง
+    avg_val = np.mean(values) if values else 0
+
     distributions = {
         "Exponential": stats.expon,
         "Weibull": stats.weibull_min,
@@ -31,13 +34,33 @@ def fit_best_distribution(values: List[float]) -> Dict:
         "Uniform": stats.uniform,
     }
 
-    best_name = None
-    best_params = None
+    best_name = "Exponential" # เริ่มต้นด้วย Exponential มักจะปลอดภัยสุด
+    best_params = stats.expon.fit(values)
     best_aic = float("inf")
 
     for name, dist in distributions.items():
         try:
             params = dist.fit(values)
+            
+            # --- กฎเหล็ก: ถ้า Weibull/Gamma หางยาวเกินไป (shape < 0.2) ให้ข้ามไป ---
+            if name in ["Weibull", "Gamma"]:
+                shape = params[0]
+                if shape < 0.2: # ค่า 0.0193 ของคุณจะติดลบที่นี่และถูกข้ามไป
+                    continue 
+
+            logL = np.sum(dist.logpdf(values, *params))
+            # --- แก้ไขจุดนี้: ป้องกัน Extreme Parameters ---
+            if name == "Weibull":
+                shape, loc, scale = params
+                # ถ้า shape ต่ำกว่า 0.1 มันจะเริ่มสุ่มได้เลขระดับ 1,000+ บ่อยครั้ง
+                # เราสามารถ "ลงโทษ" (Penalty) AIC ของมันเพื่อให้ระบบไปเลือกตัวอื่นแทน
+                if shape < 0.2: 
+                    continue # ไม่ใช้ Weibull ถ้าหางมันยาวเกินไป
+
+            if name == "Gamma":
+                shape, loc, scale = params
+                if shape < 0.2:
+                    continue
 
             logL = np.sum(dist.logpdf(values, *params))
             k = len(params)
@@ -74,37 +97,56 @@ def fit_best_distribution(values: List[float]) -> Dict:
 # ------------------------------
 # Convert params to text
 # ------------------------------
+
 def params_to_string(dist_name: str, params) -> str:
     params = list(params)
+    EPSILON = 0.0001  # ค่าขั้นต่ำที่ยอมรับได้ เพื่อป้องกันการหารด้วยศูนย์และเลขมหาศาล
 
+    # 1. No Arrival: ใช้ค่าที่สูงมากพอที่ Passenger จะไม่เกิดในระบบ
     if dist_name == "No Arrival":
-        # ส่งค่าที่สูงมากๆ ไปยัง Simulation เพื่อไม่ให้เกิดการสร้าง Passenger
-        return f"value=999999.0"
-    
-    if dist_name == "Constant":
-        return f"value={params[0]:.4f}"
+        return "value=9999999.0"
 
+    # 2. Constant: interarrival เป๊ะๆ
+    if dist_name == "Constant":
+        val = max(EPSILON, params[0])
+        return f"value={val:.4f}"
+
+    # 3. Exponential: ตัวปัญหาหลัก (rate = 1/scale)
     if dist_name == "Exponential":
         loc, scale = params
-        rate = 1.0 / scale
+        # ป้องกัน scale เป็น 0 หรือติดลบ
+        safe_scale = max(EPSILON, scale)
+        rate = 1.0 / safe_scale
         return f"rate={rate:.4f}, loc={loc:.4f}"
 
+    # 4. Weibull: ต้องระวัง shape เข้าใกล้ 0 (จะทำให้เกิดความผันผวนสูงมาก)
     if dist_name == "Weibull":
         shape, loc, scale = params
-        return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
+        safe_shape = max(0.01, shape) # shape ที่น้อยกว่า 0.01 มักเกิดจาก data ที่พัง
+        safe_scale = max(EPSILON, scale)
+        return f"shape={safe_shape:.4f}, loc={loc:.4f}, scale={safe_scale:.4f}"
 
+    # 5. Gamma
     if dist_name == "Gamma":
         shape, loc, scale = params
-        return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
+        safe_shape = max(EPSILON, shape)
+        safe_scale = max(EPSILON, scale)
+        return f"shape={safe_shape:.4f}, loc={loc:.4f}, scale={safe_scale:.4f}"
 
+    # 6. Uniform
     if dist_name == "Uniform":
         loc, scale = params
-        return f"min={loc:.4f}, max={(loc + scale):.4f}"
+        # ป้องกันช่วงกว้าง (scale) เป็น 0
+        safe_scale = max(EPSILON, scale)
+        return f"min={loc:.4f}, max={(loc + safe_scale):.4f}"
 
+    # 7. Poisson
     if dist_name == "Poisson":
         (lam,) = params
-        return f"lambda={lam:.4f}"
+        safe_lam = max(EPSILON, lam)
+        return f"lambda={safe_lam:.4f}"
 
+    # กรณีอื่นๆ
     return str(params)
 
 
@@ -116,7 +158,15 @@ def distribution_fitting(request: DataModelDistRequest) -> DataFitResponse:
     results: List[FitItem] = []
 
     for item in request.Data:
-        values = [rec.NumericValue for rec in item.Records]
+        raw_values = [rec.NumericValue for rec in item.Records]
+        
+        # --- กรอง Outliers (ใช้ Percentile 95 หรือ 99) ---
+        # ตัดค่าที่โด่งเกินไปออกก่อนฟิต เพื่อให้ได้ Distribution ที่เป็นตัวแทนของคนส่วนใหญ่
+        if len(raw_values) > 10:
+            upper_limit = np.percentile(raw_values, 99) 
+            values = [v for v in raw_values if v <= upper_limit]
+        else:
+            values = raw_values
 
         fit_result = fit_best_distribution(values)
 

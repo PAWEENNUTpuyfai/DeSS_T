@@ -1,0 +1,291 @@
+{
+	"time_period": "8:00-10:00",
+	"time_slot": "30",
+	"configuration_data": {
+		"station_list": [
+			{
+				"station_id": "15d97d41-80fb-4214-9fd4-0829cdd50da4",
+				"station_name": "คณะรัฐศาสตร์ฯ"
+			},
+			{
+				"station_id": "abc954af-cbd7-4d60-aac9-fe0f266f959f",
+				"station_name": "ลานจอดรถ อ.มช."
+			},
+			{
+				"station_id": "897875eb-29a3-4fb1-8f27-3aa66147734c",
+				"station_name": "ร้านสหกรณ์ มช."
+			},
+			{
+				"station_id": "da280c3c-9874-4012-8537-7eccc50c9f34",
+				"station_name": "ลานจอดรถ ITSC"
+			},
+			{
+				"station_id": "f5b8ef28-d981-46b5-a895-463f2fb807ac",
+				"station_name": "สถานีกลาง รถไฟฟ้า (หอพักหญิง 3)"
+			},
+			{
+				"station_id": "c8b7b643-d730-4462-a9ce-3b2f6d2fc368",
+				"station_name": "คณะสังคมศาสตร์"
+			},
+			{
+				"station_id": "3b06abe7-459a-462c-a43a-7274c3df3981",
+				"station_name": "อาคาร HB7"
+			}
+		],
+		"route_pair": [
+			{
+				"route_pair_id": "2927c11e-9254-4b80-9012-ad3d9ddc16b5",
+				"fst_station": "15d97d41-80fb-4214-9fd4-0829cdd50da4",
+				"snd_station": "abc954af-cbd7-4d60-aac9-fe0f266f959f",
+				"travel_time": 48.51,
+				"distance": 378.79
+			},
+			{
+				"route_pair_id": "be840aa5-85d4-4c5e-b0d5-80534c980214",
+				"fst_station": "abc954af-cbd7-4d60-aac9-fe0f266f959f",
+				"snd_station": "f5b8ef28-d981-46b5-a895-463f2fb807ac",
+				"travel_time": 18.56,
+				"distance": 139.42
+			},
+			{
+				"route_pair_id": "54c6b3de-0e2c-46f4-abb3-81bfd72b55a4",
+				"fst_station": "897875eb-29a3-4fb1-8f27-3aa66147734c",
+				"snd_station": "c8b7b643-d730-4462-a9ce-3b2f6d2fc368",
+				"travel_time": 38.02,
+				"distance": 309.96
+			},
+			{
+				"route_pair_id": "dceca87f-a6ba-4d05-96bd-f285e59dc47b",
+				"fst_station": "da280c3c-9874-4012-8537-7eccc50c9f34",
+				"snd_station": "15d97d41-80fb-4214-9fd4-0829cdd50da4",
+				"travel_time": 46.46,
+				"distance": 293.85
+			},
+			{
+				"route_pair_id": "1207e515-7837-4c9e-9a80-75f3084d8ea0",
+				"fst_station": "f5b8ef28-d981-46b5-a895-463f2fb807ac",
+				"snd_station": "897875eb-29a3-4fb1-8f27-3aa66147734c",
+				"travel_time": 49.92,
+				"distance": 348.99
+			},
+			{
+				"route_pair_id": "447ca1e1-d2a6-4bd4-b4be-d0bad0aba052",
+				"fst_station": "c8b7b643-d730-4462-a9ce-3b2f6d2fc368",
+				"snd_station": "3b06abe7-459a-462c-a43a-7274c3df3981",
+				"travel_time": 4.95,
+				"distance": 41.29
+			},
+			{
+				"route_pair_id": "21debf36-eb7e-4aed-abe9-fe9abe003bb4",
+				"fst_station": "3b06abe7-459a-462c-a43a-7274c3df3981",
+				"snd_station": "da280c3c-9874-4012-8537-7eccc50c9f34",
+				"travel_time": 61.06,
+				"distance": 396.42
+			}
+		],
+		"alighting_data": [
+			{
+				"time_range": "08:00-08:59",
+				"records": [
+					{
+						"station": "f5b8ef28-d981-46b5-a895-463f2fb807ac",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "897875eb-29a3-4fb1-8f27-3aa66147734c",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=1.0000"
+					},
+					{
+						"station": "c8b7b643-d730-4462-a9ce-3b2f6d2fc368",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=2.7500"
+					},
+					{
+						"station": "3b06abe7-459a-462c-a43a-7274c3df3981",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.7500"
+					},
+					{
+						"station": "da280c3c-9874-4012-8537-7eccc50c9f34",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.3333"
+					},
+					{
+						"station": "15d97d41-80fb-4214-9fd4-0829cdd50da4",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "abc954af-cbd7-4d60-aac9-fe0f266f959f",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					}
+				]
+			},
+			{
+				"time_range": "09:00-09:59",
+				"records": [
+					{
+						"station": "f5b8ef28-d981-46b5-a895-463f2fb807ac",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.2500"
+					},
+					{
+						"station": "897875eb-29a3-4fb1-8f27-3aa66147734c",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=1.2500"
+					},
+					{
+						"station": "c8b7b643-d730-4462-a9ce-3b2f6d2fc368",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=4.2500"
+					},
+					{
+						"station": "3b06abe7-459a-462c-a43a-7274c3df3981",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.7500"
+					},
+					{
+						"station": "da280c3c-9874-4012-8537-7eccc50c9f34",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "15d97d41-80fb-4214-9fd4-0829cdd50da4",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "abc954af-cbd7-4d60-aac9-fe0f266f959f",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.2500"
+					}
+				]
+			}
+		],
+		"interarrival_data": [
+			{
+				"time_range": "08:00-08:59",
+				"records": [
+					{
+						"station": "f5b8ef28-d981-46b5-a895-463f2fb807ac",
+						"Distribution": "Weibull",
+						"ArgumentList": "shape=0.2820, loc=-0.0000, scale=0.6934"
+					},
+					{
+						"station": "897875eb-29a3-4fb1-8f27-3aa66147734c",
+						"Distribution": "Uniform",
+						"ArgumentList": "min=10.4200, max=59.9800"
+					},
+					{
+						"station": "c8b7b643-d730-4462-a9ce-3b2f6d2fc368",
+						"Distribution": "Exponential",
+						"ArgumentList": "rate=10000.0000, loc=59.9800"
+					},
+					{
+						"station": "3b06abe7-459a-462c-a43a-7274c3df3981",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=9999999.0"
+					},
+					{
+						"station": "da280c3c-9874-4012-8537-7eccc50c9f34",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=9999999.0"
+					},
+					{
+						"station": "15d97d41-80fb-4214-9fd4-0829cdd50da4",
+						"Distribution": "Uniform",
+						"ArgumentList": "min=3.3500, max=59.9800"
+					},
+					{
+						"station": "abc954af-cbd7-4d60-aac9-fe0f266f959f",
+						"Distribution": "Uniform",
+						"ArgumentList": "min=20.8000, max=59.9800"
+					}
+				]
+			},
+			{
+				"time_range": "09:00-09:59",
+				"records": [
+					{
+						"station": "f5b8ef28-d981-46b5-a895-463f2fb807ac",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.4537, loc=-0.0000, scale=0.8405"
+					},
+					{
+						"station": "897875eb-29a3-4fb1-8f27-3aa66147734c",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.4412, loc=-0.0000, scale=7.7326"
+					},
+					{
+						"station": "c8b7b643-d730-4462-a9ce-3b2f6d2fc368",
+						"Distribution": "Weibull",
+						"ArgumentList": "shape=0.5701, loc=0.0800, scale=36.4869"
+					},
+					{
+						"station": "3b06abe7-459a-462c-a43a-7274c3df3981",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=9999999.0"
+					},
+					{
+						"station": "da280c3c-9874-4012-8537-7eccc50c9f34",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=9999999.0"
+					},
+					{
+						"station": "15d97d41-80fb-4214-9fd4-0829cdd50da4",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.3487, loc=0.4700, scale=15.0630"
+					},
+					{
+						"station": "abc954af-cbd7-4d60-aac9-fe0f266f959f",
+						"Distribution": "Weibull",
+						"ArgumentList": "shape=0.4557, loc=0.9800, scale=6.7326"
+					}
+				]
+			}
+		]
+	},
+	"scenario_data": [
+		{
+			"route_id": "aab40264-cd12-493b-bc00-456c5cc69ef6",
+			"route_name": "Route 1",
+			"route_order": "1207e515-7837-4c9e-9a80-75f3084d8ea0$54c6b3de-0e2c-46f4-abb3-81bfd72b55a4$447ca1e1-d2a6-4bd4-b4be-d0bad0aba052$21debf36-eb7e-4aed-abe9-fe9abe003bb4$dceca87f-a6ba-4d05-96bd-f285e59dc47b$2927c11e-9254-4b80-9012-ad3d9ddc16b5$be840aa5-85d4-4c5e-b0d5-80534c980214",
+			"route_schedule": [
+				{
+					"departure_time": "08:05"
+				},
+				{
+					"departure_time": "08:25"
+				},
+				{
+					"departure_time": "08:40"
+				},
+				{
+					"departure_time": "08:50"
+				},
+				{
+					"departure_time": "09:05"
+				},
+				{
+					"departure_time": "09:25"
+				},
+				{
+					"departure_time": "09:40"
+				},
+				{
+					"departure_time": "09:50"
+				}
+			],
+			"bus_information": {
+				"bus_speed": 20,
+				"max_distance": 70,
+				"max_bus": 1,
+				"bus_capacity": 16,
+				"avg_travel_time": 10
+			}
+		}
+	]
+}

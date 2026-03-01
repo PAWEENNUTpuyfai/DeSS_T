@@ -992,13 +992,13 @@ export default function InteractiveMap({
                   <li>
                     • Avg. Waiting Time{" "}
                     <span className=" text-[#81069E] text-[16px] font-bold ml-1">
-                      {(stationCard?.average_waiting_time ?? 0).toFixed(2)} mins
+                      {(stationCard?.average_waiting_time ?? 0) < 0 ? "-" : (stationCard?.average_waiting_time ?? 0).toFixed(2)} mins
                     </span>
                   </li>
                   <li>
                     • Avg. Queue Length{" "}
                     <span className="text-[#81069E] text-[16px] font-bold ml-1">
-                      {(stationCard?.average_queue_length ?? 0).toFixed(2)}{" "}
+                      {(stationCard?.average_queue_length ?? 0) < 0 ? "-" : (stationCard?.average_queue_length ?? 0).toFixed(2)}{" "}
                       persons
                     </span>
                   </li>
@@ -1023,13 +1023,13 @@ export default function InteractiveMap({
                     <li>
                       • Avg. Waiting Time{" "}
                       <span className="text-[#81069E] text-[16px] font-bold ml-1">
-                        {summary.average_waiting_time.toFixed(2)} mins
+                        {summary.average_waiting_time < 0 ? "-" : summary.average_waiting_time.toFixed(2)} mins
                       </span>
                     </li>
                     <li>
                       • Avg. Queue Length{" "}
                       <span className="text-[#81069E] text-[16px] font-bold ml-1">
-                        {summary.average_queue_length.toFixed(2)} persons
+                        {summary.average_queue_length < 0 ? "-" : summary.average_queue_length.toFixed(2)} persons
                       </span>
                     </li>
                   </ul>

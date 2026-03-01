@@ -1,0 +1,533 @@
+{
+	"time_period": "8:00-10:00",
+	"time_slot": "30",
+	"configuration_data": {
+		"station_list": [
+			{
+				"station_id": "ca64d1f0-497b-40ca-a30f-c35c8ae44e46",
+				"station_name": "วิทยาลัยพหุวิทยาการและสหวิทยาการ"
+			},
+			{
+				"station_id": "1a6ccdae-ed4c-458c-9b25-17176355757b",
+				"station_name": "สโมสรนักศึกษาบัณฑิตศึกษา"
+			},
+			{
+				"station_id": "e58ba283-783a-4e13-b2d2-6ac29f25ac1f",
+				"station_name": "อาคาร 1 คณะศึกษาศาสตร์"
+			},
+			{
+				"station_id": "629c47d7-d936-442b-9ac4-463bd7b12a8e",
+				"station_name": "คณะสถาปัตยกรรมศาสตร์"
+			},
+			{
+				"station_id": "74b33cbf-f8c9-444d-816d-9461eab427a1",
+				"station_name": "หอพักหญิง 6"
+			},
+			{
+				"station_id": "83e67d38-473b-4b68-9a24-2a75031d14f5",
+				"station_name": "ภาควิชาอาชีวศึกษาฯ คณะศึกษาศาสตร์"
+			},
+			{
+				"station_id": "e1d5042c-066e-4582-846f-e3ab328a8a8e",
+				"station_name": "ห้องสมุด คณะวิศวกรรมศาสตร์"
+			},
+			{
+				"station_id": "6b1a4a62-3826-4213-9584-24097d4f51a3",
+				"station_name": "โรงจอดรถ คณะวิศวกรรมศาสตร์"
+			},
+			{
+				"station_id": "6889522b-d982-4fd6-9c3e-6b8d38c51b1f",
+				"station_name": "อาคาร 30 ปี คณะวิศวกรรมศาสตร์"
+			},
+			{
+				"station_id": "f7168b10-f412-4c21-9aff-f24bf01ed751",
+				"station_name": "อาคาร 4 คณะศึกษาศาสตร์"
+			},
+			{
+				"station_id": "0e2d4fed-1663-4bd9-b046-06bbafe03773",
+				"station_name": "อาคารจอดรถ S1"
+			},
+			{
+				"station_id": "82ba278b-3c76-4eff-b556-7fe23392ee4a",
+				"station_name": "สถานีกลาง รถไฟฟ้า (หอพักหญิง 3)"
+			},
+			{
+				"station_id": "0afea0cb-b964-45d6-8113-d1b81e22c11f",
+				"station_name": "หอพักหญิง 4"
+			},
+			{
+				"station_id": "eb3905f1-6092-4776-a169-da6092ca6a44",
+				"station_name": "ลานจอดรถ S2"
+			},
+			{
+				"station_id": "46f33ba9-6b81-41b9-bccc-e2bbaa0fd90e",
+				"station_name": "CMU Food Center"
+			}
+		],
+		"route_pair": [
+			{
+				"route_pair_id": "18a1f94a-a590-4d16-adfa-56fef2cb590d",
+				"fst_station": "ca64d1f0-497b-40ca-a30f-c35c8ae44e46",
+				"snd_station": "6889522b-d982-4fd6-9c3e-6b8d38c51b1f",
+				"travel_time": 221.8,
+				"distance": 1223.59
+			},
+			{
+				"route_pair_id": "d8f7f52c-1115-4799-8373-1513dc9e8532",
+				"fst_station": "1a6ccdae-ed4c-458c-9b25-17176355757b",
+				"snd_station": "0e2d4fed-1663-4bd9-b046-06bbafe03773",
+				"travel_time": 58.56,
+				"distance": 284.97
+			},
+			{
+				"route_pair_id": "d306b830-817e-44a4-ba84-fb68b6d1dcbc",
+				"fst_station": "e58ba283-783a-4e13-b2d2-6ac29f25ac1f",
+				"snd_station": "f7168b10-f412-4c21-9aff-f24bf01ed751",
+				"travel_time": 59.95,
+				"distance": 298.39
+			},
+			{
+				"route_pair_id": "9000478d-6ad9-441f-9375-bfe721013f05",
+				"fst_station": "629c47d7-d936-442b-9ac4-463bd7b12a8e",
+				"snd_station": "46f33ba9-6b81-41b9-bccc-e2bbaa0fd90e",
+				"travel_time": 78.07,
+				"distance": 543.59
+			},
+			{
+				"route_pair_id": "f1e33c01-7c14-4897-9f5f-096bf0779bed",
+				"fst_station": "74b33cbf-f8c9-444d-816d-9461eab427a1",
+				"snd_station": "83e67d38-473b-4b68-9a24-2a75031d14f5",
+				"travel_time": 37.62,
+				"distance": 234.66
+			},
+			{
+				"route_pair_id": "b6d88376-a231-4c22-9ea7-c39a8d843713",
+				"fst_station": "83e67d38-473b-4b68-9a24-2a75031d14f5",
+				"snd_station": "e58ba283-783a-4e13-b2d2-6ac29f25ac1f",
+				"travel_time": 44.66,
+				"distance": 299.78
+			},
+			{
+				"route_pair_id": "7bcee816-a18e-4186-bc3c-8ff235b8f027",
+				"fst_station": "e1d5042c-066e-4582-846f-e3ab328a8a8e",
+				"snd_station": "6b1a4a62-3826-4213-9584-24097d4f51a3",
+				"travel_time": 60.65,
+				"distance": 336.99
+			},
+			{
+				"route_pair_id": "7206d710-e41d-4252-a374-9c5758674901",
+				"fst_station": "6b1a4a62-3826-4213-9584-24097d4f51a3",
+				"snd_station": "629c47d7-d936-442b-9ac4-463bd7b12a8e",
+				"travel_time": 43.87,
+				"distance": 311.25
+			},
+			{
+				"route_pair_id": "ae9af8b7-ddaf-4f2c-af2c-2ea007156fc0",
+				"fst_station": "6889522b-d982-4fd6-9c3e-6b8d38c51b1f",
+				"snd_station": "eb3905f1-6092-4776-a169-da6092ca6a44",
+				"travel_time": 41.48,
+				"distance": 193.81
+			},
+			{
+				"route_pair_id": "2dc4c54e-26f4-4dc8-9ef9-833d98d29836",
+				"fst_station": "f7168b10-f412-4c21-9aff-f24bf01ed751",
+				"snd_station": "1a6ccdae-ed4c-458c-9b25-17176355757b",
+				"travel_time": 57.8,
+				"distance": 279.69
+			},
+			{
+				"route_pair_id": "a95efa01-d537-4e0b-8066-7869ee21a0d6",
+				"fst_station": "0e2d4fed-1663-4bd9-b046-06bbafe03773",
+				"snd_station": "ca64d1f0-497b-40ca-a30f-c35c8ae44e46",
+				"travel_time": 136.21,
+				"distance": 697.06
+			},
+			{
+				"route_pair_id": "32531980-3a10-4c2b-8d1f-74893ca0c192",
+				"fst_station": "82ba278b-3c76-4eff-b556-7fe23392ee4a",
+				"snd_station": "0afea0cb-b964-45d6-8113-d1b81e22c11f",
+				"travel_time": 32.4,
+				"distance": 188.26
+			},
+			{
+				"route_pair_id": "4cae630d-ace0-461e-9218-73c0ce28fc00",
+				"fst_station": "0afea0cb-b964-45d6-8113-d1b81e22c11f",
+				"snd_station": "74b33cbf-f8c9-444d-816d-9461eab427a1",
+				"travel_time": 13,
+				"distance": 108.35
+			},
+			{
+				"route_pair_id": "81474b80-efda-4afe-8cdf-dddaaaac93f2",
+				"fst_station": "eb3905f1-6092-4776-a169-da6092ca6a44",
+				"snd_station": "e1d5042c-066e-4582-846f-e3ab328a8a8e",
+				"travel_time": 22.33,
+				"distance": 124.04
+			},
+			{
+				"route_pair_id": "f76e9082-a9c5-4b24-91a8-2b3e3bd15b43",
+				"fst_station": "46f33ba9-6b81-41b9-bccc-e2bbaa0fd90e",
+				"snd_station": "82ba278b-3c76-4eff-b556-7fe23392ee4a",
+				"travel_time": 47.42,
+				"distance": 272.16
+			}
+		],
+		"alighting_data": [
+			{
+				"time_range": "08:00-08:59",
+				"records": [
+					{
+						"station": "82ba278b-3c76-4eff-b556-7fe23392ee4a",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=4.5000"
+					},
+					{
+						"station": "0afea0cb-b964-45d6-8113-d1b81e22c11f",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "74b33cbf-f8c9-444d-816d-9461eab427a1",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "83e67d38-473b-4b68-9a24-2a75031d14f5",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "e58ba283-783a-4e13-b2d2-6ac29f25ac1f",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.5000"
+					},
+					{
+						"station": "f7168b10-f412-4c21-9aff-f24bf01ed751",
+						"Distribution": "Constant",
+						"ArgumentList": "value=1.0000"
+					},
+					{
+						"station": "1a6ccdae-ed4c-458c-9b25-17176355757b",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.5000"
+					},
+					{
+						"station": "0e2d4fed-1663-4bd9-b046-06bbafe03773",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "ca64d1f0-497b-40ca-a30f-c35c8ae44e46",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "6889522b-d982-4fd6-9c3e-6b8d38c51b1f",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.5000"
+					},
+					{
+						"station": "eb3905f1-6092-4776-a169-da6092ca6a44",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "e1d5042c-066e-4582-846f-e3ab328a8a8e",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "6b1a4a62-3826-4213-9584-24097d4f51a3",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "629c47d7-d936-442b-9ac4-463bd7b12a8e",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "46f33ba9-6b81-41b9-bccc-e2bbaa0fd90e",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=1.0000"
+					}
+				]
+			},
+			{
+				"time_range": "09:00-09:59",
+				"records": [
+					{
+						"station": "82ba278b-3c76-4eff-b556-7fe23392ee4a",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=2.2500"
+					},
+					{
+						"station": "0afea0cb-b964-45d6-8113-d1b81e22c11f",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "74b33cbf-f8c9-444d-816d-9461eab427a1",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "83e67d38-473b-4b68-9a24-2a75031d14f5",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "e58ba283-783a-4e13-b2d2-6ac29f25ac1f",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "f7168b10-f412-4c21-9aff-f24bf01ed751",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.3333"
+					},
+					{
+						"station": "1a6ccdae-ed4c-458c-9b25-17176355757b",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.5000"
+					},
+					{
+						"station": "0e2d4fed-1663-4bd9-b046-06bbafe03773",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.6667"
+					},
+					{
+						"station": "ca64d1f0-497b-40ca-a30f-c35c8ae44e46",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=1.0000"
+					},
+					{
+						"station": "6889522b-d982-4fd6-9c3e-6b8d38c51b1f",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.2500"
+					},
+					{
+						"station": "eb3905f1-6092-4776-a169-da6092ca6a44",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "e1d5042c-066e-4582-846f-e3ab328a8a8e",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "6b1a4a62-3826-4213-9584-24097d4f51a3",
+						"Distribution": "Constant",
+						"ArgumentList": "value=0.0000"
+					},
+					{
+						"station": "629c47d7-d936-442b-9ac4-463bd7b12a8e",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=0.7500"
+					},
+					{
+						"station": "46f33ba9-6b81-41b9-bccc-e2bbaa0fd90e",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=1.2500"
+					}
+				]
+			}
+		],
+		"interarrival_data": [
+			{
+				"time_range": "08:00-08:59",
+				"records": [
+					{
+						"station": "82ba278b-3c76-4eff-b556-7fe23392ee4a",
+						"Distribution": "Weibull",
+						"ArgumentList": "shape=0.6492, loc=-0.0000, scale=3.1283"
+					},
+					{
+						"station": "0afea0cb-b964-45d6-8113-d1b81e22c11f",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.6133, loc=-0.0000, scale=27.6874"
+					},
+					{
+						"station": "74b33cbf-f8c9-444d-816d-9461eab427a1",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "83e67d38-473b-4b68-9a24-2a75031d14f5",
+						"Distribution": "Uniform",
+						"ArgumentList": "min=9.1700, max=59.9800"
+					},
+					{
+						"station": "e58ba283-783a-4e13-b2d2-6ac29f25ac1f",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.8058, loc=-0.0000, scale=5.8087"
+					},
+					{
+						"station": "f7168b10-f412-4c21-9aff-f24bf01ed751",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.5910, loc=2.7500, scale=17.4518"
+					},
+					{
+						"station": "1a6ccdae-ed4c-458c-9b25-17176355757b",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "0e2d4fed-1663-4bd9-b046-06bbafe03773",
+						"Distribution": "Weibull",
+						"ArgumentList": "shape=0.6403, loc=-0.0000, scale=4.1813"
+					},
+					{
+						"station": "ca64d1f0-497b-40ca-a30f-c35c8ae44e46",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "6889522b-d982-4fd6-9c3e-6b8d38c51b1f",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "eb3905f1-6092-4776-a169-da6092ca6a44",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "e1d5042c-066e-4582-846f-e3ab328a8a8e",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "6b1a4a62-3826-4213-9584-24097d4f51a3",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "629c47d7-d936-442b-9ac4-463bd7b12a8e",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "46f33ba9-6b81-41b9-bccc-e2bbaa0fd90e",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.2194, loc=10.1000, scale=31.4101"
+					}
+				]
+			},
+			{
+				"time_range": "09:00-09:59",
+				"records": [
+					{
+						"station": "82ba278b-3c76-4eff-b556-7fe23392ee4a",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.5187, loc=-0.0000, scale=2.3451"
+					},
+					{
+						"station": "0afea0cb-b964-45d6-8113-d1b81e22c11f",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.3369, loc=-0.0000, scale=12.6270"
+					},
+					{
+						"station": "74b33cbf-f8c9-444d-816d-9461eab427a1",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "83e67d38-473b-4b68-9a24-2a75031d14f5",
+						"Distribution": "Uniform",
+						"ArgumentList": "min=1.3300, max=59.9800"
+					},
+					{
+						"station": "e58ba283-783a-4e13-b2d2-6ac29f25ac1f",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.5140, loc=-0.0000, scale=5.6596"
+					},
+					{
+						"station": "f7168b10-f412-4c21-9aff-f24bf01ed751",
+						"Distribution": "Uniform",
+						"ArgumentList": "min=0.0000, max=59.9800"
+					},
+					{
+						"station": "1a6ccdae-ed4c-458c-9b25-17176355757b",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "0e2d4fed-1663-4bd9-b046-06bbafe03773",
+						"Distribution": "Gamma",
+						"ArgumentList": "shape=0.3217, loc=-0.0000, scale=7.7332"
+					},
+					{
+						"station": "ca64d1f0-497b-40ca-a30f-c35c8ae44e46",
+						"Distribution": "Weibull",
+						"ArgumentList": "shape=0.5270, loc=4.0000, scale=17.1094"
+					},
+					{
+						"station": "6889522b-d982-4fd6-9c3e-6b8d38c51b1f",
+						"Distribution": "Uniform",
+						"ArgumentList": "min=11.5000, max=25.0000"
+					},
+					{
+						"station": "eb3905f1-6092-4776-a169-da6092ca6a44",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "e1d5042c-066e-4582-846f-e3ab328a8a8e",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "6b1a4a62-3826-4213-9584-24097d4f51a3",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "629c47d7-d936-442b-9ac4-463bd7b12a8e",
+						"Distribution": "No Arrival",
+						"ArgumentList": "value=999999.0"
+					},
+					{
+						"station": "46f33ba9-6b81-41b9-bccc-e2bbaa0fd90e",
+						"Distribution": "Weibull",
+						"ArgumentList": "shape=0.6704, loc=-0.0000, scale=35.1196"
+					}
+				]
+			}
+		]
+	},
+	"scenario_data": [
+		{
+			"route_id": "3eefcc68-3467-4e24-adf5-3331afe69e85",
+			"route_name": "Route 1",
+			"route_order": "32531980-3a10-4c2b-8d1f-74893ca0c192$4cae630d-ace0-461e-9218-73c0ce28fc00$f1e33c01-7c14-4897-9f5f-096bf0779bed$b6d88376-a231-4c22-9ea7-c39a8d843713$d306b830-817e-44a4-ba84-fb68b6d1dcbc$2dc4c54e-26f4-4dc8-9ef9-833d98d29836$d8f7f52c-1115-4799-8373-1513dc9e8532$a95efa01-d537-4e0b-8066-7869ee21a0d6$18a1f94a-a590-4d16-adfa-56fef2cb590d$ae9af8b7-ddaf-4f2c-af2c-2ea007156fc0$81474b80-efda-4afe-8cdf-dddaaaac93f2$7bcee816-a18e-4186-bc3c-8ff235b8f027$7206d710-e41d-4252-a374-9c5758674901$9000478d-6ad9-441f-9375-bfe721013f05$f76e9082-a9c5-4b24-91a8-2b3e3bd15b43",
+			"route_schedule": [
+				{
+					"departure_time": "08:10"
+				},
+				{
+					"departure_time": "08:30"
+				},
+				{
+					"departure_time": "08:55"
+				},
+				{
+					"departure_time": "09:10"
+				},
+				{
+					"departure_time": "09:30"
+				},
+				{
+					"departure_time": "09:55"
+				}
+			],
+			"bus_information": {
+				"bus_speed": 20,
+				"max_distance": 70,
+				"max_bus": 2,
+				"bus_capacity": 16,
+				"avg_travel_time": 21
+			}
+		}
+	]
+}

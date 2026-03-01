@@ -5,7 +5,7 @@ import { buildStationNameToIdMap } from "../sheetHelpers";
 
 export async function AlightingFitFromXlsx(
   file: File,
-  stationDetails: StationDetail[]
+  stationDetails: StationDetail[],
 ): Promise<DataFitResponse> {
   const form = new FormData();
 
@@ -58,6 +58,45 @@ export async function InterarrivalFitFromXlsx(
   } catch (err) {
     if ((err as { name?: string })?.name === "AbortError") {
       throw new Error("Interarrival fit request timed out. Please try again.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!res.ok) {
+    throw new Error(`API error: ${res.statusText}`);
+  }
+
+  return res.json() as Promise<DataFitResponse>;
+}
+
+// Fit distribution from interarrival values directly (no file upload)
+export async function FitDistributionFromInterarrivalValues(
+  interarrivalValues: Array<{
+    Station: string;
+    StationName?: string;
+    Time_Range: string;
+    OriginalValues: number[];
+    InterarrivalValues: number[];
+  }>,
+): Promise<DataFitResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}/guest/interarrival/fit_from_values`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ InterarrivalValues: interarrivalValues }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if ((err as { name?: string })?.name === "AbortError") {
+      throw new Error("Fit distribution request timed out. Please try again.");
     }
     throw err;
   } finally {

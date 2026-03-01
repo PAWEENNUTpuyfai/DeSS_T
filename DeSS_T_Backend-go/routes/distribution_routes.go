@@ -9,5 +9,6 @@ import (
 func SetupDistributionRoutes(app *fiber.App) {
     app.Post("/api/guest/alighting/distribution_fit", controllers.UploadGuestAlightingFit)
     app.Post("/api/guest/interarrival/distribution_fit", controllers.UploadGuestInterarrivalFit)
+    app.Post("/api/guest/interarrival/fit_from_values", controllers.FitDistributionFromInterarrivalValues)
 	app.Post("/api/guest/schedule/upload/:scenarioID", controllers.UploadGuestSchedulefile )
 }

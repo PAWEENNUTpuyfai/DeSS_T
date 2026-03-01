@@ -55,6 +55,51 @@ func UploadGuestAlightingFit(c *fiber.Ctx) error {
     return c.JSON(result)
 }
 
+// FitDistributionFromInterarrivalValues receives interarrival values JSON directly and fits distribution
+func FitDistributionFromInterarrivalValues(c *fiber.Ctx) error {
+    // รับ JSON body โดยตรง
+    var requestBody struct {
+        InterarrivalValues []models.InterarrivalItem `json:"InterarrivalValues"`
+    }
+    
+    if err := c.BodyParser(&requestBody); err != nil {
+        return c.Status(400).JSON(fiber.Map{"error": "invalid JSON body", "detail": err.Error()})
+    }
+    
+    if len(requestBody.InterarrivalValues) == 0 {
+        return c.Status(400).JSON(fiber.Map{"error": "no interarrival values provided"})
+    }
+    
+    // แปลง InterarrivalValues เป็น DataModelDistRequest สำหรับ Python
+    var dataItems []models.ItemDistRequest
+    for _, item := range requestBody.InterarrivalValues {
+        var records []models.RecordDistRequest
+        for i, val := range item.InterarrivalValues {
+            records = append(records, models.RecordDistRequest{
+                RecordID:     i + 1,
+                NumericValue: val,
+            })
+        }
+        dataItems = append(dataItems, models.ItemDistRequest{
+            Station:   item.Station,
+            TimeRange: item.TimeRange,
+            Records:   records,
+        })
+    }
+    
+    jsonData := models.DataModelDistRequest{
+        Data: dataItems,
+    }
+    
+    // ส่ง JSON ไป Python สำหรับ distribution fitting
+    result, err := services.CallPythonInterarrivalDistributionFit(jsonData)
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+    }
+    
+    return c.JSON(result)
+}
+
 func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
     // รับไฟล์
     f, err := c.FormFile("file")
@@ -134,9 +179,16 @@ func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
         return c.Status(500).JSON(fiber.Map{"error": err.Error()})
     }
 
+    // Python คืนค่า { "DataFitResponse": [...] }
+    // ดึงเฉพาะ array ออกมาใส่ใน response
+    dataFitArray := result["DataFitResponse"]
+    if dataFitArray == nil {
+        dataFitArray = result // fallback ถ้า structure ต่างออกไป
+    }
+
     // ส่ง response ที่รวม distribution fit + interarrival values
     response := fiber.Map{
-        "DataFitResponse": result,
+        "DataFitResponse": dataFitArray,
         "InterarrivalValues": interarrivalData,
     }
 

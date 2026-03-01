@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
+  FitDistributionFromInterarrivalValues,
 } from "../../../utility/api/distributionFit";
 import MapViewer from "../MapViewer";
 import LoadingModal from "../LoadingModal";
@@ -119,6 +120,7 @@ export default function ConfigurationFiles({
   const [endHour, setEndHour] = useState<number>(16);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [isDayTemplate, setIsDayTemplate] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // File Upload Functions
   const submitAlighting = async () => {
@@ -470,6 +472,35 @@ export default function ConfigurationFiles({
           if (outI) interRes = outI;
         }
 
+        // If we have interarrival values from day template, fit distribution from them
+        if (
+          interarrivalValues &&
+          Array.isArray(interarrivalValues) &&
+          interarrivalValues.length > 0
+        ) {
+          try {
+            const fittedResult = await FitDistributionFromInterarrivalValues(
+              interarrivalValues as Array<{
+                Station: string;
+                StationName?: string;
+                Time_Range: string;
+                OriginalValues: number[];
+                InterarrivalValues: number[];
+              }>,
+            );
+            if (fittedResult) {
+              interRes = fittedResult;
+              setInterarrivalResult(fittedResult);
+            }
+          } catch (fitErr) {
+            console.warn(
+              "Failed to fit distribution from interarrival values:",
+              fitErr,
+            );
+            // Continue with existing interRes
+          }
+        }
+
         let network: NetworkModel;
         if (stationDetails && stationDetails.length > 0) {
           try {
@@ -555,13 +586,11 @@ export default function ConfigurationFiles({
         setIsSubmitting(false);
       }
 
-      // // Navigate after cleanup if successful
-      // if (saveSuccess) {
-      //   alert(`Configuration "${configurationName}" saved successfully!`);
-      //   // Use window.location to ensure navigation happens
-      //   window.location.href = "/user/workspace?tab=config";
-      //   return;
-      // }
+      // Show success modal if successful
+      if (saveSuccess) {
+        setShowSuccessModal(true);
+        return;
+      }
 
       return;
     }
@@ -663,6 +692,67 @@ export default function ConfigurationFiles({
             : "Processing files..."
         }
       />
+
+      {/* Success Modal with Download Option */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-[25px] p-8 shadow-lg max-w-md w-full">
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                Configuration Saved!
+              </h2>
+              <p className="text-gray-600 text-center mb-6">
+                Configuration "{configurationName}" has been saved successfully.
+              </p>
+
+              {/* Download Interarrival Values Button */}
+              {interarrivalValues ? (
+                <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                  <h4 className="font-semibold text-blue-900 mb-2">
+                    ✓ Interarrival Values Available
+                  </h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    {Array.isArray(interarrivalValues)
+                      ? `${(interarrivalValues as Array<unknown>).length} time period(s) processed`
+                      : "Interarrival values computed successfully"}
+                  </p>
+                  <button
+                    onClick={() => downloadInterarrivalValues()}
+                    className="btn_primary text-sm w-full"
+                  >
+                    Download Interarrival Values
+                  </button>
+                </div>
+              ) : null}
+
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  window.location.href = "/user/workspace?tab=config";
+                }}
+                className="btn_primary w-full"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Nav
         usermode={usermode}
         inpage="Configuration"
@@ -879,38 +969,6 @@ export default function ConfigurationFiles({
                 </div>
               )}
 
-              {/* Display Interarrival Values */}
-              {interarrivalValues && Array.isArray(interarrivalValues) ? (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-semibold text-blue-900 mb-2">
-                    ✓ Interarrival Values Calculated
-                  </h4>
-                  <p className="text-sm text-blue-700 mb-3">
-                    {`${(interarrivalValues as Array<unknown>).length} time period(s) processed`}
-                  </p>
-                  <button
-                    onClick={() => downloadInterarrivalValues()}
-                    className="btn_primary text-sm"
-                  >
-                    Download Interarrival Values
-                  </button>
-                </div>
-              ) : interarrivalValues ? (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-semibold text-blue-900 mb-2">
-                    ✓ Interarrival Values Calculated
-                  </h4>
-                  <p className="text-sm text-blue-700 mb-3">
-                    Interarrival values computed successfully
-                  </p>
-                  <button
-                    onClick={() => downloadInterarrivalValues()}
-                    className="btn_primary text-sm"
-                  >
-                    Download Interarrival Values
-                  </button>
-                </div>
-              ) : null}
               {/* Action Buttons */}
               <div className="mt-2 flex justify-end">
                 <button

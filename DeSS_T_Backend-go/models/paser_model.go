@@ -291,8 +291,8 @@ func DistributionExcelToJSONReaderWithDayTemplate(
                 recordID++
             }
 
-            // สร้าง time range header (เช่น "8:00-8:59")
-            timeRange := fmt.Sprintf("%d:00-%d:59", hour, hour)
+            // สร้าง time range header (เช่น "08:00-08:59")
+            timeRange := fmt.Sprintf("%02d:00-%02d:59", hour, hour)
 
             output.Data = append(output.Data, Item{
                 Station:   stationID,

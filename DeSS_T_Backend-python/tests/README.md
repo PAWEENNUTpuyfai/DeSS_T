@@ -11,6 +11,9 @@ tests/
 ├── __init__.py
 ├── README.md                         # ไฟล์นี้
 ├── sample_input.json                 # ตัวอย่าง input สำหรับทดสอบ
+├── sample_actual_values.json         # ตัวอย่างค่าจริงสำหรับ accuracy analyzer
+├── accuracy_analyzer.py              # 🎯 วิเคราะห์ accuracy โดยเทียบกับค่าจริง (1 รอบ)
+├── accuracy_batch_analyzer.py        # 🎯 รัน accuracy หลายรอบและแสดงสถิติ
 ├── precision_analyzer.py             # 🔬 วิเคราะห์ precision ของผลลัพธ์
 ├── simulation_batch_runner.py        # รัน simulation หลายรอบ
 ├── simulation_comparator.py          # เปรียบเทียบผลลัพธ์แบบละเอียด
@@ -43,7 +46,149 @@ python -m tests.simulation_batch_runner -i tests/sample_input.json
 - รายงานเปรียบเทียบอัตโนมัติ
 - Statistics (mean, stdev, CV%)
 
-### 2. 🔬 Precision Analyzer - วิเคราะห์ความแม่นยำ (แนะนำ)
+### 2. 🎯 Accuracy Analyzer - วิเคราะห์ความแม่นยำโดยเทียบกับค่าจริง (แนะนำ)
+
+```bash
+# วิเคราะห์ accuracy โดยเทียบกับค่าจริง
+python -m tests.accuracy_analyzer --input tests/sample_input.json --actual tests/sample_actual_values.json
+
+# บันทึกผลลัพธ์
+python -m tests.accuracy_analyzer -i tests/sample_input.json -a tests/sample_actual_values.json -o accuracy_report.json
+```
+
+**Format ของไฟล์ actual values (JSON):**
+
+```json
+{
+  "waiting_time": 5.2, // ค่าเฉลี่ย waiting time ที่เป็นจริง (นาที)
+  "utilization": 0.75, // ค่าเฉลี่ย utilization ที่เป็นจริง (0-1)
+  "stations": {
+    // waiting time แต่ละสถานี (ถ้ามี)
+    "หอพักหญิง 6": 3.5,
+    "คณะวิศวกรรมศาสตร์": 4.2
+  },
+  "routes": {
+    "utilization": {
+      // utilization แต่ละเส้นทาง (ถ้ามี)
+      "route_id_1": 0.8
+    },
+    "waiting_time": {
+      // waiting time แต่ละเส้นทาง (ถ้ามี)
+      "route_id_1": 5.5
+    }
+  }
+}
+```
+
+**Output:**
+
+```
+======================================================================
+📊 ACCURACY ANALYSIS REPORT
+======================================================================
+
+🎯 OVERALL SUMMARY:
+----------------------------------------------------------------------
+  🕐 Waiting Time:
+     Actual: 5.20 min
+     Predicted: 5.35 min
+     Error: 0.15 min (2.88%)
+     ✓ Accuracy: 97.12%
+
+  📈 Utilization:
+     Actual: 0.75
+     Predicted: 0.73
+     Error: 0.0200 (2.67%)
+     ✓ Accuracy: 97.33%
+
+📈 AGGREGATE METRICS:
+----------------------------------------------------------------------
+  🕐 Waiting Time (across 15 measurements):
+     MAPE (Mean Absolute % Error): 3.45%
+     RMSE (Root Mean Square Error): 0.2341
+     ✓ Overall Accuracy: 96.55%
+
+  📈 Utilization (across 8 measurements):
+     MAPE (Mean Absolute % Error): 2.87%
+     RMSE (Root Mean Square Error): 0.0234
+     ✓ Overall Accuracy: 97.13%
+```
+
+**Metrics ที่คำนวณ:**
+
+- **Absolute Error** - ส่วนต่างสัมบูรณ์ระหว่างค่าจริงและค่าจาก simulation
+- **Relative Error** - เปอร์เซ็นต์ความคลาดเคลื่อนเทียบกับค่าจริง
+- **Accuracy** - ความแม่นยำ (100% - Relative Error)
+- **MAPE** - Mean Absolute Percentage Error (ค่าเฉลี่ยของ % error)
+- **RMSE** - Root Mean Square Error (วัดความแตกต่างโดยรวม)
+
+### 2.5 🎯 Accuracy Batch Analyzer - รัน accuracy หลายรอบ
+
+```bash
+# รัน accuracy 10 รอบ แล้วแสดงสถิติ
+python -m tests.accuracy_batch_analyzer --input tests/sample_input.json --actual tests/sample_actual_values.json --runs 10
+
+# แสดงรายละเอียดแต่ละรอบ
+python -m tests.accuracy_batch_analyzer -i tests/sample_input.json -a tests/sample_actual_values.json -r 10 --detailed
+
+# บันทึกผลลัพธ์
+python -m tests.accuracy_batch_analyzer -i tests/sample_input.json -a tests/sample_actual_values.json -r 10 -o test_results/
+```
+
+**Options:**
+
+- `--input, -i` : Path ไปยังไฟล์ JSON input
+- `--actual, -a` : Path ไปยังไฟล์ actual values
+- `--runs, -r` : จำนวนรอบที่ต้องการรัน (default: 10)
+- `--output, -o` : Folder สำหรับเก็บผลลัพธ์ (default: test_results)
+- `--detailed` : แสดงรายละเอียดแต่ละรอบ
+
+**Output:**
+
+```
+🚀 Starting accuracy batch analysis: 10 runs
+...
+▶️  Run 1/10... ✅ Done (2.34s)
+▶️  Run 2/10... ✅ Done (2.21s)
+...
+
+======================================================================
+📊 ACCURACY BATCH ANALYSIS REPORT
+======================================================================
+
+📈 Batch Summary:
+   Total Runs: 10
+   Successful: 10
+   Failed: 0
+
+🕐 Waiting Time Accuracy (across 10 runs):
+   ✓ Mean:    97.12%
+   📊 Median: 97.25%
+   📉 StDev:  1.23%
+   📊 Range:  94.56% ~ 99.12%
+   Error Mean: 2.88%
+   Error StDev: 1.23%
+
+📈 Utilization Accuracy (across 10 runs):
+   ✓ Mean:    97.33%
+   📊 Median: 97.45%
+   📉 StDev:  0.87%
+   📊 Range:  95.67% ~ 98.92%
+   Error Mean: 2.67%
+   Error StDev: 0.87%
+
+✅ Assessment:
+   Waiting Time: Excellent (97.12% accuracy)
+   Utilization: Excellent (97.33% accuracy)
+```
+
+**ได้ JSON file ที่บันทึก:**
+
+- จำนวนรอบรวม, สำเร็จ, ล้มเหลว
+- สถิติความแม่นยำ (mean, median, stdev, min, max)
+- รายละเอียดแต่ละรอบ
+
+### 3. 🔬 Precision Analyzer - วิเคราะห์ความแม่นยำ (แนะนำ)
 
 ```bash
 # วิเคราะห์ precision จาก 10 รอบ
@@ -74,7 +219,7 @@ average_utilization            3 dp       4 sf       99.1%        0.7523, 0.7519
 - `Sig.Figs` - Significant figures ที่เชื่อถือได้
 - `Agreement` - สัดส่วนความตรงกันของค่า (0-100%)
 
-### 3. Comparator - เปรียบเทียบผลลัพธ์หลาย batch
+### 4. Comparator - เปรียบเทียบผลลัพธ์หลาย batch
 
 ```bash
 # เปรียบเทียบไฟล์เฉพาะ
@@ -94,7 +239,7 @@ python -m tests.simulation_comparator --dir test_results/ --output report.json
 - เปรียบเทียบ slot-by-slot
 - รายงาน Route statistics
 
-### 4. Pytest Tests - ทดสอบอัตโนมัติ
+### 5. Pytest Tests - ทดสอบอัตโนมัติ
 
 ```bash
 # รัน tests ทั้งหมด
@@ -211,9 +356,44 @@ pytest
 pytest-benchmark  # optional, for performance tests
 ```
 
-## 💡 Tips
+## 💡 Tips และการเลือกเครื่องมือ
 
-1. **เริ่มต้นด้วย 5 รอบ** - ถ้า CV สูง ให้เพิ่มเป็น 10-20 รอบ
-2. **ดู CV%** - ถ้า CV > 30% อาจมีปัญหากับ simulation หรือ input
-3. **ตรวจสอบ Outliers** - ค่าที่อยู่ไกลจาก mean อาจบ่งบอกถึง edge cases
-4. **ใช้ sample_input.json เป็น template** - แก้ไขตาม scenario ที่ต้องการ
+### เข้าใจความต่างของเครื่องมือ:
+
+| เครื่องมือ                     | ใช้เมื่อ                                     | ตัวอย่าง                                                                     |
+| ------------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------- |
+| **accuracy_analyzer.py**       | ต้องการวิเคราะห์ 1 รอบ เทียบกับค่าจริง       | `python -m tests.accuracy_analyzer -i input.json -a actual.json`             |
+| **accuracy_batch_analyzer.py** | รัน accuracy หลายรอบเพื่อดูสถิติ (มีค่าจริง) | `python -m tests.accuracy_batch_analyzer -i input.json -a actual.json -r 10` |
+| **precision_analyzer.py**      | วิเคราะห์ความสม่ำเสมอ (ไม่รู้ค่าจริง)        | `python -m tests.precision_analyzer -i input.json -r 10`                     |
+| **simulation_batch_runner.py** | เก็บผลลัพธ์หลายรอบ (ไม่วิเคราะห์อะไร)        | `python -m tests.simulation_batch_runner -i input.json -r 10`                |
+
+**ความต่างหลัก:**
+
+- **Accuracy** = เปรียบเทียบกับค่าจริง (ต้องรู้ค่าจริง)
+  - 1 รอบ: ใช้ `accuracy_analyzer.py`
+  - หลายรอบ: ใช้ `accuracy_batch_analyzer.py`
+- **Precision** = วัดความสม่ำเสมอ (ไม่ต้องรู้ค่าจริง)
+  - ใช้ `precision_analyzer.py` (ดู CV%, standard deviation)
+
+**ตัวอย่าง:**
+
+- ถ้า simulation ให้ผลลัพธ์ 5.2, 5.3, 5.1 (precision สูง) แต่ค่าจริงคือ 8.0 (accuracy ต่ำ)
+
+### คำแนะนำการใช้งาน:
+
+1. **ถ้ามีค่าจริง (Actual Values):**
+   - **รัน 1 รอบ:** ใช้ `accuracy_analyzer.py` เพื่อดูว่าถูกต้องหรือไม่
+   - **รัน 10+ รอบ:** ใช้ `accuracy_batch_analyzer.py` เพื่อดูความน่าเชื่อถือ (ทำให้ได้ผลประมาณเดิมไหม)
+
+2. **ถ้าไม่มีค่าจริง:**
+   - ใช้ `precision_analyzer.py` เพื่อดูว่าผลลัพธ์สม่ำเสมอหรือไม่ (CV%)
+   - ค่อยรัน batch runner เพื่อเก็บผลลัพธ์ดู
+
+3. **ตรวจสอบ Thresholds:**
+   - **Accuracy MAPE > 20%** → อาจมีปัญหา
+   - **Precision CV > 30%** → ผลลัพธ์ไม่สม่ำเสมอ
+   - **Accuracy StDev > 3%** → ผลลัพธ์แกว่งไปมา (ต้อง debug)
+
+4. **ตรวจสอบ Outliers** - ค่าที่อยู่ไกลจาก mean อาจบ่งบอกถึง edge cases
+
+5. **ใช้ sample_input.json เป็น template** - แก้ไขตาม scenario ที่ต้องการ

@@ -4,7 +4,6 @@ import {
   TileLayer,
   CircleMarker,
   Polyline,
-  Popup,
   Tooltip,
   Marker,
 } from "react-leaflet";
@@ -717,7 +716,9 @@ export default function InteractiveMap({
                     click: () => setSelectedStationId(st.id),
                   }}
                 >
-                  <Popup>{st.name}</Popup>
+                  <Tooltip direction="top" offset={[0, -8]} opacity={1}>
+                    {st.name}
+                  </Tooltip>
                 </CircleMarker>
               ))}
 
@@ -754,7 +755,6 @@ export default function InteractiveMap({
                             click: () => setSelectedStationId(stationId),
                           }}
                         >
-                          <Popup>{station.name}</Popup>
                           <Tooltip
                             direction="top"
                             offset={[0, -10]}

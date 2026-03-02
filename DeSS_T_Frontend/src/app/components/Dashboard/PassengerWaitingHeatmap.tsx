@@ -105,12 +105,13 @@ function HeatmapLayer({ data }: { data: HeatmapDataPoint[] }) {
         color: "#fff",
         weight: 1,
       })
-        .bindPopup(
+        .bindTooltip(
           `<div style="font-size: 13px;">
             <div style="font-weight: bold; margin-bottom: 4px;">${point.station_name}</div>
             <div style="color: #ff6b00;">Wait: ${point.avg_waiting_time.toFixed(1)}m</div>
             <div style="color: #0088cc;">Queue: ${point.avg_queue_length.toFixed(1)}p</div>
           </div>`,
+          { direction: "top", offset: [0, -8], opacity: 0.95 },
         )
         .addTo(map);
       markers.push(marker);

@@ -260,8 +260,10 @@ export default function Scenario({
   // 🔹 Unsaved changes modal state
   const [showUnsavedModal, setShowUnsavedModal] = useState<boolean>(false);
   
-  const [simStartHour, setSimStartHour] = useState<number>(8);
-  const [simEndHour, setSimEndHour] = useState<number>(16);
+  const [simStartHour, setSimStartHour] = useState<number | ''>(8);
+  const [simEndHour, setSimEndHour] = useState<number | ''>(16);
+  const [prevSimStartHour, setPrevSimStartHour] = useState<number>(8);
+  const [prevSimEndHour, setPrevSimEndHour] = useState<number>(16);
   const [timeSlot, setTimeSlot] = useState<string>("15 Minutes");
   
   // Station filter state
@@ -874,7 +876,7 @@ export default function Scenario({
       const simulationRequest: ProjectSimulationRequest = {
         configuration: configuration,
         scenario: scenarioDetail,
-        time_periods: simStartHour + ":00-" + simEndHour + ":00",
+        time_periods: (simStartHour || 0) + ":00-" + (simEndHour || 0) + ":00",
         time_slot: timeSlot.split(" ")[0],
       };
 
@@ -1025,7 +1027,7 @@ export default function Scenario({
         };
       }),
     })),
-    simWindow: `${simStartHour.toString().padStart(2, "0")}:00-${simEndHour.toString().padStart(2, "0")}:00`,
+    simWindow: `${(simStartHour || 0).toString().padStart(2, "0")}:00-${(simEndHour || 0).toString().padStart(2, "0")}:00`,
     timeSlotMinutes: parseInt(timeSlot.split(" ")[0]),
     simulationResponse: simulationResponse,
     busInfo: routes.map((r) => ({
@@ -1354,20 +1356,96 @@ export default function Scenario({
                         <div className="time-inputs p-2 px-4 text-[#C296CD] ml-3 my-2 h-[60px] flex items-center text-lg">
                           <input
                             type="number"
+                            step="1"
                             min={0}
                             max={23}
                             value={simStartHour}
-                            onChange={(e) => setSimStartHour(Number(e.target.value))}
+                            onFocus={() => {
+                              const current = typeof simStartHour === 'number' ? simStartHour : 0;
+                              setPrevSimStartHour(current);
+                            }}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSimStartHour(val === '' ? '' : Number(val));
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === '') {
+                                // Restore previous value if empty
+                                setSimStartHour(prevSimStartHour);
+                              } else {
+                                let val = Number(e.target.value);
+                                
+                                // If negative or NaN, restore previous value
+                                if (isNaN(val) || val < 0) {
+                                  setSimStartHour(prevSimStartHour);
+                                  return;
+                                }
+                                
+                                // Round to integer (no decimals allowed)
+                                val = Math.round(val);
+                                
+                                // Clamp to 0-23
+                                val = Math.max(0, Math.min(23, val));
+                                
+                                // Check if start > end
+                                const currentEnd = typeof simEndHour === 'number' ? simEndHour : 24;
+                                if (val > currentEnd) {
+                                  alert(`Start hour (${val}) cannot be greater than end hour (${currentEnd})`);
+                                  setSimStartHour(prevSimStartHour);
+                                  return;
+                                }
+                                
+                                setSimStartHour(val);
+                              }
+                            }}
                             className="border p-2 rounded w-10 text-lg"
                           />
                           <span className="text-lg">:00</span>
                           <span className="mx-2 text-lg">-</span>
                           <input
                             type="number"
+                            step="1"
                             min={1}
                             max={24}
                             value={simEndHour}
-                            onChange={(e) => setSimEndHour(Number(e.target.value))}
+                            onFocus={() => {
+                              const current = typeof simEndHour === 'number' ? simEndHour : 0;
+                              setPrevSimEndHour(current);
+                            }}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSimEndHour(val === '' ? '' : Number(val));
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === '') {
+                                // Restore previous value if empty
+                                setSimEndHour(prevSimEndHour);
+                              } else {
+                                let val = Number(e.target.value);
+                                
+                                // If negative or NaN, restore previous value
+                                if (isNaN(val) || val < 0) {
+                                  setSimEndHour(prevSimEndHour);
+                                  return;
+                                }
+                                
+                                // Round to integer (no decimals allowed)
+                                val = Math.round(val);
+                                
+                                // Clamp to 1-24
+                                val = Math.max(1, Math.min(24, val));
+                                
+                                // Check if end < start
+                                const currentStart = typeof simStartHour === 'number' ? simStartHour : 0;
+                                if (val < currentStart) {
+                                  alert(`End hour (${val}) cannot be less than start hour (${currentStart})`);
+                                  setSimEndHour(prevSimEndHour);
+                                  return;
+                                }
+                                
+                                setSimEndHour(val);
+                              }
+                            }}
                             className="border p-2 rounded w-10 text-lg"
                           />
                           <span className="text-lg">:00</span>

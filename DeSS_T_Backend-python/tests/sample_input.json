@@ -1,0 +1,673 @@
+{
+	"time_period": "8:00-16:00",
+	"time_slot": "15",
+	"configuration_data": {
+		"station_list": [
+			{
+				"station_id": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+				"station_name": "คณะวิศวกรรมศาสตร์"
+			},
+			{
+				"station_id": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+				"station_name": "หอพักหญิง 6"
+			},
+			{
+				"station_id": "3f608122-b333-4899-98ab-26f51f0d42fe",
+				"station_name": "อ.มช."
+			},
+			{
+				"station_id": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+				"station_name": "หอพักหญิง 4"
+			},
+			{
+				"station_id": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+				"station_name": "หอพักหญิง 1"
+			},
+			{
+				"station_id": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+				"station_name": "หอพักหญิง 12"
+			}
+		],
+		"route_pair": [
+			{
+				"route_pair_id": "16842c47-2c3b-4da6-af41-790d93d5d85d",
+				"fst_station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+				"snd_station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+				"travel_time": 40.83,
+				"distance": 340.29
+			},
+			{
+				"route_pair_id": "72c9791e-d930-4b79-89d4-8ca459f55cb6",
+				"fst_station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+				"snd_station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+				"travel_time": 25.5,
+				"distance": 212.53
+			},
+			{
+				"route_pair_id": "ba6e5ec6-d591-40b8-902f-75c37b6c6ad8",
+				"fst_station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+				"snd_station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+				"travel_time": 53.08,
+				"distance": 374.12
+			},
+			{
+				"route_pair_id": "a5b75f5d-509b-4681-b2fa-301bbc23e87d",
+				"fst_station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+				"snd_station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+				"travel_time": 13,
+				"distance": 108.35
+			},
+			{
+				"route_pair_id": "f1f10963-a29f-4efe-9f20-f661688101c6",
+				"fst_station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+				"snd_station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+				"travel_time": 71.47,
+				"distance": 524.16
+			}
+		],
+		"alighting_data": [
+			{
+				"time_range": "09:00-09:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "11:00-11:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "12:00-12:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "13:00-13:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "15:00-15:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "08:00-08:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "10:00-10:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "14:00-14:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Constant",
+						"ArgumentList": "value=5.0000"
+					}
+				]
+			}
+		],
+		"interarrival_data": [
+			{
+				"time_range": "13:00-13:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "14:00-14:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "10:00-10:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "11:00-11:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "12:00-12:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "15:00-15:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "08:00-08:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					}
+				]
+			},
+			{
+				"time_range": "09:00-09:59",
+				"records": [
+					{
+						"station": "5801d881-6928-43c0-9eb7-67da6c91ce36",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f58bc1fa-ec23-4036-9cfd-f8eddecd136d",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "3f608122-b333-4899-98ab-26f51f0d42fe",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "fefbce0a-3695-4868-8a8a-475aa60a70d8",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "f74d3f1f-3edb-4a8d-aba3-f76688985f42",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					},
+					{
+						"station": "108d0e82-2ff4-47b8-9d59-37fb8c6b3710",
+						"Distribution": "Poisson",
+						"ArgumentList": "lambda=5.0000"
+					}
+				]
+			}
+		]
+	},
+	"scenario_data": [
+		{
+			"route_id": "44e65cf2-6fca-4496-a9a0-4f051e8aed29",
+			"route_name": "Route 1",
+			"route_order": "a5b75f5d-509b-4681-b2fa-301bbc23e87d$72c9791e-d930-4b79-89d4-8ca459f55cb6$16842c47-2c3b-4da6-af41-790d93d5d85d$f1f10963-a29f-4efe-9f20-f661688101c6$ba6e5ec6-d591-40b8-902f-75c37b6c6ad8",
+			"route_schedule": [
+				{
+					"departure_time": "08:00"
+				},
+				{
+					"departure_time": "09:00"
+				},
+				{
+					"departure_time": "10:00"
+				},
+				{
+					"departure_time": "11:00"
+				},
+				{
+					"departure_time": "12:00"
+				},
+				{
+					"departure_time": "13:00"
+				},
+				{
+					"departure_time": "14:00"
+				},
+				{
+					"departure_time": "15:00"
+				}
+			],
+			"bus_information": {
+				"bus_speed": 60,
+				"max_distance": 70,
+				"max_bus": 4,
+				"bus_capacity": 16,
+				"avg_travel_time": 5
+			}
+		}
+	]
+}

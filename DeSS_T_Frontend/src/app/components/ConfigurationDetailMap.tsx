@@ -148,23 +148,16 @@ export default function ConfigurationDetailMap({
             center={stationToLatLng(st)}
             radius={5}
             color="#eeb34b"
-            fillColor="#ffffff"
+            fillColor={isSelected ? "#eeb34b" : "#ffffff"}
             fillOpacity={0.9}
             weight={2}
             eventHandlers={{
               click: () => handleStationClick(stationId),
             }}
           >
-            {isSelected && (
-              <Tooltip 
-                permanent 
-                direction="top" 
-                offset={[0, -10]}
-                autoPan={false}
-              >
-                <strong>{st.name || stationId}</strong>
-              </Tooltip>
-            )}
+            <Tooltip direction="top" offset={[0, -8]} opacity={1}>
+              <strong>{st.name || stationId}</strong>
+            </Tooltip>
           </CircleMarker>
         );
       })}

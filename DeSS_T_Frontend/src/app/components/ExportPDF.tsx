@@ -339,6 +339,15 @@ export default function ExportPDF({
   );
 
   // Helper function to split dataset into chunks for pagination
+  // Helper function to format numeric values - show "-" for negative/invalid values
+  const formatValue = (value: number | string, decimals: number = 1): string => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue) || numValue < 0) {
+      return '-';
+    }
+    return numValue.toFixed(decimals);
+  };
+
   const splitDatasetIntoChunks = (
     dataset: [string, string, number][],
     maxSlotsPerPage: number,
@@ -385,28 +394,34 @@ export default function ExportPDF({
     // Convert waiting time from seconds to minutes (or keep as seconds if very small)
     const waitingTimeMinutes = summary.average_waiting_time / 60;
     const waitingTimeDisplay =
-      waitingTimeMinutes > 1
-        ? `${waitingTimeMinutes.toFixed(1)} mins`
-        : `${summary.average_waiting_time.toFixed(1)} mins`;
+      summary.average_waiting_time < 0
+        ? '-'
+        : waitingTimeMinutes > 1
+          ? `${waitingTimeMinutes.toFixed(1)} mins`
+          : `${summary.average_waiting_time.toFixed(1)} mins`;
 
     // Convert traveling time from seconds to minutes
     const travelingTimeMinutes = summary.average_travel_time / 60;
     const travelingTimeDisplay =
-      travelingTimeMinutes > 1
-        ? `${travelingTimeMinutes.toFixed(1)} mins`
-        : `${summary.average_travel_time.toFixed(1)} mins`;
+      summary.average_travel_time < 0
+        ? '-'
+        : travelingTimeMinutes > 1
+          ? `${travelingTimeMinutes.toFixed(1)} mins`
+          : `${summary.average_travel_time.toFixed(1)} mins`;
 
     // Convert traveling distance from meters to km
     const travelingDistanceKm = summary.average_travel_distance / 1000;
     const travelingDistanceDisplay =
-      travelingDistanceKm > 1
-        ? `${travelingDistanceKm.toFixed(1)} km`
-        : `${summary.average_travel_distance.toFixed(1)} m`;
+      summary.average_travel_distance < 0
+        ? '-'
+        : travelingDistanceKm > 1
+          ? `${travelingDistanceKm.toFixed(1)} km`
+          : `${summary.average_travel_distance.toFixed(1)} m`;
 
     return {
       avgWaitingTime: waitingTimeDisplay,
-      avgQueueLength: summary.average_queue_length.toFixed(1),
-      avgUtilization: (summary.average_utilization * 100).toFixed(0),
+      avgQueueLength: summary.average_queue_length < 0 ? '-' : summary.average_queue_length.toFixed(1),
+      avgUtilization: summary.average_utilization < 0 ? '-' : (summary.average_utilization * 100).toFixed(0),
       avgTravelingTime: travelingTimeDisplay,
       avgTravelingDistance: travelingDistanceDisplay,
     };
@@ -422,9 +437,9 @@ export default function ExportPDF({
           routeId: route.route_id,
           routeName: routeInfo?.[1] || route.route_id,
           routeColor: routeInfo?.[2] || "#9ca3af",
-          avgWaitingTime: (route.average_waiting_time / 60).toFixed(1),
-          avgQueueLength: route.average_queue_length.toFixed(1),
-          avgUtilization: (route.average_utilization * 100).toFixed(0),
+          avgWaitingTime: formatValue(route.average_waiting_time / 60),
+          avgQueueLength: formatValue(route.average_queue_length),
+          avgUtilization: formatValue(route.average_utilization * 100, 0),
         };
       }),
     }));
@@ -459,8 +474,8 @@ export default function ExportPDF({
         stationId: station.station_name,
         stationName:
           stationMap.get(station.station_name) ?? station.station_name,
-        avgWaitingTime: (station.average_waiting_time / 60).toFixed(1),
-        avgQueueLength: station.average_queue_length.toFixed(1),
+        avgWaitingTime: formatValue(station.average_waiting_time / 60),
+        avgQueueLength: formatValue(station.average_queue_length),
       })),
     }));
   }, [simulationResponse, playbackSeed?.stations]);
@@ -779,20 +794,32 @@ export default function ExportPDF({
               const avgOfAllStations =
                 slot.stations.length > 0
                   ? {
-                      avgWaitingTime: (
-                        slot.stations.reduce(
-                          (sum, s) => sum + parseFloat(s.avgWaitingTime),
-                          0,
-                        ) / slot.stations.length
-                      ).toFixed(1),
-                      avgQueueLength: (
-                        slot.stations.reduce(
-                          (sum, s) => sum + parseFloat(s.avgQueueLength),
-                          0,
-                        ) / slot.stations.length
-                      ).toFixed(1),
+                      avgWaitingTime: (() => {
+                        const validValues = slot.stations
+                          .map((s) =>
+                            s.avgWaitingTime === '-'
+                              ? NaN
+                              : parseFloat(s.avgWaitingTime),
+                          )
+                          .filter((v) => !isNaN(v));
+                        return validValues.length > 0
+                          ? formatValue(validValues.reduce((a, b) => a + b) / validValues.length)
+                          : '-';
+                      })(),
+                      avgQueueLength: (() => {
+                        const validValues = slot.stations
+                          .map((s) =>
+                            s.avgQueueLength === '-'
+                              ? NaN
+                              : parseFloat(s.avgQueueLength),
+                          )
+                          .filter((v) => !isNaN(v));
+                        return validValues.length > 0
+                          ? formatValue(validValues.reduce((a, b) => a + b) / validValues.length)
+                          : '-';
+                      })(),
                     }
-                  : { avgWaitingTime: "0.0", avgQueueLength: "0.0" };
+                  : { avgWaitingTime: '-', avgQueueLength: '-' };
 
               return (
                 <div

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   MapContainer,
   TileLayer,
-  Popup,
+  Tooltip,
   CircleMarker,
   useMap,
 } from "react-leaflet";
@@ -190,7 +190,9 @@ export default function MapViewer({
             fillColor="#ffffffff"
             fillOpacity={0.9}
           >
-            <Popup>{st.name || st.station_detail_id}</Popup>
+            <Tooltip direction="top" offset={[0, -8]} opacity={1}>
+              {st.name || st.station_detail_id}
+            </Tooltip>
           </CircleMarker>
         ))}
 

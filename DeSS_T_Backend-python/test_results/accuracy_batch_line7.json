@@ -1,0 +1,836 @@
+{
+  "metadata": {
+    "input_file": "tests/line7req.json",
+    "num_runs": 100,
+    "timestamp": "2026-03-01T21:17:08.442452",
+    "actual_waiting_time": 7.3033333,
+    "actual_utilization": 0.54018
+  },
+  "statistics": {
+    "total_runs": 100,
+    "successful_runs": 100,
+    "failed_runs": 0,
+    "waiting_time": {
+      "accuracy_mean": 54.71,
+      "accuracy_median": 79.86,
+      "accuracy_stdev": 35.45,
+      "accuracy_min": 0,
+      "accuracy_max": 86.68,
+      "error_mean": 47.9,
+      "error_stdev": 39.77,
+      "count": 100
+    },
+    "utilization": {
+      "accuracy_mean": 52.57,
+      "accuracy_median": 65.5,
+      "accuracy_stdev": 29.49,
+      "accuracy_min": 14.03,
+      "accuracy_max": 88.63,
+      "error_mean": 47.43,
+      "error_stdev": 29.49,
+      "count": 100
+    }
+  },
+  "runs": [
+    {
+      "run_number": 1,
+      "waiting_time_accuracy": 10.58,
+      "waiting_time_error": 89.42,
+      "utilization_accuracy": 84.03,
+      "utilization_error": 15.97,
+      "duration_seconds": 0.102896
+    },
+    {
+      "run_number": 2,
+      "waiting_time_accuracy": 10.58,
+      "waiting_time_error": 89.42,
+      "utilization_accuracy": 84.03,
+      "utilization_error": 15.97,
+      "duration_seconds": 0.059018
+    },
+    {
+      "run_number": 3,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027525
+    },
+    {
+      "run_number": 4,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027299
+    },
+    {
+      "run_number": 5,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027796
+    },
+    {
+      "run_number": 6,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.031155
+    },
+    {
+      "run_number": 7,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.026927
+    },
+    {
+      "run_number": 8,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027102
+    },
+    {
+      "run_number": 9,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027812
+    },
+    {
+      "run_number": 10,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027229
+    },
+    {
+      "run_number": 11,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.02836
+    },
+    {
+      "run_number": 12,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.026368
+    },
+    {
+      "run_number": 13,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.030268
+    },
+    {
+      "run_number": 14,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.02714
+    },
+    {
+      "run_number": 15,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027127
+    },
+    {
+      "run_number": 16,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.02827
+    },
+    {
+      "run_number": 17,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027708
+    },
+    {
+      "run_number": 18,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027029
+    },
+    {
+      "run_number": 19,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027766
+    },
+    {
+      "run_number": 20,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.031635
+    },
+    {
+      "run_number": 21,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.028207
+    },
+    {
+      "run_number": 22,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027659
+    },
+    {
+      "run_number": 23,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.028499
+    },
+    {
+      "run_number": 24,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.02653
+    },
+    {
+      "run_number": 25,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027009
+    },
+    {
+      "run_number": 26,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027586
+    },
+    {
+      "run_number": 27,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.028057
+    },
+    {
+      "run_number": 28,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.031197
+    },
+    {
+      "run_number": 29,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.028611
+    },
+    {
+      "run_number": 30,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.028128
+    },
+    {
+      "run_number": 31,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027666
+    },
+    {
+      "run_number": 32,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.026488
+    },
+    {
+      "run_number": 33,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027055
+    },
+    {
+      "run_number": 34,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027429
+    },
+    {
+      "run_number": 35,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.031433
+    },
+    {
+      "run_number": 36,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027489
+    },
+    {
+      "run_number": 37,
+      "waiting_time_accuracy": 86.68,
+      "waiting_time_error": 13.32,
+      "utilization_accuracy": 14.03,
+      "utilization_error": 85.97,
+      "duration_seconds": 0.027144
+    },
+    {
+      "run_number": 38,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.044543
+    },
+    {
+      "run_number": 39,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.045302
+    },
+    {
+      "run_number": 40,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.048204
+    },
+    {
+      "run_number": 41,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.043612
+    },
+    {
+      "run_number": 42,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.044261
+    },
+    {
+      "run_number": 43,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.04445
+    },
+    {
+      "run_number": 44,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.047939
+    },
+    {
+      "run_number": 45,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.043725
+    },
+    {
+      "run_number": 46,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.045473
+    },
+    {
+      "run_number": 47,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.042806
+    },
+    {
+      "run_number": 48,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.066903
+    },
+    {
+      "run_number": 49,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.045686
+    },
+    {
+      "run_number": 50,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.044342
+    },
+    {
+      "run_number": 51,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.043763
+    },
+    {
+      "run_number": 52,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.047495
+    },
+    {
+      "run_number": 53,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.0449
+    },
+    {
+      "run_number": 54,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.043793
+    },
+    {
+      "run_number": 55,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.043337
+    },
+    {
+      "run_number": 56,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.048288
+    },
+    {
+      "run_number": 57,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.04467
+    },
+    {
+      "run_number": 58,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.045182
+    },
+    {
+      "run_number": 59,
+      "waiting_time_accuracy": 79.86,
+      "waiting_time_error": 20.14,
+      "utilization_accuracy": 65.5,
+      "utilization_error": 34.5,
+      "duration_seconds": 0.04417
+    },
+    {
+      "run_number": 60,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.057368
+    },
+    {
+      "run_number": 61,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.052352
+    },
+    {
+      "run_number": 62,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.0522
+    },
+    {
+      "run_number": 63,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.052225
+    },
+    {
+      "run_number": 64,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.057738
+    },
+    {
+      "run_number": 65,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.052953
+    },
+    {
+      "run_number": 66,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.052565
+    },
+    {
+      "run_number": 67,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.052449
+    },
+    {
+      "run_number": 68,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.058282
+    },
+    {
+      "run_number": 69,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.053315
+    },
+    {
+      "run_number": 70,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.054098
+    },
+    {
+      "run_number": 71,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.052503
+    },
+    {
+      "run_number": 72,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.062239
+    },
+    {
+      "run_number": 73,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.054353
+    },
+    {
+      "run_number": 74,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.054678
+    },
+    {
+      "run_number": 75,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.059232
+    },
+    {
+      "run_number": 76,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.053184
+    },
+    {
+      "run_number": 77,
+      "waiting_time_accuracy": 33.05,
+      "waiting_time_error": 66.95,
+      "utilization_accuracy": 66.98,
+      "utilization_error": 33.02,
+      "duration_seconds": 0.053228
+    },
+    {
+      "run_number": 78,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.061103
+    },
+    {
+      "run_number": 79,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.070526
+    },
+    {
+      "run_number": 80,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.059359
+    },
+    {
+      "run_number": 81,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.060513
+    },
+    {
+      "run_number": 82,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.063887
+    },
+    {
+      "run_number": 83,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.058586
+    },
+    {
+      "run_number": 84,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.059526
+    },
+    {
+      "run_number": 85,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.06359
+    },
+    {
+      "run_number": 86,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.061412
+    },
+    {
+      "run_number": 87,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.059264
+    },
+    {
+      "run_number": 88,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.095072
+    },
+    {
+      "run_number": 89,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.060397
+    },
+    {
+      "run_number": 90,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.060436
+    },
+    {
+      "run_number": 91,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.06497
+    },
+    {
+      "run_number": 92,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.060067
+    },
+    {
+      "run_number": 93,
+      "waiting_time_accuracy": 0,
+      "waiting_time_error": 116.33,
+      "utilization_accuracy": 88.63,
+      "utilization_error": 11.37,
+      "duration_seconds": 0.062008
+    },
+    {
+      "run_number": 94,
+      "waiting_time_accuracy": 9.22,
+      "waiting_time_error": 90.78,
+      "utilization_accuracy": 76.22,
+      "utilization_error": 23.78,
+      "duration_seconds": 0.058295
+    },
+    {
+      "run_number": 95,
+      "waiting_time_accuracy": 9.22,
+      "waiting_time_error": 90.78,
+      "utilization_accuracy": 76.22,
+      "utilization_error": 23.78,
+      "duration_seconds": 0.053646
+    },
+    {
+      "run_number": 96,
+      "waiting_time_accuracy": 9.22,
+      "waiting_time_error": 90.78,
+      "utilization_accuracy": 76.22,
+      "utilization_error": 23.78,
+      "duration_seconds": 0.052606
+    },
+    {
+      "run_number": 97,
+      "waiting_time_accuracy": 9.22,
+      "waiting_time_error": 90.78,
+      "utilization_accuracy": 76.22,
+      "utilization_error": 23.78,
+      "duration_seconds": 0.057148
+    },
+    {
+      "run_number": 98,
+      "waiting_time_accuracy": 9.22,
+      "waiting_time_error": 90.78,
+      "utilization_accuracy": 76.22,
+      "utilization_error": 23.78,
+      "duration_seconds": 0.053703
+    },
+    {
+      "run_number": 99,
+      "waiting_time_accuracy": 9.22,
+      "waiting_time_error": 90.78,
+      "utilization_accuracy": 76.22,
+      "utilization_error": 23.78,
+      "duration_seconds": 0.053267
+    },
+    {
+      "run_number": 100,
+      "waiting_time_accuracy": 9.22,
+      "waiting_time_error": 90.78,
+      "utilization_accuracy": 76.22,
+      "utilization_error": 23.78,
+      "duration_seconds": 0.05282
+    }
+  ]
+}

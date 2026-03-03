@@ -4,7 +4,7 @@ import {
   TileLayer,
   CircleMarker,
   Polyline,
-  Popup,
+  Tooltip,
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -272,7 +272,9 @@ export default function ScenarioMap({
               },
             }}
           >
-            <Popup>{stationDisplayName(st)}</Popup>
+            <Tooltip direction="top" offset={[0, -8]} opacity={1}>
+              {stationDisplayName(st)}
+            </Tooltip>
           </CircleMarker>
         ))}
 

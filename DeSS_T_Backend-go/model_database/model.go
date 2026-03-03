@@ -1,7 +1,7 @@
 package model_database
 
 import (
-    "time"
+	"time"
 )
 
 // ------------------- USER --------------------
@@ -206,6 +206,7 @@ type ConfigurationDetail struct {
     ScenarioDetails      []ScenarioDetail      `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;"`
     AlightingData        []AlightingData       `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;" json:"alighting_datas"`
     InterArrivalData     []InterArrivalData    `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;" json:"interarrival_datas"`
+    ScheduleData         []ScheduleData        `gorm:"foreignKey:ConfigurationDetailID;constraint:OnDelete:CASCADE;" json:"schedule_datas"`
 }
 
 // ------------------- ALIGHTING DATA --------------------

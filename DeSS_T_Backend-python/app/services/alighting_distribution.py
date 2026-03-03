@@ -1,7 +1,11 @@
 from typing import List, Dict
 from scipy import stats
 import numpy as np
+import warnings
 from app.schemas.calculation import DataFitResponse, FitItem, DataModelDistRequest
+
+# Suppress scipy warnings during distribution fitting
+warnings.filterwarnings('ignore', category=RuntimeWarning, module='scipy')
 
 # ------------------------------
 # Distribution fitting function
@@ -9,11 +13,12 @@ from app.schemas.calculation import DataFitResponse, FitItem, DataModelDistReque
 def fit_best_distribution_alighting(values: List[float]) -> Dict:
     """
     Fit distributions specifically optimized for alighting (discrete/count data).
+    Handles edge cases to avoid scipy numerical warnings.
     """
     if not values:
         return {"name": "No Alighting", "params": (0,)}
 
-    data = np.array(values)
+    data = np.array(values, dtype=float)
     n = len(data)
     
     # 1. กรณีข้อมูลเป็น 0 ทั้งหมด หรือเกือบทั้งหมด
@@ -38,7 +43,12 @@ def fit_best_distribution_alighting(values: List[float]) -> Dict:
 
     # --- Group B: Continuous Distributions (For high volume/spread) ---
     # เราจะลอง Continuous เฉพาะเมื่อข้อมูลมีค่าหลากหลายพอ
-    if np.unique(data).size > 3:
+    # Check for sufficient variance before trying continuous distributions
+    data_std = np.std(data)
+    data_mean = np.mean(data)
+    
+    # Only fit continuous distributions if variance is sufficient (CV > 10%)
+    if np.unique(data).size > 3 and data_std > 0 and (data_std / max(data_mean, 1e-10)) > 0.1:
         cont_distributions = {
             "Exponential": stats.expon,
             "Gamma": stats.gamma,
@@ -49,15 +59,26 @@ def fit_best_distribution_alighting(values: List[float]) -> Dict:
         for name, dist in cont_distributions.items():
             try:
                 params = dist.fit(data)
+                
+                # Validate parameters are sensible (not NaN or infinite)
+                if any(np.isnan(params)) or any(np.isinf(params)):
+                    continue
+                    
                 logL = np.sum(dist.logpdf(data, *params))
+                
+                # Check if logL is valid
+                if np.isnan(logL) or np.isinf(logL):
+                    continue
+                    
                 k = len(params)
                 aic = 2 * k - 2 * logL
                 
-                if aic < best_aic:
+                if aic < best_aic and not np.isnan(aic) and not np.isinf(aic):
                     best_aic = aic
                     best_name = name
                     best_params = params
-            except:
+            except Exception:
+                # Silently skip distributions that fail to fit
                 continue
 
     return {

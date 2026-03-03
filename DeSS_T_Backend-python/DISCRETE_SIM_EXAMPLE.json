@@ -1,0 +1,296 @@
+{
+  "example_request": {
+    "description": "Complete example of a DiscreteSimulationRequest",
+    "time_period": "08:00-12:00",
+    "time_slot": 60,
+    "day_template": {
+      "arrivals": [
+        {
+          "station_name": "Central Station",
+          "arrival_time": "08:00:00"
+        },
+        {
+          "station_name": "Central Station",
+          "arrival_time": "08:05:15"
+        },
+        {
+          "station_name": "Central Station",
+          "arrival_time": "08:10:30"
+        },
+        {
+          "station_name": "North Station",
+          "arrival_time": "08:08:00"
+        },
+        {
+          "station_name": "North Station",
+          "arrival_time": "08:15:00"
+        },
+        {
+          "station_name": "South Station",
+          "arrival_time": "08:12:00"
+        },
+        {
+          "station_name": "Central Station",
+          "arrival_time": "09:00:00"
+        },
+        {
+          "station_name": "North Station",
+          "arrival_time": "09:05:00"
+        },
+        {
+          "station_name": "South Station",
+          "arrival_time": "09:10:00"
+        },
+        {
+          "station_name": "Central Station",
+          "arrival_time": "10:00:00"
+        }
+      ]
+    },
+    "configuration_data": {
+      "station_list": [
+        {
+          "station_id": "S1",
+          "station_name": "Central Station"
+        },
+        {
+          "station_id": "S2",
+          "station_name": "North Station"
+        },
+        {
+          "station_id": "S3",
+          "station_name": "South Station"
+        }
+      ],
+      "route_pair": [
+        {
+          "route_pair_id": "P1",
+          "fst_station": "Central Station",
+          "snd_station": "North Station",
+          "travel_time": 15.0,
+          "distance": 12.5
+        },
+        {
+          "route_pair_id": "P2",
+          "fst_station": "North Station",
+          "snd_station": "South Station",
+          "travel_time": 20.0,
+          "distance": 18.0
+        },
+        {
+          "route_pair_id": "P3",
+          "fst_station": "South Station",
+          "snd_station": "Central Station",
+          "travel_time": 18.0,
+          "distance": 15.5
+        }
+      ],
+      "alighting_data": [
+        {
+          "time_range": "08:00-12:00",
+          "records": [
+            {
+              "station": "Central Station",
+              "Distribution": "Uniform",
+              "ArgumentList": "0.1,0.2"
+            },
+            {
+              "station": "North Station",
+              "Distribution": "Uniform",
+              "ArgumentList": "0.1,0.2"
+            },
+            {
+              "station": "South Station",
+              "Distribution": "Uniform",
+              "ArgumentList": "0.1,0.2"
+            }
+          ]
+        }
+      ],
+      "interarrival_data": []
+    },
+    "scenario_data": [
+      {
+        "route_id": "R1",
+        "route_name": "Route 1 (Central-North-South)",
+        "route_order": "P1$P2",
+        "route_schedule": [
+          {
+            "departure_time": "08:00:00"
+          },
+          {
+            "departure_time": "08:30:00"
+          },
+          {
+            "departure_time": "09:00:00"
+          },
+          {
+            "departure_time": "09:30:00"
+          },
+          {
+            "departure_time": "10:00:00"
+          },
+          {
+            "departure_time": "10:30:00"
+          }
+        ],
+        "bus_information": {
+          "bus_speed": 40.0,
+          "max_distance": 100.0,
+          "max_bus": 3,
+          "bus_capacity": 50,
+          "avg_travel_time": 35.0
+        }
+      },
+      {
+        "route_id": "R2",
+        "route_name": "Route 2 (South-Central-North)",
+        "route_order": "P3$P1",
+        "route_schedule": [
+          {
+            "departure_time": "08:15:00"
+          },
+          {
+            "departure_time": "08:45:00"
+          },
+          {
+            "departure_time": "09:15:00"
+          },
+          {
+            "departure_time": "09:45:00"
+          },
+          {
+            "departure_time": "10:15:00"
+          }
+        ],
+        "bus_information": {
+          "bus_speed": 40.0,
+          "max_distance": 100.0,
+          "max_bus": 2,
+          "bus_capacity": 45,
+          "avg_travel_time": 33.0
+        }
+      }
+    ]
+  },
+  "example_response": {
+    "description": "Sample DiscreteSimulationResponse",
+    "result": "success",
+    "simulation_result": {
+      "result_summary": {
+        "average_waiting_time": 5.234,
+        "average_queue_length": 2.15,
+        "average_utilization": 0.648,
+        "average_travel_time": 17.3,
+        "average_travel_distance": 15.3,
+        "total_passengers": 10,
+        "min_waiting_time": 0.45,
+        "max_waiting_time": 18.52
+      },
+      "result_station": [
+        {
+          "station_name": "Central Station",
+          "average_waiting_time": 4.82,
+          "average_queue_length": 2.3,
+          "min_waiting_time": 0.5,
+          "max_waiting_time": 15.2,
+          "passengers_count": 4
+        },
+        {
+          "station_name": "North Station",
+          "average_waiting_time": 6.1,
+          "average_queue_length": 1.9,
+          "min_waiting_time": 1.2,
+          "max_waiting_time": 18.52,
+          "passengers_count": 3
+        },
+        {
+          "station_name": "South Station",
+          "average_waiting_time": 4.5,
+          "average_queue_length": 2.0,
+          "min_waiting_time": 0.45,
+          "max_waiting_time": 12.8,
+          "passengers_count": 3
+        }
+      ],
+      "result_route": [
+        {
+          "route_id": "R1",
+          "average_utilization": 0.7,
+          "average_travel_time": 18.5,
+          "average_travel_distance": 30.5,
+          "average_waiting_time": 5.3,
+          "average_queue_length": 1.8,
+          "customers_count": 6,
+          "min_waiting_time": 0.5,
+          "max_waiting_time": 15.2
+        },
+        {
+          "route_id": "R2",
+          "average_utilization": 0.58,
+          "average_travel_time": 15.8,
+          "average_travel_distance": 33.5,
+          "average_waiting_time": 5.1,
+          "average_queue_length": 2.5,
+          "customers_count": 4,
+          "min_waiting_time": 1.2,
+          "max_waiting_time": 18.52
+        }
+      ]
+    },
+    "logs": [
+      {
+        "time": "08:00:00",
+        "component": "DiscreteArrivalGenerator",
+        "message": "Scheduled arrival at Central Station at 0.00"
+      },
+      {
+        "time": "08:00:00",
+        "component": "DiscretePassenger",
+        "message": "Passenger arrives at Central Station at 0.00"
+      },
+      {
+        "time": "08:00:00",
+        "component": "DiscreteBus",
+        "message": "Bus R1-#1 departed, active=1/3"
+      },
+      {
+        "time": "08:00:00",
+        "component": "DiscreteBus",
+        "message": "Bus R1-#1 arrives at Central Station"
+      },
+      {
+        "time": "08:00:10",
+        "component": "DiscreteBus",
+        "message": "Bus R1-#1 picks P_from_Central_Station_1 at Central Station (load: 1/50)"
+      },
+      {
+        "time": "08:00:10",
+        "component": "DiscretePassenger",
+        "message": "Passenger boarded, waited 0.17 min"
+      }
+    ]
+  },
+  "notes": {
+    "arrival_time_formats": [
+      "\"HH:MM:SS\" (e.g., \"08:30:45\")",
+      "\"HH:MM\" (e.g., \"08:30\")",
+      "\"MM:SS\" (e.g., \"30:45\")",
+      "Number (e.g., 485)"
+    ],
+    "required_fields": [
+      "time_period",
+      "time_slot",
+      "day_template",
+      "configuration_data",
+      "scenario_data"
+    ],
+    "important": [
+      "All station names in day_template.arrivals must exist in configuration_data.station_list",
+      "All arrival times must be within time_period",
+      "Route pairs define the connectivity between stations",
+      "Bus capacity cannot be exceeded",
+      "Each bus follows its departure schedule from scenario_data"
+    ]
+  }
+}

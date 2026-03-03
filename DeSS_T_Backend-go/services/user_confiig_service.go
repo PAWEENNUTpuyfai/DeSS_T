@@ -3,6 +3,7 @@ package services
 import (
 	"DeSS_T_Backend-go/config"
 	"DeSS_T_Backend-go/model_database"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -201,6 +202,14 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 		log.Printf("❌ TRANSACTION FAILED: %v", err)
 	} else {
 		log.Println("✅ TRANSACTION SUCCESS: All data saved successfully")
+		
+		// Save Schedule data to file
+		if input.ConfigurationDetail != nil && len(input.ConfigurationDetail.ScheduleData) > 0 {
+			if fileErr := SaveScheduleData(input.ConfigurationDetail.ScheduleData); fileErr != nil {
+				log.Printf("⚠️  WARNING: Failed to save schedule data to file: %v", fileErr)
+				// Don't fail the transaction for this - just warn
+			}
+		}
 	}
 
 	return input, err
@@ -335,4 +344,78 @@ func deletePhysicalFile(fileName string) {
     if _, err := os.Stat(filePath); err == nil {
         _ = os.Remove(filePath)
     }
+}
+
+// ========================================
+// Schedule Data Persistence Functions
+// ========================================
+
+// SaveScheduleData บันทึก Schedule data ลงไฟล์ JSON
+// ไฟล์จะเก็บที่: uploads/schedule_data.json
+// ถ้าไม่มีไฟล์จะสร้างใหม่, ถ้ามีจะเขียนทับ
+func SaveScheduleData(scheduleData []model_database.ScheduleData) error {
+    uploadDir := os.Getenv("UPLOAD_DIR")
+    if uploadDir == "" {
+        uploadDir = "./uploads"
+    }
+    
+    // สร้าง uploads directory ถ้าไม่มี
+    if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+        return fmt.Errorf("failed to create uploads directory: %w", err)
+    }
+    
+    filePath := filepath.Join(uploadDir, "schedule_data.json")
+    
+    // Convert to JSON
+    jsonData, err := json.MarshalIndent(scheduleData, "", "  ")
+    if err != nil {
+        return fmt.Errorf("failed to marshal schedule data: %w", err)
+    }
+    
+    // Write to file (create or overwrite)
+    if err := os.WriteFile(filePath, jsonData, 0644); err != nil {
+        return fmt.Errorf("failed to write schedule data file: %w", err)
+    }
+    
+    log.Printf("[✅ SAVED] Schedule data saved to: %s", filePath)
+    log.Printf("    Records: %d", len(scheduleData))
+    
+    return nil
+}
+
+// LoadScheduleData อ่าน Schedule data จากไฟล์ JSON
+// ถ้าไฟล์ไม่มีจะ return nil (ไม่ error)
+func LoadScheduleData() ([]model_database.ScheduleData, error) {
+    uploadDir := os.Getenv("UPLOAD_DIR")
+    if uploadDir == "" {
+        uploadDir = "./uploads"
+    }
+    
+    filePath := filepath.Join(uploadDir, "schedule_data.json")
+    
+    // Check if file exists
+    if _, err := os.Stat(filePath); err != nil {
+        if os.IsNotExist(err) {
+            log.Printf("[⚠️  INFO] No saved schedule data file found at: %s", filePath)
+            return nil, nil
+        }
+        return nil, fmt.Errorf("failed to stat file: %w", err)
+    }
+    
+    // Read file
+    jsonData, err := os.ReadFile(filePath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to read schedule data file: %w", err)
+    }
+    
+    // Parse JSON
+    var scheduleData []model_database.ScheduleData
+    if err := json.Unmarshal(jsonData, &scheduleData); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal schedule data: %w", err)
+    }
+    
+    log.Printf("[✅ LOADED] Schedule data loaded from: %s", filePath)
+    log.Printf("    Records: %d", len(scheduleData))
+    
+    return scheduleData, nil
 }

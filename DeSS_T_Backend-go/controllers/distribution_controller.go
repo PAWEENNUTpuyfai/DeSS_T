@@ -133,43 +133,60 @@ func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
     }
     defer reader.Close()
     
-    // อ่าน Excel และคำนวณ interarrival ในแต่ละ column แล้วจัดกลุ่มตามชั่วโมง
-    // Records ที่ได้คือ interarrival values แล้ว (ไม่ใช่ arrival times)
-    jsonData, err := models.DistributionExcelToJSONReaderWithDayTemplate(
-        reader,
-        stationMap,
-        isDayTemplate,
-    )
+    var jsonData models.Data
+    var interarrivalData []models.InterarrivalItem
 
-    if err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-    }
+    // ถ้าเป็น day template: อ่านแล้วคำนวณ interarrival หลังจากนั้นจึง fit distribution
+    if isDayTemplate {
+        // อ่าน Excel และคำนวณ interarrival ในแต่ละ column แล้วจัดกลุ่มตามชั่วโมง
+        jsonData, err = models.DistributionExcelToJSONReaderWithDayTemplate(
+            reader,
+            stationMap,
+            isDayTemplate,
+        )
 
-    // สร้าง interarrival data สำหรับ response (Records เป็น interarrival แล้ว)
-    interarrivalData := []models.InterarrivalItem{}
-    for i := range jsonData.Data {
-        stationID := jsonData.Data[i].Station
-        timeRange := jsonData.Data[i].TimeRange
-        
-        // หาชื่อสถานีจาก reverse map
-        stationName := stationID
-        if name, ok := idToNameMap[stationID]; ok {
-            stationName = name
-        }
-        
-        // แปลง records เป็น float64 array (ค่าเหล่านี้คือ interarrival แล้ว)
-        var interVals []float64
-        for _, rec := range jsonData.Data[i].Records {
-            interVals = append(interVals, rec.NumericValue)
+        if err != nil {
+            return c.Status(500).JSON(fiber.Map{"error": err.Error()})
         }
 
-        interarrivalData = append(interarrivalData, models.InterarrivalItem{
-            Station:           stationID,
-            StationName:       stationName,
-            TimeRange:         timeRange,
-            OriginalValues:    interVals, // ใช้ interarrival เป็น original ด้วย (เพื่อ download)
-            InterarrivalValues: interVals,
-        })
+        // สร้าง interarrival data สำหรับ response (Records เป็น interarrival แล้ว)
+        for i := range jsonData.Data {
+            stationID := jsonData.Data[i].Station
+            timeRange := jsonData.Data[i].TimeRange
+            
+            // หาชื่อสถานีจาก reverse map
+            stationName := stationID
+            if name, ok := idToNameMap[stationID]; ok {
+                stationName = name
+            }
+            
+            // แปลง records เป็น float64 array (ค่าเหล่านี้คือ interarrival แล้ว)
+            var interVals []float64
+            for _, rec := range jsonData.Data[i].Records {
+                interVals = append(interVals, rec.NumericValue)
+            }
+
+            interarrivalData = append(interarrivalData, models.InterarrivalItem{
+                Station:           stationID,
+                StationName:       stationName,
+                TimeRange:         timeRange,
+                OriginalValues:    interVals,
+                InterarrivalValues: interVals,
+            })
+        }
+    } else {
+        // ถ้าไม่ใช่ day template: อ่าน Excel โดยตรง (เหมือน alighting) ไม่ต้องคำนวณ interarrival
+        jsonData, err = models.DistributionExcelToJSONReader(
+            reader,
+            stationMap,
+        )
+
+        if err != nil {
+            return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+        }
+
+        // ไม่สร้าง interarrivalData (เพราะไม่ใช่ day template)
+        interarrivalData = nil
     }
 
     // ส่ง JSON ไป Python สำหรับ distribution fitting
@@ -186,10 +203,14 @@ func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
         dataFitArray = result // fallback ถ้า structure ต่างออกไป
     }
 
-    // ส่ง response ที่รวม distribution fit + interarrival values
+    // สร้าง response ตามที่ isDayTemplate
     response := fiber.Map{
         "DataFitResponse": dataFitArray,
-        "InterarrivalValues": interarrivalData,
+    }
+
+    // ถ้าเป็น day template ให้เติม InterarrivalValues
+    if isDayTemplate {
+        response["InterarrivalValues"] = interarrivalData
     }
 
     return c.JSON(response)

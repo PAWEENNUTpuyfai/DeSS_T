@@ -10,12 +10,12 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// parseTimeValue แปลงค่าเวลาจาก Excel เป็นนาทีตั้งแต่เที่ยงคืน
+// parseTimeValue แปลงค่าเวลา/ตัวเลขจาก Excel
 // รองรับหลายรูปแบบ:
 // - "8:01" หรือ "08:01" -> 481 นาที (8*60 + 1)
 // - "15:55" -> 955 นาที (15*60 + 55)
 // - "0.354166..." (Excel serial time) -> แปลงเป็นนาที
-// - "8" (เลขล้วน) -> 480 นาที (8*60)
+// - ตัวเลขล้วน เช่น "5", "12.5" -> ใช้ค่าตามเดิม (นาที)
 func parseTimeValue(val string) (float64, bool) {
 	// ลอง parse รูปแบบ HH:MM หรือ H:MM
 	if strings.Contains(val, ":") {
@@ -30,7 +30,7 @@ func parseTimeValue(val string) (float64, bool) {
 		}
 	}
 
-	// ลอง parse เป็นตัวเลข (อาจเป็น Excel serial time หรือเลขชั่วโมง)
+    // ลอง parse เป็นตัวเลข
 	var num float64
 	if _, err := fmt.Sscanf(val, "%f", &num); err == nil {
 		// ถ้าค่าน้อยกว่า 1 แสดงว่าเป็น Excel serial time (fraction ของวัน)
@@ -38,11 +38,9 @@ func parseTimeValue(val string) (float64, bool) {
 			// แปลงเป็นนาที: num * 24 * 60
 			return num * 1440, true
 		}
-		// ถ้าค่ามากกว่า 1 แต่น้อยกว่า 24 อาจเป็นชั่วโมง -> แปลงเป็นนาที
-		if num >= 1 && num < 24 {
-			return num * 60, true
-		}
-		// ถ้ามากกว่า 24 อาจเป็นนาทีอยู่แล้ว
+        // สำหรับตัวเลขทั่วไปให้ถือเป็น "นาที" โดยตรง
+        // (ป้องกันกรณีไฟล์ non-day-template ที่กรอก interarrival เป็นนาที
+        // แล้วถูกคูณ 60 จนหน่วยเพี้ยน)
 		return num, true
 	}
 

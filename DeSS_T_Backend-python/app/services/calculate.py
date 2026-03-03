@@ -97,37 +97,56 @@ def fit_best_distribution(values: List[float]) -> Dict:
 # ------------------------------
 # Convert params to text
 # ------------------------------
+
 def params_to_string(dist_name: str, params) -> str:
     params = list(params)
+    EPSILON = 0.0001  # ค่าขั้นต่ำที่ยอมรับได้ เพื่อป้องกันการหารด้วยศูนย์และเลขมหาศาล
 
+    # 1. No Arrival: ใช้ค่าที่สูงมากพอที่ Passenger จะไม่เกิดในระบบ
     if dist_name == "No Arrival":
-        # ส่งค่าที่สูงมากๆ ไปยัง Simulation เพื่อไม่ให้เกิดการสร้าง Passenger
-        return f"value=999999.0"
-    
-    if dist_name == "Constant":
-        return f"value={params[0]:.4f}"
+        return "value=9999999.0"
 
+    # 2. Constant: interarrival เป๊ะๆ
+    if dist_name == "Constant":
+        val = max(EPSILON, params[0])
+        return f"value={val:.4f}"
+
+    # 3. Exponential: ตัวปัญหาหลัก (rate = 1/scale)
     if dist_name == "Exponential":
         loc, scale = params
-        rate = 1.0 / scale
+        # ป้องกัน scale เป็น 0 หรือติดลบ
+        safe_scale = max(EPSILON, scale)
+        rate = 1.0 / safe_scale
         return f"rate={rate:.4f}, loc={loc:.4f}"
 
+    # 4. Weibull: ต้องระวัง shape เข้าใกล้ 0 (จะทำให้เกิดความผันผวนสูงมาก)
     if dist_name == "Weibull":
         shape, loc, scale = params
-        return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
+        safe_shape = max(0.01, shape) # shape ที่น้อยกว่า 0.01 มักเกิดจาก data ที่พัง
+        safe_scale = max(EPSILON, scale)
+        return f"shape={safe_shape:.4f}, loc={loc:.4f}, scale={safe_scale:.4f}"
 
+    # 5. Gamma
     if dist_name == "Gamma":
         shape, loc, scale = params
-        return f"shape={shape:.4f}, loc={loc:.4f}, scale={scale:.4f}"
+        safe_shape = max(EPSILON, shape)
+        safe_scale = max(EPSILON, scale)
+        return f"shape={safe_shape:.4f}, loc={loc:.4f}, scale={safe_scale:.4f}"
 
+    # 6. Uniform
     if dist_name == "Uniform":
         loc, scale = params
-        return f"min={loc:.4f}, max={(loc + scale):.4f}"
+        # ป้องกันช่วงกว้าง (scale) เป็น 0
+        safe_scale = max(EPSILON, scale)
+        return f"min={loc:.4f}, max={(loc + safe_scale):.4f}"
 
+    # 7. Poisson
     if dist_name == "Poisson":
         (lam,) = params
-        return f"lambda={lam:.4f}"
+        safe_lam = max(EPSILON, lam)
+        return f"lambda={safe_lam:.4f}"
 
+    # กรณีอื่นๆ
     return str(params)
 
 

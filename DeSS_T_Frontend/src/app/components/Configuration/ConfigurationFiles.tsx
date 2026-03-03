@@ -3,7 +3,6 @@ import { useState, useRef } from "react";
 import {
   AlightingFitFromXlsx,
   InterarrivalFitFromXlsx,
-  FitDistributionFromInterarrivalValues,
 } from "../../../utility/api/distributionFit";
 import MapViewer from "../MapViewer";
 import LoadingModal from "../LoadingModal";
@@ -470,35 +469,6 @@ export default function ConfigurationFiles({
         if (interarrivalFile) {
           const outI = await submitInterarrival();
           if (outI) interRes = outI;
-        }
-
-        // If we have interarrival values from day template, fit distribution from them
-        if (
-          interarrivalValues &&
-          Array.isArray(interarrivalValues) &&
-          interarrivalValues.length > 0
-        ) {
-          try {
-            const fittedResult = await FitDistributionFromInterarrivalValues(
-              interarrivalValues as Array<{
-                Station: string;
-                StationName?: string;
-                Time_Range: string;
-                OriginalValues: number[];
-                InterarrivalValues: number[];
-              }>,
-            );
-            if (fittedResult) {
-              interRes = fittedResult;
-              setInterarrivalResult(fittedResult);
-            }
-          } catch (fitErr) {
-            console.warn(
-              "Failed to fit distribution from interarrival values:",
-              fitErr,
-            );
-            // Continue with existing interRes
-          }
         }
 
         let network: NetworkModel;

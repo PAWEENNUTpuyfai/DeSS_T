@@ -764,6 +764,31 @@ export default function UserWorkspace({
               type="text"
               value={configName}
               onChange={(e) => setConfigName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (!configName.trim()) {
+                    alert("Please enter a configuration name");
+                    return;
+                  }
+
+                  // Check for duplicate name
+                  const isDuplicate = userConfigurations.some(
+                    (config) =>
+                      config.name.toLowerCase() ===
+                      configName.trim().toLowerCase(),
+                  );
+
+                  if (isDuplicate) {
+                    alert(
+                      "A configuration with this name already exists. Please choose a different name.",
+                    );
+                    return;
+                  }
+
+                  setShowConfigModal(false);
+                  setShowConfigMap(true);
+                }
+              }}
               placeholder="Configuration name"
               className="workspace-modal-input workspace-modal-input-dropdown"
               autoFocus
@@ -830,6 +855,16 @@ export default function UserWorkspace({
                 type="text"
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    // Trigger the Create New button click
+                    const createBtn = document.querySelector('[data-test-id="create-project-btn"]') as HTMLButtonElement;
+                    if (createBtn) {
+                      createBtn.click();
+                    }
+                  }
+                }}
                 placeholder="Project name"
                 className="workspace-modal-input workspace-modal-input-dropdown"
                 autoFocus
@@ -874,6 +909,7 @@ export default function UserWorkspace({
                 Cancel
               </button>
               <button
+                data-test-id="create-project-btn"
                 onClick={async () => {
                   if (!projectName.trim()) {
                     alert("Please enter a project name");

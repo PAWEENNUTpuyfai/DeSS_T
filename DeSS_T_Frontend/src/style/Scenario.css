@@ -106,3 +106,9 @@
   line-height: 25px;
   color: #323232;
 }
+
+.map .leaflet-interactive:focus,
+.map .leaflet-marker-icon:focus,
+.map .leaflet-marker-shadow:focus {
+  outline: none;
+}

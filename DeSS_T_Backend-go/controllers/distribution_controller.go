@@ -143,21 +143,19 @@ func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
 
     // --- ส่วนงานหลักกรณีเป็น Day Template ---
     if isDayTemplate {
-        // A. สร้าง JSON ข้อมูลดิบ (Arrival Times) ตามโมเดล DiscreteSimulation
-        rawSimulationData, err := services.GenerateDiscreteSimulationJSON(fileReader, configID)
+        // A. ส่ง stationMap เข้าไปด้วยเพื่อแปลงชื่อสถานีเป็น ID ก่อนเซฟลง JSON
+        rawSimulationData, err := services.GenerateDiscreteSimulationJSON(fileReader, configID, stationMap)
         if err != nil {
             return c.Status(500).JSON(fiber.Map{"error": "failed to generate simulation json", "detail": err.Error()})
         }
 
-        // B. บันทึกไฟล์ JSON ลงในโฟลเดอร์ของระบบ Go (ไม่ส่งกลับ Frontend)
-        // เรียกใช้ฟังก์ชัน Save ที่เราสร้างไว้ (ดูฟังก์ชัน Save ด้านล่างโค้ดนี้)
+        // B. บันทึกไฟล์ JSON (ข้อมูลข้างในจะเป็น Station ID เรียบร้อยแล้ว)
         _, err = services.SaveSimulationJSON(rawSimulationData)
         if err != nil {
             log.Printf("[ERROR] Save JSON failed: %v", err)
-            // แจ้งเตือนใน Log แต่ปล่อยให้ระบบทำงานต่อได้
         }
 
-        // C. สำคัญ: Reset Pointer ของไฟล์กลับไปจุดเริ่มต้น เพื่อให้ฟังก์ชันถัดไปอ่านได้
+        // C. Reset Pointer
         if seeker, ok := fileReader.(io.Seeker); ok {
             seeker.Seek(0, 0)
         }

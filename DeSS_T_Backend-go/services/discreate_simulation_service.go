@@ -8,7 +8,7 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func GenerateDiscreteSimulationJSON(r io.Reader, configID string) (models.DiscreteSimulation, error) {
+func GenerateDiscreteSimulationJSON(r io.Reader, configID string, stationMap map[string]string) (models.DiscreteSimulation, error) {
     f, err := excelize.OpenReader(r)
     if err != nil {
         return models.DiscreteSimulation{}, err
@@ -21,41 +21,43 @@ func GenerateDiscreteSimulationJSON(r io.Reader, configID string) (models.Discre
     }
 
     for _, sheet := range f.GetSheetList() {
+        sheetName := strings.TrimSpace(sheet)
+        
+        // แปลงชื่อชีทเป็น ID จาก map
+        stationID := sheetName
+        if id, ok := stationMap[sheetName]; ok {
+            stationID = id
+        }
+
         rows, err := f.GetRows(sheet)
         if err != nil || len(rows) == 0 {
             continue
         }
 
         stationEntry := models.ArrivalList{
-            StationID:       sheet,
+            StationID:       stationID, // ใช้ค่า ID ที่แปลงแล้ว
             ArrivalTimeData: []models.ArrivalTimeEntry{},
         }
 
-        headers := rows[0] // สมมติแถวแรกคือ "Day 1", "Day 2"
-
-        // วนตาม Column (แต่ละวัน)
+        headers := rows[0]
         for colIndex, header := range headers {
             if strings.TrimSpace(header) == "" {
                 continue
             }
 
             dayEntry := models.ArrivalTimeEntry{
-                Date:         header,
+                Date:         strings.TrimSpace(header),
                 ArrivalTimes: []string{},
             }
 
-            // วนตาม Row เพื่อเก็บค่าเวลา (ยังไม่คำนวณ diff)
             for rowIndex := 1; rowIndex < len(rows); rowIndex++ {
                 if colIndex >= len(rows[rowIndex]) {
                     continue
                 }
-
                 val := strings.TrimSpace(rows[rowIndex][colIndex])
                 if val == "" {
                     continue
                 }
-                
-                // เก็บค่า string ของเวลาต้นฉบับไว้ (เช่น "8:00")
                 dayEntry.ArrivalTimes = append(dayEntry.ArrivalTimes, val)
             }
 
@@ -63,7 +65,6 @@ func GenerateDiscreteSimulationJSON(r io.Reader, configID string) (models.Discre
                 stationEntry.ArrivalTimeData = append(stationEntry.ArrivalTimeData, dayEntry)
             }
         }
-
         simulation.ArrivalList = append(simulation.ArrivalList, stationEntry)
     }
 

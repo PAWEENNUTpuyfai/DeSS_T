@@ -3,11 +3,13 @@ package services
 import (
 	"DeSS_T_Backend-go/config"
 	"DeSS_T_Backend-go/model_database"
+	"DeSS_T_Backend-go/models"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -20,7 +22,7 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 	// log.Printf("📍 Stations count: %d", len(input.ConfigurationDetail.NetworkModel.StationDetails))
 	// log.Printf("📉 Alighting Data count: %d", len(input.ConfigurationDetail.AlightingData))
 	// log.Printf("📈 InterArrival Data count: %d", len(input.ConfigurationDetail.InterArrivalData))
-
+    stationIDMap := make(map[string]string)
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
 
 		// --- 1. Generate New IDs ---
@@ -42,7 +44,6 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 		}
 
 		// --- 3. บันทึก StationDetails & Build ID Map ---
-		stationIDMap := make(map[string]string)
 		for i := range netModel.StationDetails {
 			s := &netModel.StationDetails[i]
 			oldID := s.ID
@@ -203,7 +204,50 @@ func SaveUserConfiguration(input model_database.UserConfiguration) (model_databa
 		log.Println("✅ TRANSACTION SUCCESS: All data saved successfully")
 	}
 
-	return input, err
+	// 2. ดึงไฟล์ Temp มาจัดการ
+    tempPath := "./storage/temp/default_config.json"
+    rawBytes, errRead := os.ReadFile(tempPath)
+	// ✅ เมื่อบันทึก DB สำเร็จ (Transaction Committed)
+	if errRead == nil {
+        var rawData models.DiscreteSimulation
+        if errUnmarshal := json.Unmarshal(rawBytes, &rawData); errUnmarshal == nil {
+
+            // 3. 🛠 เริ่มการแปลง ID เป็นของจริง (Finalizing JSON)
+            finalData := models.DiscreteSimulation{
+                // ใช้ค่า ID ใหม่ที่ Gen ใน Transaction (cd.ID)
+                ConfigurationDetailID: input.ConfigurationDetail.ID, 
+                ArrivalList:           []models.ArrivalList{},
+            }
+
+            for _, arrival := range rawData.ArrivalList {
+                // 🔍 ดึง New ID จาก Map ที่เราสร้างไว้ใน Transaction
+                newStationID, ok := stationIDMap[arrival.StationID] 
+                if !ok {
+                    // ถ้าหาไม่เจอใน Map ให้ใช้ค่าเดิม (ป้องกันข้อมูลหาย)
+                    newStationID = arrival.StationID
+                    log.Printf("⚠️ Warning: Station ID %s not found in mapping", arrival.StationID)
+                }
+                
+                finalData.ArrivalList = append(finalData.ArrivalList, models.ArrivalList{
+                    StationID:       newStationID,
+                    ArrivalTimeData: arrival.ArrivalTimeData,
+                })
+            }
+
+            // 4. บันทึกไฟล์ที่เปลี่ยน ID แล้ว และลบไฟล์ Temp ทิ้ง
+			savedPath, errSave := SaveSimulationJSON(finalData) // ✅ รับทั้ง 2 ค่า
+			if errSave != nil {
+				log.Printf("❌ Error saving final JSON: %v", errSave)
+			} else {
+				log.Printf("✅ Successfully saved final JSON at: %s", savedPath)
+				os.Remove(tempPath) 
+			}
+        }
+    } else {
+        log.Printf("⚠️ Warning: Temp file not found at %s", tempPath)
+    }
+
+    return input, nil
 }
 func GetConfigurationDetailByID(configDetailID string) (model_database.ConfigurationDetail, error) {
 	var configDetail model_database.ConfigurationDetail

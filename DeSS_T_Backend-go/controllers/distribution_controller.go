@@ -4,7 +4,7 @@ import (
 	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
 	"encoding/json"
-    "log"
+    "os"
 	// "path/filepath"
 	// "time"
     "io"
@@ -143,19 +143,17 @@ func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
 
     // --- ส่วนงานหลักกรณีเป็น Day Template ---
     if isDayTemplate {
-        // A. ส่ง stationMap เข้าไปด้วยเพื่อแปลงชื่อสถานีเป็น ID ก่อนเซฟลง JSON
+        // 1. สร้างก้อนข้อมูลดิบ (StationID ยังเป็น ID ชั่วคราว)
         rawSimulationData, err := services.GenerateDiscreteSimulationJSON(fileReader, configID, stationMap)
-        if err != nil {
-            return c.Status(500).JSON(fiber.Map{"error": "failed to generate simulation json", "detail": err.Error()})
-        }
+        
+        // 2. บันทึกลง Folder Temp โดยใช้ configID ชั่วคราวเป็นชื่อไฟล์
+        // เพื่อให้ตอน Save เรารู้ว่าต้องไปเปิดไฟล์ไหนมาเปลี่ยน ID
+        tempPath := "./storage/temp/" + configID + ".json"
+        os.MkdirAll("./storage/temp/", 0755)
+        fileData, _ := json.Marshal(rawSimulationData)
+        os.WriteFile(tempPath, fileData, 0644)
 
-        // B. บันทึกไฟล์ JSON (ข้อมูลข้างในจะเป็น Station ID เรียบร้อยแล้ว)
-        _, err = services.SaveSimulationJSON(rawSimulationData)
-        if err != nil {
-            log.Printf("[ERROR] Save JSON failed: %v", err)
-        }
-
-        // C. Reset Pointer
+        // Reset Pointer เพื่อไปคำนวณ Fit ต่อ
         if seeker, ok := fileReader.(io.Seeker); ok {
             seeker.Seek(0, 0)
         }

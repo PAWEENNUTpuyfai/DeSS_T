@@ -274,15 +274,20 @@ func atoi(s string) int {
 }
 
 func isTimeRangeInPeriod(timeRange, period string) bool {
+    tr := strings.Split(timeRange, "-")
+    pr := strings.Split(period, "-")
 
-	tr := strings.Split(timeRange, "-")
-	pr := strings.Split(period, "-")
+    // ตรวจสอบว่ามีข้อมูลครบทั้ง Start และ End หรือไม่
+    if len(tr) < 2 || len(pr) < 2 {
+        return false 
+    }
 
-	trStart := timeToMinute(tr[0])
-	prStart := timeToMinute(pr[0])
-	prEnd := timeToMinute(pr[1])
+    trStart := timeToMinute(tr[0])
+    // trEnd := timeToMinute(tr[1]) // ถ้าต้องใช้ end ของ range ด้วย
+    prStart := timeToMinute(pr[0])
+    prEnd := timeToMinute(pr[1])
 
-	return trStart >= prStart && trStart < prEnd
+    return trStart >= prStart && trStart < prEnd
 }
 func isTimeInPeriod(timeStr, period string) bool {
 	pr := strings.Split(period, "-")

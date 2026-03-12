@@ -10,4 +10,6 @@ func SetupSimulationRoutes(app *fiber.App) {
 	simulation := app.Group("/api/simulation")
 	simulation.Post("/transform", controllers.TransformSimulationHandler)
 	simulation.Post("/run", controllers.RunSimulationHandler)
+	
+	simulation.Post("/transform-discrete", controllers.TransformDiscreteSimulationHandler)
 }

@@ -5,6 +5,7 @@ import (
 	"DeSS_T_Backend-go/services"
 	"encoding/json"
     "os"
+    "strings"
 	// "path/filepath"
 	// "time"
     "io"
@@ -101,124 +102,166 @@ func FitDistributionFromInterarrivalValues(c *fiber.Ctx) error {
 }
 
 func UploadGuestInterarrivalFit(c *fiber.Ctx) error {
-    // 1. รับค่า Parameter และไฟล์จาก Request
-    f, err := c.FormFile("file")
-    if err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": "file missing"})
-    }
+	// 1. รับค่า Parameter และไฟล์จาก Request
+	f, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "file missing"})
+	}
 
-    // รับ config_id เพื่อใช้เป็นชื่อไฟล์ JSON
-    configID := c.FormValue("configuration_detail_id")
-    if configID == "" {
-        configID = "default_config" // หรือจะใช้ timestamp แทนก็ได้
-    }
+	configID := c.FormValue("configuration_detail_id")
+	if configID == "" {
+		configID = "default_config"
+	}
 
-    stationMapStr := c.FormValue("station_map")
-    if stationMapStr == "" {
-        return c.Status(400).JSON(fiber.Map{"error": "station_map missing"})
-    }
+	stationMapStr := c.FormValue("station_map")
+	if stationMapStr == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "station_map missing"})
+	}
+
+	var stationMap map[string]string
+	if err := json.Unmarshal([]byte(stationMapStr), &stationMap); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid station_map"})
+	}
+
+	// สร้าง reverse map (ID -> Name) สำหรับแสดงผล
+	idToNameMap := make(map[string]string)
+	for name, id := range stationMap {
+		idToNameMap[id] = name
+	}
+
+	isDayTemplate := c.FormValue("is_day_template") == "true"
+
+	// 2. เปิดไฟล์ Excel
+	fileReader, err := f.Open()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "cannot open file", "detail": err.Error()})
+	}
+	defer fileReader.Close()
+
+	var jsonData models.Data
+	var interarrivalData []models.InterarrivalItem
+	var manualFitResponses []map[string]interface{} // สำหรับเก็บเคสที่ Go จัดการเองได้ (ไม่ต้องพึ่ง Python)
+
+	// --- อ่านข้อมูลจาก Excel ---
+	if isDayTemplate {
+		// ประมวลผล Simulation ข้อมูลดิบ
+		rawSimulationData, err := services.GenerateDiscreteSimulationJSON(fileReader, configID, stationMap)
+		if err == nil {
+			tempPath := "./storage/temp/" + configID + ".json"
+			os.MkdirAll("./storage/temp/", 0755)
+			fileData, _ := json.Marshal(rawSimulationData)
+			os.WriteFile(tempPath, fileData, 0644)
+		}
+
+		if seeker, ok := fileReader.(io.Seeker); ok {
+			seeker.Seek(0, 0)
+		}
+
+		jsonData, err = models.DistributionExcelToJSONReaderWithDayTemplate(fileReader, stationMap, isDayTemplate)
+	} else {
+		jsonData, err = models.DistributionExcelToJSONReader(fileReader, stationMap)
+	}
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+    // --- 3. Validation, Preparation & Time Formatting ---
+    var dataToFit models.Data 
     
-    var stationMap map[string]string
-    if err := json.Unmarshal([]byte(stationMapStr), &stationMap); err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": "invalid station_map"})
-    }
-
-    // สร้าง reverse map (ID -> Name) สำหรับแสดงผล
-    idToNameMap := make(map[string]string)
-    for name, id := range stationMap {
-        idToNameMap[id] = name
-    }
-
-    isDayTemplate := c.FormValue("is_day_template") == "true"
-
-    // 2. เปิดไฟล์ Excel
-    fileReader, err := f.Open()
-    if err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": "cannot open file", "detail": err.Error()})
-    }
-    defer fileReader.Close()
-
-    var jsonData models.Data
-    var interarrivalData []models.InterarrivalItem
-
-    // --- ส่วนงานหลักกรณีเป็น Day Template ---
-    if isDayTemplate {
-        // 1. สร้างก้อนข้อมูลดิบ (StationID ยังเป็น ID ชั่วคราว)
-        rawSimulationData, err := services.GenerateDiscreteSimulationJSON(fileReader, configID, stationMap)
+    for i := range jsonData.Data {
+        // --- ส่วนที่เพิ่ม: ลบ AM/PM ออกจาก TimeRange ---
+        jsonData.Data[i].TimeRange = strings.NewReplacer(
+            " AM", "", " PM", "", 
+            " am", "", " pm", "",
+        ).Replace(jsonData.Data[i].TimeRange)
         
-        // 2. บันทึกลง Folder Temp โดยใช้ configID ชั่วคราวเป็นชื่อไฟล์
-        // เพื่อให้ตอน Save เรารู้ว่าต้องไปเปิดไฟล์ไหนมาเปลี่ยน ID
-        tempPath := "./storage/temp/" + configID + ".json"
-        os.MkdirAll("./storage/temp/", 0755)
-        fileData, _ := json.Marshal(rawSimulationData)
-        os.WriteFile(tempPath, fileData, 0644)
+        item := jsonData.Data[i]
+        stationID := item.Station
+        stationName := idToNameMap[stationID]
+        if stationName == "" { stationName = stationID }
 
-        // Reset Pointer เพื่อไปคำนวณ Fit ต่อ
-        if seeker, ok := fileReader.(io.Seeker); ok {
-            seeker.Seek(0, 0)
+        var interVals []float64
+        for _, rec := range item.Records {
+            interVals = append(interVals, rec.NumericValue)
         }
 
-        // D. อ่านไฟล์เพื่อคำนวณ Interarrival (Logic เดิมของคุณ)
-        jsonData, err = models.DistributionExcelToJSONReaderWithDayTemplate(
-            fileReader,
-            stationMap,
-            isDayTemplate,
-        )
-        if err != nil {
-            return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+        if len(interVals) == 0 {
+            manualFitResponses = append(manualFitResponses, map[string]interface{}{
+                "station":      stationID,
+                "station_name": stationName,
+                "time_range":   item.TimeRange, // ใช้ตัวที่ clean แล้ว
+                "distribution": "Fixed",
+                "params":       map[string]float64{"value": 0},
+                "status":       "no_data",
+            })
+            continue
         }
 
-        // E. เตรียมข้อมูล Interarrival สำหรับส่งกลับไปแสดงผลเบื้องต้น
-        for i := range jsonData.Data {
-            stationID := jsonData.Data[i].Station
-            timeRange := jsonData.Data[i].TimeRange
-            
-            stationName := stationID
-            if name, ok := idToNameMap[stationID]; ok {
-                stationName = name
-            }
-            
-            var interVals []float64
-            for _, rec := range jsonData.Data[i].Records {
-                interVals = append(interVals, rec.NumericValue)
-            }
-
+        if len(interVals) == 1 {
+            manualFitResponses = append(manualFitResponses, map[string]interface{}{
+                "station":      stationID,
+                "station_name": stationName,
+                "time_range":   item.TimeRange,
+                "distribution": "Fixed",
+                "params":       map[string]float64{"value": interVals[0]},
+                "status":       "single_value",
+            })
             interarrivalData = append(interarrivalData, models.InterarrivalItem{
                 Station:            stationID,
                 StationName:        stationName,
-                TimeRange:          timeRange,
+                TimeRange:          item.TimeRange,
                 OriginalValues:     interVals,
                 InterarrivalValues: interVals,
             })
+            continue
         }
-    } else {
-        // กรณีไม่ใช่ Day Template
-        jsonData, err = models.DistributionExcelToJSONReader(fileReader, stationMap)
-        if err != nil {
-            return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+
+        dataToFit.Data = append(dataToFit.Data, item)
+        interarrivalData = append(interarrivalData, models.InterarrivalItem{
+            Station:            stationID,
+            StationName:        stationName,
+            TimeRange:          item.TimeRange,
+            OriginalValues:     interVals,
+            InterarrivalValues: interVals,
+        })
+    }
+	// --- 4. เรียก Python Service เฉพาะข้อมูลที่ Fit ได้ ---
+	var finalFitResponse []interface{}
+	
+	// รวมผลลัพธ์ที่เป็น Fixed ก่อน
+	for _, m := range manualFitResponses {
+		finalFitResponse = append(finalFitResponse, m)
+	}
+
+	if len(dataToFit.Data) > 0 {
+		pythonResult, err := services.CallPythonInterarrivalDistributionFit(dataToFit)
+		if err != nil {
+			// ถ้า Python พัง อย่างน้อยเรายังมีข้อมูลเบื้องต้นส่งกลับ
+			return c.Status(500).JSON(fiber.Map{
+				"error":              "Python fitting service error",
+				"detail":             err.Error(),
+				"InterarrivalValues": interarrivalData,
+			})
+		}
+
+		// ดึงผลลัพธ์จาก Python มาใส่ใน List
+		if pyData, ok := pythonResult["DataFitResponse"].([]interface{}); ok {
+			finalFitResponse = append(finalFitResponse, pyData...)
+		} else if pythonResult != nil {
+            // กรณี Python return array ตรงๆ
+            finalFitResponse = append(finalFitResponse, pythonResult)
         }
-    }
+	}
 
-    // 3. ส่งข้อมูล (ที่ผ่านการหา Interarrival แล้ว) ไปให้ Python Fit Distribution
-    result, err := services.CallPythonInterarrivalDistributionFit(jsonData)
-    if err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": "Python fitting service error", "detail": err.Error()})
-    }
+	// 5. ส่งกลับ Frontend
+	response := fiber.Map{
+		"DataFitResponse": finalFitResponse,
+	}
 
-    dataFitArray := result["DataFitResponse"]
-    if dataFitArray == nil {
-        dataFitArray = result 
-    }
+	if isDayTemplate {
+		response["InterarrivalValues"] = interarrivalData
+	}
 
-    // 4. สรุปผลลัพธ์ส่งกลับ Frontend
-    // หมายเหตุ: เราไม่ส่ง RawArrivalData กลับไป เพราะเราเซฟลงเครื่องไปแล้วตามความต้องการ
-    response := fiber.Map{
-        "DataFitResponse": dataFitArray,
-    }
-
-    if isDayTemplate {
-        response["InterarrivalValues"] = interarrivalData
-    }
-
-    return c.JSON(response)
+	return c.JSON(response)
 }

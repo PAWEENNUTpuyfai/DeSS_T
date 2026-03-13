@@ -1,11 +1,20 @@
-from app.services.simulation_time import TimeContext, parse_hour_min
+import math
+import random
+import time
 import salabim as sim
+from app.services.simulation_logger import add_log, SimulationLogger
+from app.schemas.DiscreteSimualtion import DiscreteSimulationResult, SimulationLog
+from app.services.simulation_time import TimeContext, parse_hour_min
 
-def build_discrete_simulation_config(req, target_date="Day 1"):
+# ==========================================
+# 1. Configuration Builder
+# ==========================================
+
+def build_discrete_simulation_config(req):
     config_data = req.discrete_configuration_data
     time_ctx = TimeContext(req.time_periods, req.time_slot)
 
-    # 1. Map ID -> Name ของสถานี เพื่อใช้แสดงผล
+    # 1. Map ID -> Name ของสถานี
     station_map = {st.station_id: st.station_name for st in config_data.station_list}
 
     # 2. Map Route Pairs (ใช้ UUID เป็น Key)
@@ -19,24 +28,18 @@ def build_discrete_simulation_config(req, target_date="Day 1"):
     travel_times = build_travel_times(bus_routes, travel_times_ideal, distances, bus_info)
     route_distances = build_route_distances(bus_routes, distances)
 
-    # 5. สร้าง Alighting Rules (ยังคงใช้ Distribution สำหรับคนลงรถ)
+    # 5. สร้าง Alighting Rules
     alighting_rules = map_alighting_distributions(config_data.alighting_sim_data, time_ctx)
 
-    # 6. 🌟 สร้าง Discrete Arrival Times จาก Arrival List
-    discrete_arrivals = map_discrete_arrivals(config_data.arrival_list, time_ctx, target_date)
+    # 6. ดึงข้อมูลการมาถึงของคนแบบ "ครบทุกวัน" 
+    discrete_arrivals_all_days = map_discrete_arrivals_all(config_data.arrival_list, time_ctx)
 
     # 7. Map ตารางเดินรถ
     bus_schedules = map_bus_schedules(req.scenario_data, time_ctx)
 
-    dwell_time = {
-        "door_open_time": 0.05,   
-        "door_close_time": 0.05,  
-        "boarding_time": 0.025,   
-        "alighting_time": 0.025   
-    }
+    # --- 🌟 ลบ Dwell Time ออกไปแล้ว ---
 
     config = {
-        "TARGET_DATE": target_date,
         "STATION_MAP": station_map,
         "TIME_CTX": time_ctx,
         "TRAVEL_TIMES": travel_times,
@@ -45,43 +48,56 @@ def build_discrete_simulation_config(req, target_date="Day 1"):
         "BUS_INFO": bus_info,
         "BUS_SCHEDULES": bus_schedules,
         "ALIGHTING_RULES": alighting_rules,
-        "DISCRETE_ARRIVALS": discrete_arrivals, # <--- ข้อมูลใหม่สำหรับระบบ Discrete
-        "USE_DWELL_TIME": True,
-        "DWELL_TIME": dwell_time
+        "DISCRETE_ARRIVALS_ALL_DAYS": discrete_arrivals_all_days
+        # ลบการ Config Dwell Time ทิ้ง
     }
     return config
 
 # ----------------- Helper Functions -----------------
+# (ใช้ Helper Functions ตัวเดิมของคุณได้เลย ไม่มีการเปลี่ยนแปลง)
+
+def map_discrete_arrivals_all(arrival_list, time_ctx):
+    all_arrivals = {}
+    for station_data in arrival_list:
+        st_id = station_data.station_id
+        for day_data in station_data.arrival_time_data:
+            date = day_data.date
+            if date not in all_arrivals:
+                all_arrivals[date] = {}
+            if st_id not in all_arrivals[date]:
+                all_arrivals[date][st_id] = []
+                
+            for t_str in day_data.arrival_times:
+                real_min = parse_hour_min(t_str)
+                sim_time = time_ctx.to_sim(real_min)
+                if sim_time >= 0:
+                    all_arrivals[date][st_id].append(sim_time)
+                    
+    for date in all_arrivals:
+        for st_id in all_arrivals[date]:
+            all_arrivals[date][st_id].sort()
+            
+    return all_arrivals
 
 def map_discrete_arrivals(arrival_list, time_ctx, target_date):
-    """
-    แปลงอาร์เรย์ของเวลา (เช่น "08:05") ให้เป็น simulation time (float) 
-    สำหรับ target_date ที่กำหนดเท่านั้น
-    """
     arrivals_by_station = {}
-    
     for station_data in arrival_list:
         st_id = station_data.station_id
         sim_times = []
-        
-        # หาวันที่ตรงกับ target_date
         for day_data in station_data.arrival_time_data:
             if day_data.date == target_date:
                 for t_str in day_data.arrival_times:
                     real_min = parse_hour_min(t_str)
                     sim_time = time_ctx.to_sim(real_min)
                     sim_times.append(sim_time)
-                break # เจอวันแล้ว ข้ามไปสถานีต่อไปได้เลย
-                
-        # เก็บเรียงตามเวลา
+                break
         arrivals_by_station[st_id] = sorted(sim_times)
-        
     return arrivals_by_station
 
 def map_route_pairs(route_pairs):
     travel_times, distances = {}, {}
     for rp in route_pairs:
-        key = (rp.fst_station, rp.snd_station) # ใช้ UUID
+        key = (rp.fst_station, rp.snd_station)
         travel_times[key] = rp.travel_time
         distances[key] = rp.distance
     return travel_times, distances
@@ -121,7 +137,6 @@ def map_bus_schedules(scenarios, time_ctx):
     return schedules
 
 def map_alighting_distributions(simdata_list, time_ctx):
-    # ย่อมาจาก build_distribution ตัวเดิมของคุณ
     rules = {}
     for simdata in simdata_list:
         t0, t1 = time_ctx.range_to_sim(simdata.time_range)
@@ -132,19 +147,17 @@ def map_alighting_distributions(simdata_list, time_ctx):
             params = dict(kv.strip().split("=") for kv in rec.argument_list.split(","))
             params = {k: float(v) for k, v in params.items()}
             
-            # ปรุง lambda (ใช้ UUID ของสถานี)
             if dist_name == "poisson":
                 dist_factory = lambda env, p=params: sim.Poisson(p["lambda"])
             elif dist_name == "constant":
                 dist_factory = lambda env, p=params: sim.Constant(p["value"])
             else:
-                dist_factory = lambda env: sim.Constant(0) # Fallback
+                dist_factory = lambda env: sim.Constant(0)
 
             rules[(rec.station, t0, t1)] = dist_factory 
     return rules
 
 def build_travel_times(bus_routes, travel_times_ideal, travel_distances, bus_info):
-    # Logic เดิมของคุณเป๊ะๆ แต่ใช้ตัวแปรที่รับ UUID แทน
     travel_times = {}
     for route_id, stations in bus_routes.items():
         info = bus_info.get(route_id, {})
@@ -163,7 +176,7 @@ def build_travel_times(bus_routes, travel_times_ideal, travel_distances, bus_inf
             if avg_time > 0 and total_dist > 0: cands.append((dist / total_dist) * avg_time)
             if key in travel_times_ideal: cands.append(travel_times_ideal[key])
             
-            travel_times[route_id][key] = max(cands) if cands else 1.0 # fallback
+            travel_times[route_id][key] = max(cands) if cands else 1.0 
     return travel_times
 
 def build_route_distances(bus_routes, distances):

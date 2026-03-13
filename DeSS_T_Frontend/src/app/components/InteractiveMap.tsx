@@ -243,6 +243,42 @@ export default function InteractiveMap({
     return mapping;
   }, [busEventByBus, mockRoutes, activePlaybackData?.routeStations]);
 
+  // Build stable display names per route (Bus <RouteName> #<n>)
+  const busDisplayNameById = useMemo(() => {
+    const routeBuckets = new Map<
+      string,
+      Array<{ busId: string; firstTime: number; routeName: string }>
+    >();
+
+    busEventByBus.forEach((events, busId) => {
+      const route = busToRoute.get(busId);
+      const routeKey = route?.id ?? "__unknown__";
+      const list = routeBuckets.get(routeKey) || [];
+      list.push({
+        busId,
+        firstTime: events[0]?.timeMinutes ?? Number.MAX_SAFE_INTEGER,
+        routeName: route?.name || "Unknown",
+      });
+      routeBuckets.set(routeKey, list);
+    });
+
+    const displayNameMap = new Map<string, string>();
+    routeBuckets.forEach((list) => {
+      list
+        .sort(
+          (a, b) => a.firstTime - b.firstTime || a.busId.localeCompare(b.busId),
+        )
+        .forEach((item, index) => {
+          displayNameMap.set(
+            item.busId,
+            `Bus ${item.routeName} #${index + 1}`,
+          );
+        });
+    });
+
+    return displayNameMap;
+  }, [busEventByBus, busToRoute]);
+
   // Helper: interpolate along route geometry between two stations
   const interpolateOnRoute = useCallback(
     (
@@ -469,7 +505,9 @@ export default function InteractiveMap({
             coord: [lat, lon],
             color: color,
             routeId: routeId,
-            displayName: `Bus ${route?.name || "Unknown"} #1`,
+            displayName:
+              busDisplayNameById.get(busId) ||
+              `Bus ${route?.name || "Unknown"}`,
           });
         });
 
@@ -582,6 +620,7 @@ export default function InteractiveMap({
       busLogEvents,
       busEventByBus,
       busToRoute,
+      busDisplayNameById,
       interpolateOnRoute,
       mockRoutes,
       playbackSeed?.scheduleData,

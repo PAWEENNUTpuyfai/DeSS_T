@@ -1368,6 +1368,11 @@ export default function Scenario({
                               const val = e.target.value;
                               setSimStartHour(val === '' ? '' : Number(val));
                             }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.currentTarget.blur();
+                              }
+                            }}
                             onBlur={(e) => {
                               if (e.target.value === '') {
                                 // Restore previous value if empty
@@ -1415,6 +1420,11 @@ export default function Scenario({
                             onChange={(e) => {
                               const val = e.target.value;
                               setSimEndHour(val === '' ? '' : Number(val));
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.currentTarget.blur();
+                              }
                             }}
                             onBlur={(e) => {
                               if (e.target.value === '') {

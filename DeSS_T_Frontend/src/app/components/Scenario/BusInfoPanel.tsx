@@ -100,6 +100,11 @@ export default function BusInfoPanel({
                 const val = e.target.value;
                 setInputValues(prev => ({ ...prev, [field.key]: val === '' ? '' : Number(val) }));
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.currentTarget.blur();
+                }
+              }}
               onBlur={(e) => {
                 if (e.target.value === '') {
                   // Restore previous value if empty

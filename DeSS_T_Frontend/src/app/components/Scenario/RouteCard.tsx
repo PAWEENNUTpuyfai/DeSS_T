@@ -161,6 +161,11 @@ export default function RouteCard({
             placeholder="Route name"
             value={route.name}
             onChange={(e) => onUpdateName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              }
+            }}
             disabled={isDisabled}
           />
 

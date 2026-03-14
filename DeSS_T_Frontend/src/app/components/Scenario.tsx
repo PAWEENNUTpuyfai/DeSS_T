@@ -1777,7 +1777,7 @@ export default function Scenario({
                         </div>
                       </div>
                       <div
-                        className="relative ml-20"
+                        className="relative ml-2"
                         ref={setStationAutocompleteRef}
                       >
                         <input

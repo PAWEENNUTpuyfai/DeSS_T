@@ -1656,7 +1656,7 @@ export default function Scenario({
                   <div className="my-4 flex w-full justify-between items-center">
                     <div className="flex gap-10 items-center">
                       <div className="flex items-center">
-                        <p className="text-[20px] text-[#323232]">Simulation Period :</p>
+                        <p className="text-[20px] text-[#323232] whitespace-nowrap">Simulation Period :</p>
                         <div className="time-inputs p-2 px-4 text-[#C296CD] ml-3 my-2 h-[60px] flex items-center text-lg">
                           <input
                             type="number"
@@ -1766,7 +1766,7 @@ export default function Scenario({
                         </div>
                       </div>
                       <div className="flex items-center">
-                        <p className="text-[20px] text-[#323232]">Time Slot : </p>
+                        <p className="text-[20px] text-[#323232] whitespace-nowrap">Time Slot : </p>
                         <div className="ml-3 my-2 h-full">
                           <CustomDropdown
                             options={["5 Minutes", "10 Minutes", "15 Minutes", "20 Minutes", "30 Minutes"]}
@@ -1777,7 +1777,7 @@ export default function Scenario({
                         </div>
                       </div>
                       <div
-                        className="relative ml-2"
+                        className="relative ml-20"
                         ref={setStationAutocompleteRef}
                       >
                         <input

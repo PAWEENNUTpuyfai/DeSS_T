@@ -533,6 +533,7 @@ export default function ExportPDF({
             <PassengerWaitingHeatmap
               simulationResponse={simulationResponse}
               stations={playbackSeed?.stations ?? []}
+              showZoomControl={false}
             />
           </div>
           <div className=" text-gray-700 mb-2 leading-tight">

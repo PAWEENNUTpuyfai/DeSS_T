@@ -1796,7 +1796,7 @@ export default function Scenario({
                             setShowStationAutocomplete(true)
                           }
                           placeholder="Search station..."
-                          className="w-[220px] h-[44px] pl-10 pr-3 text-sm bg-white rounded-xl border border-[#d9d9d9] focus:outline-none focus:border-[#81069e] focus:ring-1 focus:ring-[#d1a3db]"
+                          className="w-[220px] h-[44px] pl-10 pr-3 text-sm bg-white rounded-full border border-[#d9d9d9] focus:outline-none focus:border-[#81069e] focus:ring-1 focus:ring-[#d1a3db]"
                         />
                         <svg
                           className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"

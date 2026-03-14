@@ -268,6 +268,13 @@ export default function Scenario({
   
   // Station filter state
   const [stationFilter, setStationFilter] = useState<"all" | "with-data" | "no-data">("with-data");
+  const [stationSearch, setStationSearch] = useState<string>("");
+  const [showStationAutocomplete, setShowStationAutocomplete] =
+    useState<boolean>(false);
+  const [stationHighlightIndex, setStationHighlightIndex] =
+    useState<number>(-1);
+  const [stationAutocompleteRef, setStationAutocompleteRef] =
+    useState<HTMLDivElement | null>(null);
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
   const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
@@ -420,9 +427,18 @@ export default function Scenario({
     scheduleDatas: ScheduleData[],
     currentScenarioId: string,
   ): { isValid: boolean; message?: string } => {
-    const activeRoutes = routes.filter((r) => !r.hidden);
+    const routesWithPathData = routes.filter(
+      (r) =>
+        (r.orders?.length ?? 0) > 0 ||
+        (r.stations?.length ?? 0) > 0 ||
+        (r.segments?.length ?? 0) > 0,
+    );
+    const routesForValidation =
+      routesWithPathData.length > 0
+        ? routesWithPathData
+        : routes.filter((r) => !r.hidden);
 
-    if (activeRoutes.length === 0) {
+    if (routesForValidation.length === 0) {
       return {
         isValid: false,
         message: "Please keep at least one visible route before saving or simulation.",
@@ -436,7 +452,7 @@ export default function Scenario({
       };
     }
 
-    const expectedRouteEntries = activeRoutes.map((route) => ({
+    const expectedRouteEntries = routesForValidation.map((route) => ({
       routePathId: buildRoutePathId(route, currentScenarioId),
       routeName: route.name,
     }));
@@ -524,6 +540,20 @@ export default function Scenario({
 
     return { isValid: true };
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        stationAutocompleteRef &&
+        !stationAutocompleteRef.contains(event.target as Node)
+      ) {
+        setShowStationAutocomplete(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [stationAutocompleteRef]);
 
   useEffect(() => {
     if (!scenario?.route_scenario?.route_paths?.length) return;
@@ -1170,18 +1200,66 @@ export default function Scenario({
   };
 
   // Filter stations based on filter criteria
+  const stationAutocompleteSuggestions =
+    stationSearch.trim() !== ""
+      ? nodes
+          .filter((s) => {
+            const stationName = (s.name || "").toLowerCase();
+            const stationId = (s.station_detail_id || "").toLowerCase();
+            const query = stationSearch.toLowerCase();
+            return stationName.includes(query) || stationId.includes(query);
+          })
+          .slice(0, 6)
+      : [];
+
+  const handleStationSearchKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (
+      !showStationAutocomplete ||
+      stationAutocompleteSuggestions.length === 0
+    ) {
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setStationHighlightIndex((prev) =>
+        prev < stationAutocompleteSuggestions.length - 1 ? prev + 1 : prev,
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setStationHighlightIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && stationHighlightIndex >= 0) {
+      e.preventDefault();
+      const picked = stationAutocompleteSuggestions[stationHighlightIndex];
+      setStationSearch(picked.name || "");
+      setShowStationAutocomplete(false);
+      setStationHighlightIndex(-1);
+    } else if (e.key === "Escape") {
+      setShowStationAutocomplete(false);
+      setStationHighlightIndex(-1);
+    }
+  };
+
   const filteredNodes = useMemo(() => {
     return nodes.filter((st) => {
       const id = st.station_detail_id || "";
       const hasData = stationsWithDataIds.has(id);
+      const query = stationSearch.trim().toLowerCase();
+      const stationName = (st.name || "").toLowerCase();
+      const stationId = id.toLowerCase();
+      const matchesSearch =
+        query === "" || stationName.includes(query) || stationId.includes(query);
       
       return (
-        stationFilter === "all" ||
-        (stationFilter === "with-data" && hasData) ||
-        (stationFilter === "no-data" && !hasData)
+        matchesSearch &&
+        (stationFilter === "all" ||
+          (stationFilter === "with-data" && hasData) ||
+          (stationFilter === "no-data" && !hasData))
       );
     });
-  }, [nodes, stationFilter, stationsWithDataIds]);
+  }, [nodes, stationFilter, stationsWithDataIds, stationSearch]);
 
   const validStations = useMemo(
     () =>
@@ -1697,6 +1775,81 @@ export default function Scenario({
                             fontSize="20px"
                           />
                         </div>
+                      </div>
+                      <div
+                        className="relative ml-2"
+                        ref={setStationAutocompleteRef}
+                      >
+                        <input
+                          type="text"
+                          value={stationSearch}
+                          onChange={(e) => {
+                            setStationSearch(e.target.value);
+                            setShowStationAutocomplete(
+                              e.target.value.trim() !== "",
+                            );
+                            setStationHighlightIndex(-1);
+                          }}
+                          onKeyDown={handleStationSearchKeyDown}
+                          onFocus={() =>
+                            stationSearch.trim() !== "" &&
+                            setShowStationAutocomplete(true)
+                          }
+                          placeholder="Search station..."
+                          className="w-[220px] h-[44px] pl-10 pr-3 text-sm bg-white rounded-xl border border-[#d9d9d9] focus:outline-none focus:border-[#81069e] focus:ring-1 focus:ring-[#d1a3db]"
+                        />
+                        <svg
+                          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#6b6b6b"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="M21 21l-4.35-4.35" />
+                        </svg>
+                        {showStationAutocomplete &&
+                          stationAutocompleteSuggestions.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#d1a3db] rounded-xl shadow-lg overflow-hidden z-[100001]">
+                              {stationAutocompleteSuggestions.map(
+                                (station, idx) => (
+                                  <div
+                                    key={station.station_detail_id}
+                                    onClick={() => {
+                                      setStationSearch(station.name || "");
+                                      setShowStationAutocomplete(false);
+                                      setStationHighlightIndex(-1);
+                                    }}
+                                    className="px-3 py-2 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                                    style={{
+                                      background:
+                                        idx === stationHighlightIndex
+                                          ? "#f3e5f5"
+                                          : "white",
+                                      color:
+                                        idx === stationHighlightIndex
+                                          ? "#81069e"
+                                          : "#333",
+                                    }}
+                                    onMouseEnter={() =>
+                                      setStationHighlightIndex(idx)
+                                    }
+                                  >
+                                    <div className="text-sm font-semibold">
+                                      {station.name}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      ID: {station.station_detail_id}
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>

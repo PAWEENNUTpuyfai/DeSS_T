@@ -268,6 +268,13 @@ export default function Scenario({
   
   // Station filter state
   const [stationFilter, setStationFilter] = useState<"all" | "with-data" | "no-data">("with-data");
+  const [stationSearch, setStationSearch] = useState<string>("");
+  const [showStationAutocomplete, setShowStationAutocomplete] =
+    useState<boolean>(false);
+  const [stationHighlightIndex, setStationHighlightIndex] =
+    useState<number>(-1);
+  const [stationAutocompleteRef, setStationAutocompleteRef] =
+    useState<HTMLDivElement | null>(null);
   const [simulationResponse, setSimulationResponse] =
     useState<SimulationResponse | null>(null);
   const [busScheduleFile, setBusScheduleFile] = useState<File | null>(null);
@@ -326,6 +333,227 @@ export default function Scenario({
   const isEditingScenario = !!scenario?.scenario_detail_id;
   const buildRoutePathId = (route: SimpleRoute, scenarioId: string) =>
     isEditingScenario ? route.id : `${route.name}-${scenarioId}`;
+
+  const mapUploadedScheduleData = (
+    scheduleData: PaserSchedule,
+    currentScenarioId: string,
+    busScenarioId: string,
+  ): {
+    scheduleDatas: ScheduleData[];
+    playbackSchedule: Array<{ route_id: string; schedule_list: string }>;
+    unresolvedRouteNames: string[];
+  } => {
+    const normalizeKey = (value: string) => value.trim().toLowerCase();
+    const extractRouteNameFromLegacyKey = (value: string): string | null => {
+      const trimmed = value.trim();
+      const marker = "-scenario-";
+      const markerIndex = trimmed.toLowerCase().indexOf(marker);
+      if (markerIndex <= 0) return null;
+
+      const routeName = trimmed.slice(0, markerIndex).trim();
+      return routeName.length > 0 ? routeName : null;
+    };
+    const resolveRoute = (rawRouteKey: string): SimpleRoute | undefined => {
+      const byId = routeById.get(rawRouteKey);
+      if (byId) return byId;
+
+      const byName = routeByName.get(normalizeKey(rawRouteKey));
+      if (byName) return byName;
+
+      const routeNameFromLegacy = extractRouteNameFromLegacyKey(rawRouteKey);
+      if (routeNameFromLegacy) {
+        return routeByName.get(normalizeKey(routeNameFromLegacy));
+      }
+
+      const normalizedRaw = normalizeKey(rawRouteKey);
+      const byPrefixRouteName = routesByNameLengthDesc.find((route) => {
+        const normalizedRouteName = normalizeKey(route.name);
+        return (
+          normalizedRaw === normalizedRouteName ||
+          normalizedRaw.startsWith(`${normalizedRouteName}-`)
+        );
+      });
+      if (byPrefixRouteName) {
+        return byPrefixRouteName;
+      }
+
+      return undefined;
+    };
+
+    const routeById = new Map(routes.map((r) => [r.id, r]));
+    const routeByName = new Map(routes.map((r) => [normalizeKey(r.name), r]));
+    const routesByNameLengthDesc = [...routes].sort(
+      (a, b) => b.name.length - a.name.length,
+    );
+
+    const unresolved = new Set<string>();
+
+    const scheduleDatas = scheduleData.ScheduleData.map((sd) => {
+      const rawRouteKey = sd.RoutePathID.trim();
+      const matchedRoute = resolveRoute(rawRouteKey);
+
+      if (!matchedRoute) {
+        unresolved.add(sd.RoutePathID);
+      }
+
+      return {
+        schedule_data_id: sd.ScheduleDataID,
+        schedule_list: sd.ScheduleList,
+        route_path_id: matchedRoute
+          ? buildRoutePathId(matchedRoute, currentScenarioId)
+          : rawRouteKey,
+        bus_scenario_id: busScenarioId,
+      };
+    });
+
+    const playbackSchedule = scheduleData.ScheduleData.map((sd) => {
+      const rawRouteKey = sd.RoutePathID.trim();
+      const matchedRoute = resolveRoute(rawRouteKey);
+
+      return {
+        route_id: matchedRoute ? matchedRoute.id : rawRouteKey,
+        schedule_list: sd.ScheduleList,
+      };
+    });
+
+    return {
+      scheduleDatas,
+      playbackSchedule,
+      unresolvedRouteNames: [...unresolved],
+    };
+  };
+
+  const validateRouteScheduleConsistency = (
+    scheduleDatas: ScheduleData[],
+    currentScenarioId: string,
+  ): { isValid: boolean; message?: string } => {
+    const routesWithPathData = routes.filter(
+      (r) =>
+        (r.orders?.length ?? 0) > 0 ||
+        (r.stations?.length ?? 0) > 0 ||
+        (r.segments?.length ?? 0) > 0,
+    );
+    const routesForValidation =
+      routesWithPathData.length > 0
+        ? routesWithPathData
+        : routes.filter((r) => !r.hidden);
+
+    if (routesForValidation.length === 0) {
+      return {
+        isValid: false,
+        message: "Please keep at least one visible route before saving or simulation.",
+      };
+    }
+
+    if (!scheduleDatas || scheduleDatas.length === 0) {
+      return {
+        isValid: false,
+        message: "Bus schedule is empty. Please upload a valid schedule file.",
+      };
+    }
+
+    const expectedRouteEntries = routesForValidation.map((route) => ({
+      routePathId: buildRoutePathId(route, currentScenarioId),
+      routeName: route.name,
+    }));
+
+    const expectedRouteIdSet = new Set(
+      expectedRouteEntries.map((entry) => entry.routePathId),
+    );
+    const expectedRouteNameMap = new Map(
+      expectedRouteEntries.map((entry) => [entry.routePathId, entry.routeName]),
+    );
+
+    const scheduleRouteIdCounts = new Map<string, number>();
+    const scheduleRouteIds = new Set<string>();
+
+    for (const sd of scheduleDatas) {
+      const routePathId = (sd.route_path_id || "").trim();
+      const scheduleList = (sd.schedule_list || "").trim();
+
+      if (!routePathId) {
+        return {
+          isValid: false,
+          message:
+            "Bus schedule contains a row with empty route id. Please fix the uploaded file.",
+        };
+      }
+
+      if (!scheduleList) {
+        return {
+          isValid: false,
+          message: `Bus schedule for route '${routePathId}' is empty. Please fill schedule times.`,
+        };
+      }
+
+      scheduleRouteIds.add(routePathId);
+      scheduleRouteIdCounts.set(
+        routePathId,
+        (scheduleRouteIdCounts.get(routePathId) ?? 0) + 1,
+      );
+    }
+
+    const missingInSchedule = expectedRouteEntries.filter(
+      (entry) => !scheduleRouteIds.has(entry.routePathId),
+    );
+    const extraInSchedule = [...scheduleRouteIds].filter(
+      (routePathId) => !expectedRouteIdSet.has(routePathId),
+    );
+    const duplicateRoutesInSchedule = [...scheduleRouteIdCounts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([routePathId]) =>
+        expectedRouteNameMap.get(routePathId) || routePathId,
+      );
+
+    if (
+      missingInSchedule.length > 0 ||
+      extraInSchedule.length > 0 ||
+      duplicateRoutesInSchedule.length > 0
+    ) {
+      const parts: string[] = [
+        "Route and Bus Schedule do not match. Please review before saving/simulation.",
+      ];
+
+      if (missingInSchedule.length > 0) {
+        parts.push(
+          `Missing in schedule: ${missingInSchedule
+            .map((entry) => entry.routeName)
+            .join(", ")}`,
+        );
+      }
+
+      if (extraInSchedule.length > 0) {
+        parts.push(`Extra in schedule: ${extraInSchedule.join(", ")}`);
+      }
+
+      if (duplicateRoutesInSchedule.length > 0) {
+        parts.push(
+          `Duplicate route rows in schedule: ${duplicateRoutesInSchedule.join(", ")}`,
+        );
+      }
+
+      return {
+        isValid: false,
+        message: parts.join("\n"),
+      };
+    }
+
+    return { isValid: true };
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        stationAutocompleteRef &&
+        !stationAutocompleteRef.contains(event.target as Node)
+      ) {
+        setShowStationAutocomplete(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [stationAutocompleteRef]);
 
   useEffect(() => {
     if (!scenario?.route_scenario?.route_paths?.length) return;
@@ -835,25 +1063,25 @@ export default function Scenario({
           currentScenarioId,
           busScheduleFile,
         );
+        const {
+          scheduleDatas: mappedSchedules,
+          playbackSchedule,
+          unresolvedRouteNames,
+        } = mapUploadedScheduleData(
+          scheduleData,
+          currentScenarioId,
+          busScenarioId,
+        );
 
-        scheduleDatas = scheduleData.ScheduleData.map((sd) => {
-          const matchingRoute = routes.find((r) => r.name === sd.RoutePathID);
-          return {
-            schedule_data_id: sd.ScheduleDataID,
-            schedule_list: sd.ScheduleList,
-            route_path_id: matchingRoute 
-              ? buildRoutePathId(matchingRoute, currentScenarioId) 
-              : sd.RoutePathID,
-            bus_scenario_id: busScenarioId,
-          };
-        });
+        if (unresolvedRouteNames.length > 0) {
+          alert(
+            `Route name in schedule file does not match current routes: ${unresolvedRouteNames.join(", ")}`,
+          );
+          return;
+        }
 
-        // Store schedule data in ref for playbackSeed
-        scheduleDataRef.current = scheduleData.ScheduleData.map((sd) => ({
-          route_id:
-            routes.find((r) => r.name === sd.RoutePathID)?.id || sd.RoutePathID,
-          schedule_list: sd.ScheduleList,
-        }));
+        scheduleDatas = mappedSchedules;
+        scheduleDataRef.current = playbackSchedule;
       } else {
         scheduleDatas = existingScheduleData.map((sd) => ({
           ...sd,
@@ -864,6 +1092,15 @@ export default function Scenario({
           route_id: sd.route_path_id,
           schedule_list: sd.schedule_list,
         }));
+      }
+
+      const routeScheduleValidation = validateRouteScheduleConsistency(
+        scheduleDatas,
+        currentScenarioId,
+      );
+      if (!routeScheduleValidation.isValid) {
+        alert(routeScheduleValidation.message || "Route and schedule mismatch");
+        return;
       }
       
       const scenarioDetail = buildScenarioDetail(
@@ -963,18 +1200,66 @@ export default function Scenario({
   };
 
   // Filter stations based on filter criteria
+  const stationAutocompleteSuggestions =
+    stationSearch.trim() !== ""
+      ? nodes
+          .filter((s) => {
+            const stationName = (s.name || "").toLowerCase();
+            const stationId = (s.station_detail_id || "").toLowerCase();
+            const query = stationSearch.toLowerCase();
+            return stationName.includes(query) || stationId.includes(query);
+          })
+          .slice(0, 6)
+      : [];
+
+  const handleStationSearchKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (
+      !showStationAutocomplete ||
+      stationAutocompleteSuggestions.length === 0
+    ) {
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setStationHighlightIndex((prev) =>
+        prev < stationAutocompleteSuggestions.length - 1 ? prev + 1 : prev,
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setStationHighlightIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && stationHighlightIndex >= 0) {
+      e.preventDefault();
+      const picked = stationAutocompleteSuggestions[stationHighlightIndex];
+      setStationSearch(picked.name || "");
+      setShowStationAutocomplete(false);
+      setStationHighlightIndex(-1);
+    } else if (e.key === "Escape") {
+      setShowStationAutocomplete(false);
+      setStationHighlightIndex(-1);
+    }
+  };
+
   const filteredNodes = useMemo(() => {
     return nodes.filter((st) => {
       const id = st.station_detail_id || "";
       const hasData = stationsWithDataIds.has(id);
+      const query = stationSearch.trim().toLowerCase();
+      const stationName = (st.name || "").toLowerCase();
+      const stationId = id.toLowerCase();
+      const matchesSearch =
+        query === "" || stationName.includes(query) || stationId.includes(query);
       
       return (
-        stationFilter === "all" ||
-        (stationFilter === "with-data" && hasData) ||
-        (stationFilter === "no-data" && !hasData)
+        matchesSearch &&
+        (stationFilter === "all" ||
+          (stationFilter === "with-data" && hasData) ||
+          (stationFilter === "no-data" && !hasData))
       );
     });
-  }, [nodes, stationFilter, stationsWithDataIds]);
+  }, [nodes, stationFilter, stationsWithDataIds, stationSearch]);
 
   const validStations = useMemo(
     () =>
@@ -1150,18 +1435,37 @@ export default function Scenario({
           currentScenarioId,
           busScheduleFile,
         );
+        const {
+          scheduleDatas: mappedSchedules,
+          unresolvedRouteNames,
+        } = mapUploadedScheduleData(
+          scheduleData,
+          currentScenarioId,
+          busScenarioId,
+        );
 
-        scheduleDatas = scheduleData.ScheduleData.map((sd) => ({
-          schedule_data_id: sd.ScheduleDataID,
-          schedule_list: sd.ScheduleList,
-          route_path_id: sd.RoutePathID,
-          bus_scenario_id: busScenarioId,
-        }));
+        if (unresolvedRouteNames.length > 0) {
+          alert(
+            `Route name in schedule file does not match current routes: ${unresolvedRouteNames.join(", ")}`,
+          );
+          return;
+        }
+
+        scheduleDatas = mappedSchedules;
       } else {
         scheduleDatas = existingScheduleData.map((sd) => ({
           ...sd,
           bus_scenario_id: sd.bus_scenario_id || busScenarioId,
         }));
+      }
+
+      const routeScheduleValidation = validateRouteScheduleConsistency(
+        scheduleDatas,
+        currentScenarioId,
+      );
+      if (!routeScheduleValidation.isValid) {
+        alert(routeScheduleValidation.message || "Route and schedule mismatch");
+        return;
       }
 
       const scenarioDetail = buildScenarioDetail(
@@ -1471,6 +1775,81 @@ export default function Scenario({
                             fontSize="20px"
                           />
                         </div>
+                      </div>
+                      <div
+                        className="relative ml-2"
+                        ref={setStationAutocompleteRef}
+                      >
+                        <input
+                          type="text"
+                          value={stationSearch}
+                          onChange={(e) => {
+                            setStationSearch(e.target.value);
+                            setShowStationAutocomplete(
+                              e.target.value.trim() !== "",
+                            );
+                            setStationHighlightIndex(-1);
+                          }}
+                          onKeyDown={handleStationSearchKeyDown}
+                          onFocus={() =>
+                            stationSearch.trim() !== "" &&
+                            setShowStationAutocomplete(true)
+                          }
+                          placeholder="Search station..."
+                          className="w-[220px] h-[44px] pl-10 pr-3 text-sm bg-white rounded-xl border border-[#d9d9d9] focus:outline-none focus:border-[#81069e] focus:ring-1 focus:ring-[#d1a3db]"
+                        />
+                        <svg
+                          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#6b6b6b"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="M21 21l-4.35-4.35" />
+                        </svg>
+                        {showStationAutocomplete &&
+                          stationAutocompleteSuggestions.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#d1a3db] rounded-xl shadow-lg overflow-hidden z-[100001]">
+                              {stationAutocompleteSuggestions.map(
+                                (station, idx) => (
+                                  <div
+                                    key={station.station_detail_id}
+                                    onClick={() => {
+                                      setStationSearch(station.name || "");
+                                      setShowStationAutocomplete(false);
+                                      setStationHighlightIndex(-1);
+                                    }}
+                                    className="px-3 py-2 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                                    style={{
+                                      background:
+                                        idx === stationHighlightIndex
+                                          ? "#f3e5f5"
+                                          : "white",
+                                      color:
+                                        idx === stationHighlightIndex
+                                          ? "#81069e"
+                                          : "#333",
+                                    }}
+                                    onMouseEnter={() =>
+                                      setStationHighlightIndex(idx)
+                                    }
+                                  >
+                                    <div className="text-sm font-semibold">
+                                      {station.name}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      ID: {station.station_detail_id}
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>

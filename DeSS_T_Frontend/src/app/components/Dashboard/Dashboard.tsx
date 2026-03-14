@@ -124,7 +124,9 @@ export default function Dashboard({
       });
     });
 
-    return routes;
+    return routes.sort((a, b) =>
+      a[1].localeCompare(b[1], undefined, { numeric: true, sensitivity: "base" }),
+    );
   }, [simulationResponse, playbackSeed?.routes]);
 
   // Track selected routes
@@ -300,19 +302,9 @@ export default function Dashboard({
   const summaryStats = useMemo(() => {
     const summary = simulationResponse.simulation_result.result_summary;
 
-    // Convert waiting time from seconds to minutes (or keep as seconds if very small)
-    const waitingTimeMinutes = summary.average_waiting_time / 60;
-    const waitingTimeDisplay =
-      waitingTimeMinutes > 1
-        ? `${waitingTimeMinutes.toFixed(1)} mins`
-        : `${summary.average_waiting_time.toFixed(1)} mins`;
+    const waitingTimeDisplay = `${summary.average_waiting_time.toFixed(1)} mins`;
 
-    // Convert traveling time from seconds to minutes
-    const travelingTimeMinutes = summary.average_travel_time / 60;
-    const travelingTimeDisplay =
-      travelingTimeMinutes > 1
-        ? `${travelingTimeMinutes.toFixed(1)} mins`
-        : `${summary.average_travel_time.toFixed(1)} mins`;
+    const travelingTimeDisplay = `${summary.average_travel_time.toFixed(1)} mins`;
 
     // Convert traveling distance from meters to km
     const travelingDistanceKm = summary.average_travel_distance / 1000;

@@ -5,11 +5,65 @@ import (
 	"DeSS_T_Backend-go/models"
 	"DeSS_T_Backend-go/services"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
+
+func validateScenarioRouteScheduleConsistency(input model_database.UserScenario) error {
+	if input.ScenarioDetail == nil {
+		return errors.New("scenario_detail is required")
+	}
+
+	sd := input.ScenarioDetail
+	if sd.RouteScenario == nil || len(sd.RouteScenario.RoutePaths) == 0 {
+		return errors.New("route_paths is required")
+	}
+	if sd.BusScenario == nil {
+		return errors.New("bus_scenario is required")
+	}
+
+	routePathIDs := make(map[string]struct{})
+	for _, rp := range sd.RouteScenario.RoutePaths {
+		routePathID := strings.TrimSpace(rp.ID)
+		if routePathID == "" {
+			return errors.New("route_path_id is required in route_paths")
+		}
+		routePathIDs[routePathID] = struct{}{}
+	}
+
+	scheduleByRoute := make(map[string]int)
+	for _, sch := range sd.BusScenario.ScheduleDatas {
+		routePathID := strings.TrimSpace(sch.RoutePathID)
+		if routePathID == "" {
+			return errors.New("route_path_id is required in schedule_data")
+		}
+		if _, exists := routePathIDs[routePathID]; !exists {
+			return errors.New("route and schedule mismatch: schedule_data contains route_path_id not present in route_paths")
+		}
+		scheduleByRoute[routePathID]++
+	}
+
+	for routePathID := range routePathIDs {
+		if scheduleByRoute[routePathID] == 0 {
+			return errors.New("route and schedule mismatch: some route_paths do not have schedule_data")
+		}
+	}
+
+	for _, info := range sd.BusScenario.BusInformations {
+		routePathID := strings.TrimSpace(info.RoutePathID)
+		if routePathID == "" {
+			return errors.New("route_path_id is required in bus_informations")
+		}
+		if _, exists := routePathIDs[routePathID]; !exists {
+			return errors.New("route and bus information mismatch: bus_informations contains route_path_id not present in route_paths")
+		}
+	}
+
+	return nil
+}
 
 func CreateUserScenario(c *fiber.Ctx) error {
 	var input model_database.UserScenario
@@ -18,6 +72,13 @@ func CreateUserScenario(c *fiber.Ctx) error {
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":  "รูปแบบ JSON ไม่ถูกต้อง",
+			"detail": err.Error(),
+		})
+	}
+
+	if err := validateScenarioRouteScheduleConsistency(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":  "ข้อมูล route และ schedule ไม่สอดคล้องกัน",
 			"detail": err.Error(),
 		})
 	}
@@ -39,65 +100,65 @@ func CreateUserScenario(c *fiber.Ctx) error {
 }
 
 func GetUserScenarios(c *fiber.Ctx) error {
-    // 1. รับค่า user_id จาก Parameter
-    userID := c.Params("user_id")
-    if userID == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "ต้องระบุ user_id",
-        })
-    }
+	// 1. รับค่า user_id จาก Parameter
+	userID := c.Params("user_id")
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ต้องระบุ user_id",
+		})
+	}
 
-    // 2. ดึงข้อมูลจากฐานข้อมูลผ่าน Service
-    dbScenarios, err := services.GetUserScenariosByUserID(userID)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error":  "เกิดข้อผิดพลาดในการดึงข้อมูลรายการ User Scenario",
-            "detail": err.Error(),
-        })
-    }
+	// 2. ดึงข้อมูลจากฐานข้อมูลผ่าน Service
+	dbScenarios, err := services.GetUserScenariosByUserID(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":  "เกิดข้อผิดพลาดในการดึงข้อมูลรายการ User Scenario",
+			"detail": err.Error(),
+		})
+	}
 
-    // 3. 🛠 MAPPING: จาก DB Model แปลงเป็น DTO Model (models.UserScenario)
-    var responseList []models.UserScenario
+	// 3. 🛠 MAPPING: จาก DB Model แปลงเป็น DTO Model (models.UserScenario)
+	var responseList []models.UserScenario
 
-    for _, dbSc := range dbScenarios {
-        // --- จัดการ Cover Image ---
-        var coverImage models.CoverImageProject
-        var coverImgIDStr string
-        
-        if dbSc.CoverImage != nil {
-            // ถ้ามีข้อมูลรูปภาพ ให้ Map id และ path_file
-            coverImgIDStr = dbSc.CoverImage.ID
-            coverImage = models.CoverImageProject{
-                CoverImageProID: dbSc.CoverImage.ID,
-                PathFile:        dbSc.CoverImage.PathFile,
-            }
-        } else if dbSc.CoverImgID != nil {
-            coverImgIDStr = *dbSc.CoverImgID
-        }
+	for _, dbSc := range dbScenarios {
+		// --- จัดการ Cover Image ---
+		var coverImage models.CoverImageProject
+		var coverImgIDStr string
 
-        // --- ประกอบร่าง User Scenario DTO ---
-        dto := models.UserScenario{
-            UserScenarioID:   dbSc.ID,
-            Name:             dbSc.Name,
-            ModifyDate:       dbSc.ModifyDate.Format(time.RFC3339), // แปลงเป็น ISO String เช่น "2026-02-19T10:00:00Z"
-            CreateBy:         dbSc.CreateBy,
-            CoverImgID:       coverImgIDStr,
-            ScenarioDetailID: dbSc.ScenarioDetailID,
-            CoverImage:       coverImage,
-            // ScenarioDetail: (ข้ามฟิลด์นี้ไปเพื่อให้ JSON ไม่แสดงผลก้อนใหญ่ ตาม omitempty)
-        }
+		if dbSc.CoverImage != nil {
+			// ถ้ามีข้อมูลรูปภาพ ให้ Map id และ path_file
+			coverImgIDStr = dbSc.CoverImage.ID
+			coverImage = models.CoverImageProject{
+				CoverImageProID: dbSc.CoverImage.ID,
+				PathFile:        dbSc.CoverImage.PathFile,
+			}
+		} else if dbSc.CoverImgID != nil {
+			coverImgIDStr = *dbSc.CoverImgID
+		}
 
-        responseList = append(responseList, dto)
-    }
+		// --- ประกอบร่าง User Scenario DTO ---
+		dto := models.UserScenario{
+			UserScenarioID:   dbSc.ID,
+			Name:             dbSc.Name,
+			ModifyDate:       dbSc.ModifyDate.Format(time.RFC3339), // แปลงเป็น ISO String เช่น "2026-02-19T10:00:00Z"
+			CreateBy:         dbSc.CreateBy,
+			CoverImgID:       coverImgIDStr,
+			ScenarioDetailID: dbSc.ScenarioDetailID,
+			CoverImage:       coverImage,
+			// ScenarioDetail: (ข้ามฟิลด์นี้ไปเพื่อให้ JSON ไม่แสดงผลก้อนใหญ่ ตาม omitempty)
+		}
 
-    // 4. ถ้าไม่มีข้อมูล จะคืนค่ากลับเป็น Array ว่าง [] เพื่อให้ Frontend จัดการง่าย
-    if responseList == nil {
-        responseList = []models.UserScenario{}
-    }
+		responseList = append(responseList, dto)
+	}
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "user_scenarios": responseList,
-    })
+	// 4. ถ้าไม่มีข้อมูล จะคืนค่ากลับเป็น Array ว่าง [] เพื่อให้ Frontend จัดการง่าย
+	if responseList == nil {
+		responseList = []models.UserScenario{}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"user_scenarios": responseList,
+	})
 }
 
 // GetScenarioDetails ดึงข้อมูล Scenario Detail แบบเต็มรูปแบบ
@@ -112,7 +173,7 @@ func GetScenarioDetails(c *fiber.Ctx) error {
 
 	// 1. เรียก Service (รับค่า result และ configName)
 	result, configName, err := services.GetScenarioDetailByID(scenarioDetailID)
-	
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -127,11 +188,12 @@ func GetScenarioDetails(c *fiber.Ctx) error {
 
 	// 2. 🛠️ ประกอบร่าง JSON Response
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"configuration_detail_id": result.ConfigurationDetailID, 
-		"configuration_name":      configName,                     // 👈 เพิ่มชื่อที่ค้นหาได้ตรงนี้!
-		"scenario_detail":         result,                       
+		"configuration_detail_id": result.ConfigurationDetailID,
+		"configuration_name":      configName, // 👈 เพิ่มชื่อที่ค้นหาได้ตรงนี้!
+		"scenario_detail":         result,
 	})
 }
+
 // DeleteUserScenario ลบ User Scenario
 func DeleteUserScenario(c *fiber.Ctx) error {
 	// 1. รับค่า ID จาก Parameter ใน URL
@@ -184,6 +246,13 @@ func EditUserScenario(c *fiber.Ctx) error {
 		})
 	}
 
+	if err := validateScenarioRouteScheduleConsistency(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":  "ข้อมูล route และ schedule ไม่สอดคล้องกัน",
+			"detail": err.Error(),
+		})
+	}
+
 	// 🛠️ [สำคัญมาก] บังคับให้ ID ของข้อมูลใหม่ ตรงกับ ID ที่รับมาจาก URL
 	// เพื่อให้เวลาสร้างใหม่ มันจะไปสวมรอยเป็น ID เดิม ไม่ใช่เกิดเป็น ID ใหม่เอี่ยม
 	input.ID = scenarioID
@@ -214,7 +283,7 @@ func EditUserScenario(c *fiber.Ctx) error {
 
 	// 5. ส่งผลลัพธ์กลับ
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":         "อัปเดต User Scenario สำเร็จเรียบร้อย",
-		"user_scenario":   result,
+		"message":       "อัปเดต User Scenario สำเร็จเรียบร้อย",
+		"user_scenario": result,
 	})
 }

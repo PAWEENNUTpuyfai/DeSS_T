@@ -416,6 +416,115 @@ export default function Scenario({
     };
   };
 
+  const validateRouteScheduleConsistency = (
+    scheduleDatas: ScheduleData[],
+    currentScenarioId: string,
+  ): { isValid: boolean; message?: string } => {
+    const activeRoutes = routes.filter((r) => !r.hidden);
+
+    if (activeRoutes.length === 0) {
+      return {
+        isValid: false,
+        message: "Please keep at least one visible route before saving or simulation.",
+      };
+    }
+
+    if (!scheduleDatas || scheduleDatas.length === 0) {
+      return {
+        isValid: false,
+        message: "Bus schedule is empty. Please upload a valid schedule file.",
+      };
+    }
+
+    const expectedRouteEntries = activeRoutes.map((route) => ({
+      routePathId: buildRoutePathId(route, currentScenarioId),
+      routeName: route.name,
+    }));
+
+    const expectedRouteIdSet = new Set(
+      expectedRouteEntries.map((entry) => entry.routePathId),
+    );
+    const expectedRouteNameMap = new Map(
+      expectedRouteEntries.map((entry) => [entry.routePathId, entry.routeName]),
+    );
+
+    const scheduleRouteIdCounts = new Map<string, number>();
+    const scheduleRouteIds = new Set<string>();
+
+    for (const sd of scheduleDatas) {
+      const routePathId = (sd.route_path_id || "").trim();
+      const scheduleList = (sd.schedule_list || "").trim();
+
+      if (!routePathId) {
+        return {
+          isValid: false,
+          message:
+            "Bus schedule contains a row with empty route id. Please fix the uploaded file.",
+        };
+      }
+
+      if (!scheduleList) {
+        return {
+          isValid: false,
+          message: `Bus schedule for route '${routePathId}' is empty. Please fill schedule times.`,
+        };
+      }
+
+      scheduleRouteIds.add(routePathId);
+      scheduleRouteIdCounts.set(
+        routePathId,
+        (scheduleRouteIdCounts.get(routePathId) ?? 0) + 1,
+      );
+    }
+
+    const missingInSchedule = expectedRouteEntries.filter(
+      (entry) => !scheduleRouteIds.has(entry.routePathId),
+    );
+    const extraInSchedule = [...scheduleRouteIds].filter(
+      (routePathId) => !expectedRouteIdSet.has(routePathId),
+    );
+    const duplicateRoutesInSchedule = [...scheduleRouteIdCounts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([routePathId]) =>
+        expectedRouteNameMap.get(routePathId) || routePathId,
+      );
+
+    if (
+      missingInSchedule.length > 0 ||
+      extraInSchedule.length > 0 ||
+      duplicateRoutesInSchedule.length > 0
+    ) {
+      const parts: string[] = [
+        "Route and Bus Schedule do not match. Please review before saving/simulation.",
+      ];
+
+      if (missingInSchedule.length > 0) {
+        parts.push(
+          `Missing in schedule: ${missingInSchedule
+            .map((entry) => entry.routeName)
+            .join(", ")}`,
+        );
+      }
+
+      if (extraInSchedule.length > 0) {
+        parts.push(`Extra in schedule: ${extraInSchedule.join(", ")}`);
+      }
+
+      if (duplicateRoutesInSchedule.length > 0) {
+        parts.push(
+          `Duplicate route rows in schedule: ${duplicateRoutesInSchedule.join(", ")}`,
+        );
+      }
+
+      return {
+        isValid: false,
+        message: parts.join("\n"),
+      };
+    }
+
+    return { isValid: true };
+  };
+
   useEffect(() => {
     if (!scenario?.route_scenario?.route_paths?.length) return;
 
@@ -954,6 +1063,15 @@ export default function Scenario({
           schedule_list: sd.schedule_list,
         }));
       }
+
+      const routeScheduleValidation = validateRouteScheduleConsistency(
+        scheduleDatas,
+        currentScenarioId,
+      );
+      if (!routeScheduleValidation.isValid) {
+        alert(routeScheduleValidation.message || "Route and schedule mismatch");
+        return;
+      }
       
       const scenarioDetail = buildScenarioDetail(
         currentScenarioId,
@@ -1261,6 +1379,15 @@ export default function Scenario({
           ...sd,
           bus_scenario_id: sd.bus_scenario_id || busScenarioId,
         }));
+      }
+
+      const routeScheduleValidation = validateRouteScheduleConsistency(
+        scheduleDatas,
+        currentScenarioId,
+      );
+      if (!routeScheduleValidation.isValid) {
+        alert(routeScheduleValidation.message || "Route and schedule mismatch");
+        return;
       }
 
       const scenarioDetail = buildScenarioDetail(

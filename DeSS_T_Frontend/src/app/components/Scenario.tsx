@@ -327,6 +327,95 @@ export default function Scenario({
   const buildRoutePathId = (route: SimpleRoute, scenarioId: string) =>
     isEditingScenario ? route.id : `${route.name}-${scenarioId}`;
 
+  const mapUploadedScheduleData = (
+    scheduleData: PaserSchedule,
+    currentScenarioId: string,
+    busScenarioId: string,
+  ): {
+    scheduleDatas: ScheduleData[];
+    playbackSchedule: Array<{ route_id: string; schedule_list: string }>;
+    unresolvedRouteNames: string[];
+  } => {
+    const normalizeKey = (value: string) => value.trim().toLowerCase();
+    const extractRouteNameFromLegacyKey = (value: string): string | null => {
+      const trimmed = value.trim();
+      const marker = "-scenario-";
+      const markerIndex = trimmed.toLowerCase().indexOf(marker);
+      if (markerIndex <= 0) return null;
+
+      const routeName = trimmed.slice(0, markerIndex).trim();
+      return routeName.length > 0 ? routeName : null;
+    };
+    const resolveRoute = (rawRouteKey: string): SimpleRoute | undefined => {
+      const byId = routeById.get(rawRouteKey);
+      if (byId) return byId;
+
+      const byName = routeByName.get(normalizeKey(rawRouteKey));
+      if (byName) return byName;
+
+      const routeNameFromLegacy = extractRouteNameFromLegacyKey(rawRouteKey);
+      if (routeNameFromLegacy) {
+        return routeByName.get(normalizeKey(routeNameFromLegacy));
+      }
+
+      const normalizedRaw = normalizeKey(rawRouteKey);
+      const byPrefixRouteName = routesByNameLengthDesc.find((route) => {
+        const normalizedRouteName = normalizeKey(route.name);
+        return (
+          normalizedRaw === normalizedRouteName ||
+          normalizedRaw.startsWith(`${normalizedRouteName}-`)
+        );
+      });
+      if (byPrefixRouteName) {
+        return byPrefixRouteName;
+      }
+
+      return undefined;
+    };
+
+    const routeById = new Map(routes.map((r) => [r.id, r]));
+    const routeByName = new Map(routes.map((r) => [normalizeKey(r.name), r]));
+    const routesByNameLengthDesc = [...routes].sort(
+      (a, b) => b.name.length - a.name.length,
+    );
+
+    const unresolved = new Set<string>();
+
+    const scheduleDatas = scheduleData.ScheduleData.map((sd) => {
+      const rawRouteKey = sd.RoutePathID.trim();
+      const matchedRoute = resolveRoute(rawRouteKey);
+
+      if (!matchedRoute) {
+        unresolved.add(sd.RoutePathID);
+      }
+
+      return {
+        schedule_data_id: sd.ScheduleDataID,
+        schedule_list: sd.ScheduleList,
+        route_path_id: matchedRoute
+          ? buildRoutePathId(matchedRoute, currentScenarioId)
+          : rawRouteKey,
+        bus_scenario_id: busScenarioId,
+      };
+    });
+
+    const playbackSchedule = scheduleData.ScheduleData.map((sd) => {
+      const rawRouteKey = sd.RoutePathID.trim();
+      const matchedRoute = resolveRoute(rawRouteKey);
+
+      return {
+        route_id: matchedRoute ? matchedRoute.id : rawRouteKey,
+        schedule_list: sd.ScheduleList,
+      };
+    });
+
+    return {
+      scheduleDatas,
+      playbackSchedule,
+      unresolvedRouteNames: [...unresolved],
+    };
+  };
+
   useEffect(() => {
     if (!scenario?.route_scenario?.route_paths?.length) return;
 
@@ -835,25 +924,25 @@ export default function Scenario({
           currentScenarioId,
           busScheduleFile,
         );
+        const {
+          scheduleDatas: mappedSchedules,
+          playbackSchedule,
+          unresolvedRouteNames,
+        } = mapUploadedScheduleData(
+          scheduleData,
+          currentScenarioId,
+          busScenarioId,
+        );
 
-        scheduleDatas = scheduleData.ScheduleData.map((sd) => {
-          const matchingRoute = routes.find((r) => r.name === sd.RoutePathID);
-          return {
-            schedule_data_id: sd.ScheduleDataID,
-            schedule_list: sd.ScheduleList,
-            route_path_id: matchingRoute 
-              ? buildRoutePathId(matchingRoute, currentScenarioId) 
-              : sd.RoutePathID,
-            bus_scenario_id: busScenarioId,
-          };
-        });
+        if (unresolvedRouteNames.length > 0) {
+          alert(
+            `Route name in schedule file does not match current routes: ${unresolvedRouteNames.join(", ")}`,
+          );
+          return;
+        }
 
-        // Store schedule data in ref for playbackSeed
-        scheduleDataRef.current = scheduleData.ScheduleData.map((sd) => ({
-          route_id:
-            routes.find((r) => r.name === sd.RoutePathID)?.id || sd.RoutePathID,
-          schedule_list: sd.ScheduleList,
-        }));
+        scheduleDatas = mappedSchedules;
+        scheduleDataRef.current = playbackSchedule;
       } else {
         scheduleDatas = existingScheduleData.map((sd) => ({
           ...sd,
@@ -1150,13 +1239,23 @@ export default function Scenario({
           currentScenarioId,
           busScheduleFile,
         );
+        const {
+          scheduleDatas: mappedSchedules,
+          unresolvedRouteNames,
+        } = mapUploadedScheduleData(
+          scheduleData,
+          currentScenarioId,
+          busScenarioId,
+        );
 
-        scheduleDatas = scheduleData.ScheduleData.map((sd) => ({
-          schedule_data_id: sd.ScheduleDataID,
-          schedule_list: sd.ScheduleList,
-          route_path_id: sd.RoutePathID,
-          bus_scenario_id: busScenarioId,
-        }));
+        if (unresolvedRouteNames.length > 0) {
+          alert(
+            `Route name in schedule file does not match current routes: ${unresolvedRouteNames.join(", ")}`,
+          );
+          return;
+        }
+
+        scheduleDatas = mappedSchedules;
       } else {
         scheduleDatas = existingScheduleData.map((sd) => ({
           ...sd,

@@ -6,7 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-
+    "math"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -16,31 +16,53 @@ import (
 // - "15:55" -> 955 นาที (15*60 + 55)
 // - "0.354166..." (Excel serial time) -> แปลงเป็นนาที
 // - ตัวเลขล้วน เช่น "5", "12.5" -> ใช้ค่าตามเดิม (นาที)
+// parseTimeValue แปลงค่าเวลา/ตัวเลขจาก Excel
 func parseTimeValue(val string) (float64, bool) {
-	// ลอง parse รูปแบบ HH:MM หรือ H:MM
-	if strings.Contains(val, ":") {
-		parts := strings.Split(val, ":")
+	valStr := strings.TrimSpace(val)
+
+	// 1. ตรวจสอบว่ามี AM/PM กำกับอยู่หรือไม่
+	isPM := strings.Contains(strings.ToLower(valStr), "pm") || strings.Contains(strings.ToLower(valStr), "p.m.")
+	isAM := strings.Contains(strings.ToLower(valStr), "am") || strings.Contains(strings.ToLower(valStr), "a.m.")
+
+	// 2. ลบตัวอักษร AM/PM และช่องว่างทิ้ง เพื่อให้เหลือแค่ตัวเลขเวลาเพียวๆ "HH:MM"
+	cleanVal := strings.NewReplacer(
+		"AM", "", "PM", "",
+		"am", "", "pm", "",
+		"A.M.", "", "P.M.", "",
+		"a.m.", "", "p.m.", "",
+		" ", "",
+	).Replace(valStr)
+
+	// 3. จัดการกรณีรูปแบบ HH:MM
+	if strings.Contains(cleanVal, ":") {
+		parts := strings.Split(cleanVal, ":")
 		if len(parts) >= 2 {
-			hour, err1 := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
-			min, err2 := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+			hour, err1 := strconv.ParseFloat(parts[0], 64)
+			min, err2 := strconv.ParseFloat(parts[1], 64)
+			
 			if err1 == nil && err2 == nil {
-				// คืนค่าเป็นนาทีตั้งแต่เที่ยงคืน
+				// ปรับเวลาให้เป็น 24 ชั่วโมง
+				if isPM && hour < 12 {
+					hour += 12 // บ่ายโมง (01:00 PM) จะถูกบวก 12 กลายเป็น 13:00
+				} else if isAM && hour == 12 {
+					hour = 0   // เที่ยงคืน (12:00 AM) จะกลายเป็น 00:00
+				}
+				
+				// คืนค่าเป็นจำนวนนาทีตั้งแต่เที่ยงคืน
 				return hour*60 + min, true
 			}
 		}
 	}
 
-    // ลอง parse เป็นตัวเลข
+	// 4. จัดการกรณี Excel Serial Time (เช่น 0.541666) หรือตัวเลขธรรมดา
 	var num float64
-	if _, err := fmt.Sscanf(val, "%f", &num); err == nil {
-		// ถ้าค่าน้อยกว่า 1 แสดงว่าเป็น Excel serial time (fraction ของวัน)
-		if num < 1 {
-			// แปลงเป็นนาที: num * 24 * 60
-			return num * 1440, true
+	if _, err := fmt.Sscanf(cleanVal, "%f", &num); err == nil {
+		// ถ้าค่ามากกว่าหมื่น (มีวันที่ติดมาด้วย) หรือเป็นทศนิยมระหว่าง 0 ถึง 1 (เวลาเพียวๆ)
+		if num > 10000 || (num >= 0 && num <= 1) {
+			_, frac := math.Modf(num) // ตัดวันที่ทิ้ง เอาแค่เศษเวลา
+			return frac * 1440, true
 		}
-        // สำหรับตัวเลขทั่วไปให้ถือเป็น "นาที" โดยตรง
-        // (ป้องกันกรณีไฟล์ non-day-template ที่กรอก interarrival เป็นนาที
-        // แล้วถูกคูณ 60 จนหน่วยเพี้ยน)
+		// สำหรับตัวเลขนาทีที่กรอกมาตรงๆ
 		return num, true
 	}
 
@@ -172,157 +194,162 @@ func DistributionExcelToJSON(path string) (Data, error) {
 
 // DistributionExcelToJSONReaderWithDayTemplate อ่าน Excel และคำนวณ interarrival แยกตาม column (แต่ละวัน)
 // แล้วจัดกลุ่มผลลัพธ์ตามช่วงชั่วโมง เช่น 8:00-8:59, 9:00-9:59, ...
+// DistributionExcelToJSONReaderWithDayTemplate อ่าน Excel และคำนวณ interarrival แยกตาม column (แต่ละวัน)
+// แล้วจัดกลุ่มผลลัพธ์ตามช่วงชั่วโมง โดยรีเซ็ตการคำนวณเมื่อขึ้นชั่วโมงใหม่
 func DistributionExcelToJSONReaderWithDayTemplate(
-    r io.Reader,
-    stationNameToID map[string]string,
-    isDayTemplate bool,
+	r io.Reader,
+	stationNameToID map[string]string,
+	isDayTemplate bool,
 ) (Data, error) {
 
-    f, err := excelize.OpenReader(r)
-    if err != nil {
-        return Data{}, err
-    }
-    defer f.Close()
+	f, err := excelize.OpenReader(r)
+	if err != nil {
+		return Data{}, err
+	}
+	defer f.Close()
 
-    output := Data{}
-    recordID := 1
+	output := Data{}
+	recordID := 1
 
-    for _, sheet := range f.GetSheetList() {
+	for _, sheet := range f.GetSheetList() {
 
-        sheetKey := strings.TrimSpace(sheet)
+		sheetKey := strings.TrimSpace(sheet)
 
-        stationID := sheetKey
-        if id, ok := stationNameToID[sheetKey]; ok {
-            stationID = id
-        }
+		stationID := sheetKey
+		if id, ok := stationNameToID[sheetKey]; ok {
+			stationID = id
+		}
 
-        rows, err := f.GetRows(sheet)
-        if err != nil || len(rows) == 0 {
-            continue
-        }
+		rows, err := f.GetRows(sheet)
+		if err != nil || len(rows) == 0 {
+			continue
+		}
 
-        headers := rows[0]
-        if len(headers) == 0 {
-            continue
-        }
+		headers := rows[0]
+		if len(headers) == 0 {
+			continue
+		}
 
-        // เก็บ interarrival values ตามช่วงชั่วโมง
-        // key = ชั่วโมง (0-23), value = slice ของ interarrival times (นาที)
-        hourlyInterarrivals := make(map[int][]float64)
+		// เก็บ interarrival values รวมของสถานีนี้ โดยแยกตามช่วงชั่วโมง (0-23)
+		hourlyInterarrivals := make(map[int][]float64)
 
-        // วนแต่ละ column (แต่ละวัน)
-        for colIndex, header := range headers {
-            if strings.TrimSpace(header) == "" {
-                continue
-            }
+		// วนแต่ละ column (แต่ละวัน)
+		for colIndex, header := range headers {
+			if strings.TrimSpace(header) == "" {
+				continue
+			}
 
-            // อ่านค่าเวลาทั้งหมดใน column นี้
-            var columnTimes []float64
-            for rowIndex := 1; rowIndex < len(rows); rowIndex++ {
-                if colIndex >= len(rows[rowIndex]) {
-                    continue
-                }
+			// อ่านค่าเวลาทั้งหมดใน column นี้
+			var columnTimes []float64
+			for rowIndex := 1; rowIndex < len(rows); rowIndex++ {
+				if colIndex >= len(rows[rowIndex]) {
+					continue
+				}
 
-                val := strings.TrimSpace(rows[rowIndex][colIndex])
-                if val == "" {
-                    continue
-                }
+				val := strings.TrimSpace(rows[rowIndex][colIndex])
+				if val == "" {
+					continue
+				}
 
-                minutesFromMidnight, ok := parseTimeValue(val)
-                if !ok {
-                    log.Printf("[DEBUG] Failed to parse time value: %s", val)
-                    continue
-                }
+				minutesFromMidnight, ok := parseTimeValue(val)
+				if !ok {
+					log.Printf("[DEBUG] Failed to parse time value: %s", val)
+					continue
+				}
 
-                columnTimes = append(columnTimes, minutesFromMidnight)
-            }
+				columnTimes = append(columnTimes, minutesFromMidnight)
+			}
 
-            if len(columnTimes) <= 1 {
-                log.Printf("[DEBUG] Column %s: not enough data (%d records)", header, len(columnTimes))
-                continue
-            }
+			// 1. ถ้าไม่มีข้อมูล หรือมีข้อมูลแค่อันเดียวใน "วันนั้น" ให้ข้ามคอลัมน์นี้ไปเลย
+			if len(columnTimes) <= 1 {
+				log.Printf("[DEBUG] Column %s: not enough data (%d records), skipping", header, len(columnTimes))
+				continue
+			}
 
-            // เรียงลำดับเวลาใน column นี้
-            sortFloat64s(columnTimes)
+			// 2. จัดกลุ่มเวลาของคนในวันนั้น แยกเป็นแต่ละชั่วโมง
+			// key = ชั่วโมง (0-23), value = list ของเวลาในชั่วโมงนั้น
+			hourlyArrivals := make(map[int][]float64)
+			for _, arrivalTime := range columnTimes {
+				hour := int(arrivalTime / 60) % 24
+				hourlyArrivals[hour] = append(hourlyArrivals[hour], arrivalTime)
+			}
 
-            log.Printf("[DEBUG] Column %s: %d records, first few times: %v", header, len(columnTimes), columnTimes[:min(5, len(columnTimes))])
+			// 3. คำนวณ Interarrival แยกภายในแต่ละชั่วโมง (รีเซ็ตต้นชั่วโมงใหม่)
+			for hour, times := range hourlyArrivals {
+				
+				// เรียงลำดับเวลาเฉพาะภายในชั่วโมงนี้ (เผื่อผู้ใช้พิมพ์สลับเวลาในไฟล์ Excel)
+				sortFloat64s(times)
 
-            // คำนวณ interarrival สำหรับ column นี้
-            // และจัดกลุ่มตามชั่วโมงของ arrival time ที่มาถึง (ตัวที่ 2 ในแต่ละ pair)
-            for i := 1; i < len(columnTimes); i++ {
-                arrivalTime := columnTimes[i]       // เวลาที่ผู้โดยสารมาถึง
-                prevTime := columnTimes[i-1]        // เวลาของคนก่อนหน้า
-                interarrival := arrivalTime - prevTime
+				for i, arrivalTime := range times {
+					var interarrival float64
 
-                // จัดกลุ่มตามชั่วโมงของ arrivalTime
-                hour := int(arrivalTime / 60)
-                if hour < 0 || hour > 23 {
-                    continue
-                }
+					if i == 0 {
+						// กรณีเป็นข้อมูลแรกของชั่วโมง: ให้ลบกับ "เวลาเริ่มต้นชั่วโมง" (ตัดชั่วโมง)
+						// เช่น มา 08:55 (535 นาที) -> hourStart = 08:00 (480 นาที) -> 535 - 480 = 55
+						hourStart := float64(int(arrivalTime/60) * 60)
+						interarrival = arrivalTime - hourStart
+					} else {
+						// กรณีเป็นคนถัดไป: ให้ลบกับ "เวลาของคนก่อนหน้า"
+						prevTime := times[i-1]
+						interarrival = arrivalTime - prevTime
+					}
 
-                hourlyInterarrivals[hour] = append(hourlyInterarrivals[hour], interarrival)
-            }
-        }
+					// เพิ่มเข้า Array เก็บค่าผลลัพธ์ของชั่วโมงนั้น
+					hourlyInterarrivals[hour] = append(hourlyInterarrivals[hour], interarrival)
+				}
+			}
+		}
 
-        // แสดง summary
-        log.Printf("[DEBUG] Station: %s, Hourly interarrival summary:", sheetKey)
-        for h := 0; h <= 23; h++ {
-            if data, ok := hourlyInterarrivals[h]; ok && len(data) > 0 {
-                log.Printf("[DEBUG]   Hour %d: %d interarrivals, first few: %v", h, len(data), data[:min(5, len(data))])
-            }
-        }
+		// สร้าง Items สำหรับแสดงผลในแต่ละช่วงชั่วโมงที่มีข้อมูล
+		for hour := 0; hour <= 23; hour++ {
+			data, exists := hourlyInterarrivals[hour]
+			if !exists || len(data) == 0 {
+				continue
+			}
 
-        // สร้าง Items สำหรับแต่ละช่วงชั่วโมงที่มีข้อมูล
-        for hour := 0; hour <= 23; hour++ {
-            data, exists := hourlyInterarrivals[hour]
-            if !exists || len(data) == 0 {
-                continue
-            }
+			// สร้าง Records จาก interarrival values
+			recs := []Record{}
+			for _, val := range data {
+				recs = append(recs, Record{
+					RecordID:     recordID,
+					NumericValue: val,
+				})
+				recordID++
+			}
 
-            // สร้าง Records จาก interarrival values (ไม่ต้อง sort อีก)
-            recs := []Record{}
-            for _, val := range data {
-                recs = append(recs, Record{
-                    RecordID:     recordID,
-                    NumericValue: val,
-                })
-                recordID++
-            }
+			// สร้าง time range header (เช่น "08:00-08:59")
+			timeRange := fmt.Sprintf("%02d:00-%02d:59", hour, hour)
 
-            // สร้าง time range header (เช่น "08:00-08:59")
-            timeRange := fmt.Sprintf("%02d:00-%02d:59", hour, hour)
+			output.Data = append(output.Data, Item{
+				Station:   stationID,
+				TimeRange: timeRange,
+				Records:   recs,
+			})
+		}
 
-            output.Data = append(output.Data, Item{
-                Station:   stationID,
-                TimeRange: timeRange,
-                Records:   recs,
-            })
-        }
+		// ถ้าไม่มีข้อมูลใน sheet เลย ให้เติมค่าว่าง
+		hasData := false
+		for _, data := range hourlyInterarrivals {
+			if len(data) > 0 {
+				hasData = true
+				break
+			}
+		}
+		if !hasData {
+			output.Data = append(output.Data, Item{
+				Station:   stationID,
+				TimeRange: "0:00-0:59",
+				Records: []Record{{
+					RecordID:     recordID,
+					NumericValue: 0,
+				}},
+			})
+			recordID++
+		}
+	}
 
-        // ถ้าไม่มีข้อมูลใน sheet เลย ให้เติมค่าว่าง
-        hasData := false
-        for _, data := range hourlyInterarrivals {
-            if len(data) > 0 {
-                hasData = true
-                break
-            }
-        }
-        if !hasData {
-            output.Data = append(output.Data, Item{
-                Station:   stationID,
-                TimeRange: "0:00-0:59",
-                Records: []Record{{
-                    RecordID:     recordID,
-                    NumericValue: 0,
-                }},
-            })
-            recordID++
-        }
-    }
-
-    return output, nil
+	return output, nil
 }
-
 // min returns the smaller of two integers
 func min(a, b int) int {
     if a < b {

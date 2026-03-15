@@ -588,8 +588,31 @@ export default function Scenario({
       },
     );
 
-    if (derivedRoutes.length > 0) {
-      setRoutes(derivedRoutes);
+    const scheduleOrderByRouteId = new Map(
+      (scenario.bus_scenario?.schedule_data ?? []).map((sd, idx) => [
+        sd.route_path_id,
+        idx,
+      ]),
+    );
+
+    const orderedDerivedRoutes = [...derivedRoutes].sort((a, b) => {
+      const aOrder = scheduleOrderByRouteId.get(a.id);
+      const bOrder = scheduleOrderByRouteId.get(b.id);
+
+      if (aOrder !== undefined && bOrder !== undefined) {
+        return aOrder - bOrder;
+      }
+      if (aOrder !== undefined) return -1;
+      if (bOrder !== undefined) return 1;
+
+      return a.name.localeCompare(b.name, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+
+    if (orderedDerivedRoutes.length > 0) {
+      setRoutes(orderedDerivedRoutes);
     }
 
     const scheduleData = scenario.bus_scenario?.schedule_data ?? [];

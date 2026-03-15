@@ -69,13 +69,13 @@ export default function InteractiveMap({
     () =>
       activePlaybackData?.routes?.length
         ? activePlaybackData.routes.map((r) => ({
-            id: r.id,
-            name: r.name,
-            color: r.color,
-            coords: r.segments.flatMap((seg) =>
-              seg.coords.map(([lon, lat]) => [lat, lon] as [number, number]),
-            ),
-          }))
+              id: r.id,
+              name: r.name,
+              color: r.color,
+              coords: r.segments.flatMap((seg) =>
+                seg.coords.map(([lon, lat]) => [lat, lon] as [number, number]),
+              ),
+            }))
         : [],
     [activePlaybackData?.routes],
   );

@@ -144,9 +144,11 @@ function HeatmapLayer({ data }: { data: HeatmapDataPoint[] }) {
 export default function PassengerWaitingHeatmap({
   simulationResponse,
   stations,
+  showZoomControl = true,
 }: {
   simulationResponse: SimulationResponse;
   stations: StationInfo[];
+  showZoomControl?: boolean;
 }) {
   // Build heatmap data from simulation results
   const heatmapData = useMemo(() => {
@@ -177,15 +179,16 @@ export default function PassengerWaitingHeatmap({
     simulationResponse.simulation_result.slot_results.forEach((slot) => {
       slot.result_station?.forEach((station) => {
         const normalized = normalizeKey(station.station_name);
+        const safeWaitingTime = Math.max(0, station.average_waiting_time);
         const existing = stationDataMap.get(normalized);
         if (existing) {
-          existing.waiting_times.push(station.average_waiting_time);
+          existing.waiting_times.push(safeWaitingTime);
           existing.queue_lengths.push(station.average_queue_length);
         } else {
           // Find station by ID or name
           const stationInfo = stationMap.get(normalized);
           stationDataMap.set(normalized, {
-            waiting_times: [station.average_waiting_time],
+            waiting_times: [safeWaitingTime],
             queue_lengths: [station.average_queue_length],
             originalName: station.station_name,
             stationInfo,
@@ -252,6 +255,7 @@ export default function PassengerWaitingHeatmap({
         <MapContainer
           center={[centerLat, centerLon]}
           zoom={13}
+          zoomControl={showZoomControl}
           style={{ height: "100%", width: "100%" }}
         >
           <TileLayer

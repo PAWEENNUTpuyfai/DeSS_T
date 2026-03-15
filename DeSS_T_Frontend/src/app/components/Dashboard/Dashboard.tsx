@@ -124,9 +124,25 @@ export default function Dashboard({
       });
     });
 
-    return routes.sort((a, b) =>
-      a[1].localeCompare(b[1], undefined, { numeric: true, sensitivity: "base" }),
+    const scenarioOrderByName = new Map(
+      (playbackSeed?.routes ?? []).map((r, idx) => [r.name.trim(), idx]),
     );
+
+    return routes.sort((a, b) => {
+      const aOrder = scenarioOrderByName.get(a[1].trim());
+      const bOrder = scenarioOrderByName.get(b[1].trim());
+
+      if (aOrder !== undefined && bOrder !== undefined) {
+        return aOrder - bOrder;
+      }
+      if (aOrder !== undefined) return -1;
+      if (bOrder !== undefined) return 1;
+
+      return a[1].localeCompare(b[1], undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
   }, [simulationResponse, playbackSeed?.routes]);
 
   // Track selected routes

@@ -118,7 +118,25 @@ export default function ExportPDF({
       });
     });
 
-    return routes;
+    const scenarioOrderByName = new Map(
+      (playbackSeed?.routes ?? []).map((r, idx) => [r.name.trim(), idx]),
+    );
+
+    return routes.sort((a, b) => {
+      const aOrder = scenarioOrderByName.get(a[1].trim());
+      const bOrder = scenarioOrderByName.get(b[1].trim());
+
+      if (aOrder !== undefined && bOrder !== undefined) {
+        return aOrder - bOrder;
+      }
+      if (aOrder !== undefined) return -1;
+      if (bOrder !== undefined) return 1;
+
+      return a[1].localeCompare(b[1], undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
   }, [simulationResponse, playbackSeed?.routes]);
 
   // Track selected routes
@@ -391,23 +409,19 @@ export default function ExportPDF({
   const summaryStats = useMemo(() => {
     const summary = simulationResponse.simulation_result.result_summary;
 
-    // Convert waiting time from seconds to minutes (or keep as seconds if very small)
-    const waitingTimeMinutes = summary.average_waiting_time / 60;
+    // Waiting time is already in minutes
+    const waitingTimeMinutes = summary.average_waiting_time;
     const waitingTimeDisplay =
       summary.average_waiting_time < 0
         ? '-'
-        : waitingTimeMinutes > 1
-          ? `${waitingTimeMinutes.toFixed(1)} mins`
-          : `${summary.average_waiting_time.toFixed(1)} mins`;
+        : `${waitingTimeMinutes.toFixed(1)} mins`;
 
-    // Convert traveling time from seconds to minutes
-    const travelingTimeMinutes = summary.average_travel_time / 60;
+    // Traveling time is already in minutes
+    const travelingTimeMinutes = summary.average_travel_time;
     const travelingTimeDisplay =
       summary.average_travel_time < 0
         ? '-'
-        : travelingTimeMinutes > 1
-          ? `${travelingTimeMinutes.toFixed(1)} mins`
-          : `${summary.average_travel_time.toFixed(1)} mins`;
+        : `${travelingTimeMinutes.toFixed(1)} mins`;
 
     // Convert traveling distance from meters to km
     const travelingDistanceKm = summary.average_travel_distance / 1000;

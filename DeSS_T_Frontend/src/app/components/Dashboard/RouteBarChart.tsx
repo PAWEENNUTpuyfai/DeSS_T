@@ -31,39 +31,34 @@ export default function RouteBarChart({
     route.map((r) => [r[0], { name: r[1], color: r[2] }]),
   );
 
-  // Build data with route info
-  const chartData = dataset
-    .map(([routeId, value], idx) => {
-      const routeInfo = routeMap.get(routeId);
+  const normalizeValue = (value: number) => {
+    if (mode === "avg-traveling-distance") {
+      return Number(value) / 1000;
+    }
+    return Number(value);
+  };
 
-      // Convert units based on mode
-      let displayValue = Number(value);
-      if (mode === "avg-traveling-time") {
-        // Already in minutes from backend
-        displayValue = Number(value);
-      } else if (mode === "avg-traveling-distance") {
-        // Convert meters to km
-        displayValue = Number(value) / 1000;
-      }
+  // Build data in Scenario order first, then append unknown routes from dataset
+  const datasetMap = new Map(dataset.map(([routeId, value]) => [routeId, value]));
 
-      return {
+  const chartData = [
+    ...route
+      .filter(([routeId]) => datasetMap.has(routeId))
+      .map(([routeId, routeName, routeColor], idx) => ({
         id: routeId,
-        name: routeInfo?.name || `สาย ${routeId}`,
-        color: routeInfo?.color || fallbackColors[idx % fallbackColors.length],
-        value: displayValue,
-      };
-    })
-    .sort((a, b) => {
-      // Sort by route ID numerically or lexicographically
-      const aNum = parseInt(a.id, 10);
-      const bNum = parseInt(b.id, 10);
-      // If both are valid numbers, compare numerically
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return aNum - bNum;
-      }
-      // Otherwise compare as strings
-      return a.id.localeCompare(b.id);
-    });
+        name: routeName,
+        color: routeColor || fallbackColors[idx % fallbackColors.length],
+        value: normalizeValue(datasetMap.get(routeId) ?? 0),
+      })),
+    ...dataset
+      .filter(([routeId]) => !routeMap.has(routeId))
+      .map(([routeId, value], idx) => ({
+        id: routeId,
+        name: `สาย ${routeId}`,
+        color: fallbackColors[(route.length + idx) % fallbackColors.length],
+        value: normalizeValue(value),
+      })),
+  ];
 
   // Calculate max value for Y-axis
   const maxValue = chartData.length
